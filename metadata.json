@@ -1,0 +1,10 @@
+{
+  "name": "TuitionMatch - Hyper-Local Tuition Marketplace & Architecture Hub",
+  "description": "Hyper-local tuition platform connecting students and tutors within a 1-5km radius, with privacy-shielded contact disclosure upon student acceptance.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #070A12;
+    --bg-card: #111827;
+    --bg-surface: #0B0F19;
+    --border-color: #1e3a8a;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  html.light {
+    --bg-primary: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-surface: #f1f5f9;
+    --border-color: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+/* Light Mode Overrides for High Daytime Contrast and Clean Accessibility */
+html.light body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.light .bg-\[\#070A12\] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-\[\#0B0F19\] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-\[\#111827\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+html.light .text-white {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-200 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-300 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.light .border-blue-900\/40,
+html.light .border-blue-900\/50,
+html.light .border-blue-900\/60,
+html.light .border-blue-950,
+html.light .border-blue-950\/40,
+html.light .border-blue-950\/50,
+html.light .border-blue-950\/60,
+html.light .border-blue-950\/70,
+html.light .border-blue-950\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .bg-blue-950,
+html.light .bg-blue-950\/30,
+html.light .bg-blue-950\/40,
+html.light .bg-blue-950\/60,
+html.light .bg-blue-950\/80 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+html.light .bg-cyan-950,
+html.light .bg-cyan-950\/30,
+html.light .bg-cyan-950\/40,
+html.light .bg-cyan-950\/70,
+html.light .bg-cyan-950\/80 {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #0e7490 !important;
+}
+
+html.light .bg-emerald-950,
+html.light .bg-emerald-950\/30,
+html.light .bg-emerald-950\/40,
+html.light .bg-emerald-950\/60,
+html.light .bg-emerald-950\/80 {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+html.light .bg-amber-950,
+html.light .bg-amber-950\/30,
+html.light .bg-amber-950\/40,
+html.light .bg-amber-950\/60 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/80 {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+html.light .bg-slate-900 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}

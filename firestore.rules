@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // Bookmarks Subcollection
+      match /bookmarks/{bookmarkId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Tuition Posts Collection
+    match /tuition_posts/{postId} {
+      // Authenticated users can read open posts for radius discovery
+      allow read: if isSignedIn();
+      
+      // Students can create their tuition posts
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      
+      // Post owner can update; or accepted status transition
+      allow update: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedTutorId', 'acceptedAt'])
+      );
+      
+      allow delete: if isSignedIn() && resource.data.studentId == request.auth.uid;
+
+      // Applications Subcollection
+      match /applications/{applicationId} {
+        // Visible to applicant or post owner
+        allow read: if isSignedIn();
+        
+        // Tutors can submit an application
+        allow create: if isSignedIn() && request.resource.data.tutorId == request.auth.uid;
+        
+        // Status can be updated by post owner (accepting) or applicant
+        allow update: if isSignedIn() && (
+          request.resource.data.tutorId == request.auth.uid ||
+          request.auth.uid == get(/databases/$(database)/documents/tuition_posts/$(postId)).data.studentId
+        );
+        
+        allow delete: if isSignedIn() && resource.data.tutorId == request.auth.uid;
+      }
+    }
+
+    // Tutor Ratings Subcollection
+    match /tutors/{tutorId}/ratings/{ratingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

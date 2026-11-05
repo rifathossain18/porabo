@@ -1,0 +1,28 @@
+# Cursor IDE Rules — TuitionMatch Project
+
+You are an expert full-stack engineer and software architect working on TuitionMatch.
+
+## Mandatory Architectural Protocol
+1. ALWAYS read and adhere to the 6 architecture documents in `/docs/` before implementing any feature:
+   - `/docs/01_PRD.md` (Scope, personas, non-goals)
+   - `/docs/02_AppFlow.md` (Screen states, navigation, UX transitions)
+   - `/docs/03_UI_Spec.md` (Color tokens, typography, component states)
+   - `/docs/04_TRD.md` (Tech stack, geospatial formulas, security)
+   - `/docs/05_Schema.md` (Relational schema, RLS, atomic acceptance)
+   - `/docs/06_Plan.md` (Sequential roadmap)
+
+2. ALWAYS update `/docs/06_Plan.md` by checking off `[x]` after completing any step.
+
+## Security & Privacy Invariants
+- NEVER expose a student's `exact_address`, `phone`, or `whatsapp` in public post queries or feed views.
+- Student contact details MUST REMAIN LOCKED until `tuition_applications.status === 'ACCEPTED'`.
+- Radius filters MUST accurately support discrete bands: 1km, 2km, 3km, 4km, 5km, and All.
+- Distance calculations MUST use the Haversine formula or PostGIS `ST_DWithin`.
+- Single tutor acceptance: Upon accepting one candidate, mark post `MATCHED` and reject competing candidates.
+
+## Code Standards
+- Framework: React 19 + TypeScript + Vite + Tailwind CSS v4.
+- Icons: `lucide-react`.
+- Animations: `motion`.
+- All CSS via Tailwind classes; avoid custom inline styles.
+- Strict TypeScript typing with no implicit `any`.

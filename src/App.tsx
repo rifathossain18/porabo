@@ -1060,9 +1060,7 @@ export default function App() {
         setCurrentUser(res.user);
         setIsLocationVerified(true);
         setAuthLoading(false);
-        showToast(
-          `Welcome back, ${res.user.fullName}! (${res.user.role === "TUTOR" ? "Teacher" : "Student"})`,
-        );
+        showToast(`Welcome back, ${res.user.fullName}. Signed in as ${res.user.role === 'TUTOR' ? 'Teacher' : 'Student'}.`);
       } else {
         setAuthLoading(false);
         setAuthError(
@@ -1202,9 +1200,7 @@ export default function App() {
         setCurrentUser(res.user);
         setIsLocationVerified(true);
         setAuthLoading(false);
-        showToast(
-          `Account registered with Cloudflare Auth as ${authRoleChoice === "STUDENT" ? "Student" : "Teacher"}!`,
-        );
+        showToast(`Account created successfully. Signed in as ${authRoleChoice === 'STUDENT' ? 'Student' : 'Teacher'}.`);
       } else {
         setAuthLoading(false);
         setAuthError(
@@ -1270,9 +1266,7 @@ export default function App() {
       setIsForgotPasswordOpen(false);
       setForgotPasswordSuccessMsg(null);
       setNewPasswordAfterReset("");
-      showToast(
-        "Password updated securely with Cloudflare Auth! Please sign in with your new password.",
-      );
+      showToast('Password updated successfully. Please sign in with your new password.');
     } else {
       showToast(res.error || "Failed to update password.");
     }
@@ -1283,7 +1277,7 @@ export default function App() {
     setCurrentUser(null);
     setIsLocationVerified(false);
     setViewingTeacherProfileId(null);
-    showToast("Signed out from Cloudflare session successfully.");
+    showToast('You have been signed out.');
   };
 
   // Submit Categorical Rating after 1 Month
@@ -1363,8 +1357,8 @@ export default function App() {
     setIsRatingModalOpen(false);
     setRatingApplication(null);
     showToast(
-      "Review submitted! It will appear on the tutor profile after admin approval.",
-    );
+    'Review submitted. It will appear on the tutor profile after admin approval.'
+  );
   };
 
   // Handle Tutor applying to post (Strict check: MUST be VERIFIED by Admin)
@@ -1409,9 +1403,7 @@ export default function App() {
 
     setApplications((prev) => [newApp, ...prev]);
     setSelectedPostForApply(null);
-    showToast(
-      "Application submitted! The student will review your verified profile.",
-    );
+    showToast('Application submitted. The student will review your verified profile.');
     cfD1
       .saveApplication(newApp)
       .catch((err) =>
@@ -1474,9 +1466,7 @@ export default function App() {
     };
 
     setApplications((prev) => [newApp, ...prev]);
-    showToast(
-      `Quick Applied to "${post.title}" at ৳ ${proposedSalary.toLocaleString()}/month! 🚀`,
-    );
+    showToast(`Application submitted for "${post.title}". Proposed fee: ৳${proposedSalary.toLocaleString()}/month.`);
     cfD1
       .saveApplication(newApp)
       .catch((err) =>
@@ -1512,7 +1502,7 @@ export default function App() {
         await navigator.clipboard.writeText(
           `${post.title} • ${post.areaName}, ${post.district} (৳ ${post.salaryBudget.toLocaleString()}/mo) • ${shareUrl}`,
         );
-        showToast("Tuition opportunity link copied to clipboard! 📋");
+        showToast('Tuition opportunity link copied to clipboard.');
       } catch {
         showToast("Link ready to share!");
       }
@@ -1538,7 +1528,7 @@ export default function App() {
         await navigator.clipboard.writeText(
           `${tutor.fullName} - Verified Educator on Porabo - ${shareUrl}`,
         );
-        showToast("Tutor profile link copied to clipboard! 📋");
+        showToast('Tutor profile link copied to clipboard.');
       } catch {
         showToast("Link ready to share!");
       }
@@ -1647,9 +1637,7 @@ export default function App() {
     const acceptedName = tutorToAccept.tutorName;
     setRatingTutorId(tutorToAccept.tutorId);
     setTutorToAccept(null);
-    showToast(
-      `Success! You accepted ${acceptedName}. Mutual contact details & address are now unlocked!`,
-    );
+    showToast(`Tutor accepted. Contact details and address are now unlocked.`);
   };
 
   // Handle Student marking post as Tutor Found
@@ -1695,9 +1683,7 @@ export default function App() {
     setTuitionPosts((prev) => [newPost, ...prev]);
     setIsCreatePostOpen(false);
     setNewPostTitle("");
-    showToast(
-      "Tuition request submitted! It is now under review by Admin and will go live once verified.",
-    );
+    showToast('Tuition request submitted. It is under review and will go live once approved.');
     cfD1
       .savePost(newPost)
       .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
@@ -1728,7 +1714,7 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsEditProfileOpen(false);
-    showToast("Professional bio & teaching profile updated successfully!");
+    showToast('Professional bio and teaching profile updated successfully.');
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -1792,9 +1778,7 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsProfileModalOpen(false);
-    showToast(
-      `Profile & Location updated! Active District: ${profileDistrict}`,
-    );
+    showToast(`Profile and location updated. Active district: ${profileDistrict}.`);
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -1812,7 +1796,7 @@ export default function App() {
       prev.map((u) => (u.id === currentUser.id ? updatedUser : u)),
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
-    showToast(`Active District updated to ${newDistrict}!`);
+    showToast(`Active district updated to ${newDistrict}.`);
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -1848,9 +1832,7 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsResubmitModalOpen(false);
-    showToast(
-      "Corrected verification dossier submitted! Your application is now in the Admin review queue.",
-    );
+    showToast('Corrected verification dossier submitted. Your application is now in the admin review queue.');
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -3256,7 +3238,7 @@ export default function App() {
                         setFilterSubject(subj);
                         setViewingTeacherProfileId(null);
                         setTeacherViewMode("feed");
-                        showToast(`Filtered tuitions & tutors by "${subj}"`);
+                        showToast(`Filtered tuitions & tutors by "${subj}".`);
                       }}
                       className="group px-3 py-1.5 rounded-xl bg-blue-950/40 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-800/60 hover:border-blue-400 text-xs font-medium transition-all shadow-sm flex items-center gap-1.5"
                     >

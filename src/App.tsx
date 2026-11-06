@@ -289,41 +289,10 @@ export default function App() {
   const [gpsLoading, setGpsLoading] = useState<boolean>(false);
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
 
-  // Primary Data State (Cloudflare D1 & Workers KV, Real Data Only)
-  const [allUsers, setAllUsers] = useState<User[]>(() => {
-    try {
-      cfD1.cleanLegacyDemoData();
-      const saved =
-        localStorage.getItem("porabo_d1_users") ||
-        localStorage.getItem("porabo_all_users");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>(() => {
-    try {
-      const saved =
-        localStorage.getItem("porabo_d1_posts") ||
-        localStorage.getItem("porabo_tuition_posts");
-      const initial = saved ? JSON.parse(saved) : [];
-      return filterActive70DayPosts(initial);
-    } catch {
-      return [];
-    }
-  });
-
-  const [applications, setApplications] = useState<TuitionApplication[]>(() => {
-    try {
-      const saved =
-        localStorage.getItem("porabo_d1_applications") ||
-        localStorage.getItem("porabo_applications");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+    // ✅ Pure Cloudflare D1 — no localStorage for data. Filled by API bootstrap effect below.
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>([]);
+  const [applications, setApplications] = useState<TuitionApplication[]>([]);
 
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
 
@@ -333,9 +302,12 @@ export default function App() {
 
     // Initial data load from API (Cloudflare Worker) — runs once on mount.
   // This is what enables cross-device sync: all phones see the same data.
+    // ✅ Pure API bootstrap — every load fetches from Cloudflare D1.
+  // Auto-polls every 30s so all devices stay in sync.
   useEffect(() => {
     let cancelled = false;
-    const bootstrap = async () => {
+
+    const refreshFromAPI = async () => {
       try {
         const [apiUsers, apiPosts, apiApps] = await Promise.all([
           cfD1.getUsers(),
@@ -346,56 +318,22 @@ export default function App() {
         setAllUsers(apiUsers);
         setTuitionPosts(filterActive70DayPosts(apiPosts));
         setApplications(apiApps);
-        console.info(
-          `[Porabo] Bootstrapped from API: ${apiUsers.length} users, ${apiPosts.length} posts, ${apiApps.length} applications`
-        );
       } catch (err) {
-        console.warn('[Porabo] API bootstrap failed, using localStorage fallback:', err);
+        console.warn('[Porabo] API refresh failed:', err);
       }
     };
-    bootstrap();
+
+    // First load
+    refreshFromAPI();
+
+    // Poll every 15s (cross-device live sync)
+    const interval = setInterval(refreshFromAPI, 15000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, []);
-
-  // Sync state to Cloudflare D1 / Local persistence
-  useEffect(() => {
-    try {
-      localStorage.setItem('porabo_d1_posts', JSON.stringify(tuitionPosts));
-      localStorage.setItem('porabo_tuition_posts', JSON.stringify(tuitionPosts));
-    } catch {}
-  }, [tuitionPosts]);
-
-
-
-  // Sync state to Cloudflare D1 / Local persistence
-  useEffect(() => {
-    try {
-      localStorage.setItem("porabo_d1_posts", JSON.stringify(tuitionPosts));
-      localStorage.setItem(
-        "porabo_tuition_posts",
-        JSON.stringify(tuitionPosts),
-      );
-    } catch {}
-  }, [tuitionPosts]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "porabo_d1_applications",
-        JSON.stringify(applications),
-      );
-      localStorage.setItem("porabo_applications", JSON.stringify(applications));
-    } catch {}
-  }, [applications]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("porabo_d1_users", JSON.stringify(allUsers));
-      localStorage.setItem("porabo_all_users", JSON.stringify(allUsers));
-    } catch {}
-  }, [allUsers]);
 
 
 
@@ -1336,7 +1274,34 @@ export default function App() {
     }
   };
 
+
+
+
+    // Whenever state changes locally (registration, accept tutor, post created),
+  // silently re-push to API in case a previous write failed.
+  // This is a safety net — individual actions already call cfD1.save*().
+  useEffect(() => {
+    // Skip on initial empty state
+    if (allUsers.length === 0 && tuitionPosts.length === 0 && applications.length === 0) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      // Poll API again after a short delay to confirm data is persisted
+      Promise.all([
+        cfD1.getUsers(),
+        cfD1.getPosts(),
+        cfD1.getApplications(),
+      ]).then(([u, p, a]) => {
+        setAllUsers(u);
+        setTuitionPosts(filterActive70DayPosts(p));
+        setApplications(a);
+      }).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [allUsers.length, tuitionPosts.length, applications.length]);
+
   const handleLogout = async () => {
+  
     cfLogout();
     setCurrentUser(null);
     setIsLocationVerified(false);

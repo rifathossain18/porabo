@@ -1,0 +1,10 @@
+name = "porabo-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# D1 Database binding
+# The actual database_id is NOT committed — it lives in wrangler.toml.local
+[[d1_databases]]
+binding = "DB"
+database_name = "porabo-db"
+database_id = "PLACEHOLDER-REPLACE-WITH-YOUR-LOCAL-ID"

@@ -327,6 +327,48 @@ export default function App() {
 
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
 
+
+
+
+
+    // Initial data load from API (Cloudflare Worker) — runs once on mount.
+  // This is what enables cross-device sync: all phones see the same data.
+  useEffect(() => {
+    let cancelled = false;
+    const bootstrap = async () => {
+      try {
+        const [apiUsers, apiPosts, apiApps] = await Promise.all([
+          cfD1.getUsers(),
+          cfD1.getPosts(),
+          cfD1.getApplications(),
+        ]);
+        if (cancelled) return;
+        setAllUsers(apiUsers);
+        setTuitionPosts(filterActive70DayPosts(apiPosts));
+        setApplications(apiApps);
+        console.info(
+          `[Porabo] Bootstrapped from API: ${apiUsers.length} users, ${apiPosts.length} posts, ${apiApps.length} applications`
+        );
+      } catch (err) {
+        console.warn('[Porabo] API bootstrap failed, using localStorage fallback:', err);
+      }
+    };
+    bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Sync state to Cloudflare D1 / Local persistence
+  useEffect(() => {
+    try {
+      localStorage.setItem('porabo_d1_posts', JSON.stringify(tuitionPosts));
+      localStorage.setItem('porabo_tuition_posts', JSON.stringify(tuitionPosts));
+    } catch {}
+  }, [tuitionPosts]);
+
+
+
   // Sync state to Cloudflare D1 / Local persistence
   useEffect(() => {
     try {
@@ -354,6 +396,28 @@ export default function App() {
       localStorage.setItem("porabo_all_users", JSON.stringify(allUsers));
     } catch {}
   }, [allUsers]);
+
+
+
+    // Poll API every 30s so admin panel and student/tutor feeds stay in sync
+  // across devices without manual refresh.
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const [apiUsers, apiPosts, apiApps] = await Promise.all([
+          cfD1.getUsers(),
+          cfD1.getPosts(),
+          cfD1.getApplications(),
+        ]);
+        setAllUsers(prev => (JSON.stringify(prev) !== JSON.stringify(apiUsers) ? apiUsers : prev));
+        setTuitionPosts(prev => (JSON.stringify(prev) !== JSON.stringify(apiPosts) ? filterActive70DayPosts(apiPosts) : prev));
+        setApplications(prev => (JSON.stringify(prev) !== JSON.stringify(apiApps) ? apiApps : prev));
+      } catch {
+        // silent — will retry next tick
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Persist notifications
   useEffect(() => {

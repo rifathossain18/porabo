@@ -148,6 +148,7 @@ import {
 } from "./components/EmptyStateIllustrations";
 import { QRCodeModal } from "./components/QRCodeModal";
 import { ActivityLog } from "./components/ActivityLog";
+import { Toast } from './components/Toast';
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 
 export default function App() {
@@ -597,9 +598,10 @@ export default function App() {
 
   // Toast Alert
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const showToast = (msg: string) => {
+    const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3800);
+    // Auto-clear after 3800ms — toast internally has its own progress bar
+    // so if the user dismisses earlier via X, the onClose handler clears it.
   };
 
   // Listen to browser URL changes for /admin (Instant & Non-blocking)
@@ -2078,13 +2080,8 @@ export default function App() {
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-        {/* Toast */}
-        {toastMessage && (
-          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-blue-600/95 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-blue-400 text-sm font-medium animate-bounce max-w-[90%] text-center">
-            <Sparkles className="w-4 h-4 shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+                {/* Toast Notification */}
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
         {/* Top Minimal Branding Header */}
         <header className="border-b border-blue-950/40 bg-[#0B0F19]/90 backdrop-blur-md px-4 py-3 sm:px-6">
@@ -2898,13 +2895,8 @@ export default function App() {
 
     return (
       <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-        {/* Toast */}
-        {toastMessage && (
-          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-blue-600/95 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-blue-400 text-sm font-medium animate-bounce max-w-[90%] text-center">
-            <Sparkles className="w-4 h-4 shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+                {/* Toast Notification */}
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
         {/* Top Header Navigation */}
         <header className="sticky top-0 z-40 border-b border-blue-950/50 bg-[#0B0F19]/90 backdrop-blur-md px-4 py-3 sm:px-6">
@@ -3827,13 +3819,8 @@ export default function App() {
   // =========================================================================
   return (
     <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-blue-600/95 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-blue-400 text-sm font-medium animate-bounce max-w-[90%] text-center">
-          <Sparkles className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+              {/* Toast Notification */}
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Main Top Header */}
       <header className="sticky top-0 z-40 border-b border-blue-950/60 bg-[#0B0F19]/90 backdrop-blur-md px-3 sm:px-6 py-2.5">

@@ -9,3 +9,9 @@ coverage/
 docs/
 .cursorrules
 CLAUDE.md
+# Lock files — Cloudflare Pages uses bun automatically
+bun.lock
+bun.lockb
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

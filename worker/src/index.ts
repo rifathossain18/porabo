@@ -60,6 +60,79 @@ export default {
         });
       }
 
+
+            // ============ ADMIN AUTH ============
+      if (path === '/api/admin/config' && method === 'GET') {
+        const result = await env.DB.prepare(
+          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
+        ).first();
+        return jsonResponse({ hasPassword: !!result });
+      }
+
+      if (path === '/api/admin/config/init' && method === 'POST') {
+        const body = await parseBody(request);
+        if (!body.password) return errorResponse('Password required');
+        
+        const existing = await env.DB.prepare(
+          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
+        ).first();
+        if (existing) return errorResponse('Admin already initialized', 400);
+
+        // Hash password
+        const msgBuffer = new TextEncoder().encode(body.password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Generate Recovery Code
+        const recoveryCode = crypto.randomUUID().slice(0, 8).toUpperCase();
+
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO admin_settings (key, value) VALUES ('admin_password_hash', ?)").bind(hashHex),
+          env.DB.prepare("INSERT INTO admin_settings (key, value) VALUES ('admin_recovery_code', ?)").bind(recoveryCode)
+        ]);
+
+        return jsonResponse({ success: true, recoveryCode });
+      }
+
+      if (path === '/api/admin/config/login' && method === 'POST') {
+        const body = await parseBody(request);
+        const existing: any = await env.DB.prepare(
+          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
+        ).first();
+        
+        if (!existing) return errorResponse('Admin not initialized', 400);
+
+        const msgBuffer = new TextEncoder().encode(body.password || '');
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        if (hashHex === existing.value) {
+          return jsonResponse({ success: true });
+        }
+        return errorResponse('Incorrect password', 401);
+      }
+
+      if (path === '/api/admin/config/reset' && method === 'POST') {
+        const body = await parseBody(request);
+        const existing: any = await env.DB.prepare(
+          "SELECT value FROM admin_settings WHERE key = 'admin_recovery_code'"
+        ).first();
+
+        if (!existing || existing.value !== body.recoveryCode) {
+          return errorResponse('Invalid recovery code', 401);
+        }
+
+        const msgBuffer = new TextEncoder().encode(body.newPassword);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        await env.DB.prepare(
+          "UPDATE admin_settings SET value = ? WHERE key = 'admin_password_hash'"
+        ).bind(hashHex).run();
+
+        return jsonResponse({ success: true });
+      }
+
       // ============ USERS ============
       if (path === '/api/users' && method === 'GET') {
         const result = await env.DB.prepare(

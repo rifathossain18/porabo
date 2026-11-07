@@ -31,3 +31,9 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_posts_student ON tuition_posts(studentId);
 CREATE INDEX IF NOT EXISTS idx_apps_tutor ON tuition_applications(tutorId);
 CREATE INDEX IF NOT EXISTS idx_apps_post ON tuition_applications(postId);
+
+
+CREATE TABLE IF NOT EXISTS admin_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

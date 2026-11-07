@@ -64,6 +64,53 @@ class CloudflareD1Service {
     this.purgeLegacyLocalData();
   }
 
+
+
+    // ==========================================================
+  // ADMIN AUTH
+  // ==========================================================
+
+  async getAdminConfig(): Promise<{ hasPassword: boolean }> {
+    try {
+      return await this.apiFetch<{ hasPassword: boolean }>('/api/admin/config');
+    } catch {
+      return { hasPassword: true }; // Fallback to login if API fails
+    }
+  }
+
+  async initAdminPassword(password: string): Promise<{ success: boolean; recoveryCode?: string; error?: string }> {
+    try {
+      return await this.apiFetch('/api/admin/config/init', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async verifyAdminPassword(password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.apiFetch('/api/admin/config/login', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  async resetAdminPassword(recoveryCode: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.apiFetch('/api/admin/config/reset', {
+        method: 'POST',
+        body: JSON.stringify({ recoveryCode, newPassword }),
+      });
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
   /**
    * Delete ALL old localStorage data that belonged to the previous localStorage-first architecture.
    * Runs once per browser session. Keeps only UI preferences & session tokens.

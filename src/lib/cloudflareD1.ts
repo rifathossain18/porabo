@@ -70,11 +70,12 @@ class CloudflareD1Service {
   // ADMIN AUTH
   // ==========================================================
 
-  async getAdminConfig(): Promise<{ hasPassword: boolean }> {
+      async getAdminConfig(): Promise<{ hasPassword: boolean }> {
     try {
       return await this.apiFetch<{ hasPassword: boolean }>('/api/admin/config');
-    } catch {
-      return { hasPassword: true }; // Fallback to login if API fails
+    } catch (err) {
+      console.warn('[Porabo D1] Admin config check failed:', err);
+      return { hasPassword: false }; // ফেইল করলে নতুন সেটআপ ফর্ম দেখাবে
     }
   }
 

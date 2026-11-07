@@ -4,7 +4,7 @@ export interface Env {
   DB: D1Database;
 }
 
-// CORS headers — এই অংশটাই মূল সমস্যা সমাধান করবে
+// CORS Headers - এই অংশটাই ব্রাউজারকে অনুমতি দেবে
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -17,7 +17,7 @@ function jsonResponse(data: unknown, status: number = 200): Response {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...corsHeaders, // সব রেসপন্সে CORS হেডার যুক্ত হচ্ছে
+      ...corsHeaders, // প্রতিটা রেসপন্সে CORS হেডার যাচ্ছে
     },
   });
 }
@@ -37,7 +37,7 @@ async function parseBody(request: Request): Promise<Record<string, any>> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // 🚨 CORS PREFLIGHT MUST BE HANDLED FIRST
+    // 🚨 সবচেয়ে গুরুত্বপূর্ণ: OPTIONS রিকোয়েস্ট হ্যান্ডেল করা (Preflight)
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
@@ -60,8 +60,7 @@ export default {
           ).first();
           return jsonResponse({ hasPassword: !!result });
         } catch (e) {
-          // If table doesn't exist, assume no password
-          return jsonResponse({ hasPassword: false });
+          return jsonResponse({ hasPassword: false }); // টেবিল না থাকলে নতুন সেটআপ দেখাবে
         }
       }
 
@@ -150,7 +149,7 @@ export default {
         return jsonResponse({ success: true });
       }
 
-      // ============ TUITION POSTS ============
+      // ============ POSTS ============
       if (path === '/api/posts' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM tuition_posts ORDER BY createdAt DESC').all();
         const posts = (result.results || []).map((r: any) => JSON.parse(r.data));
@@ -200,7 +199,7 @@ export default {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Internal server error';
       console.error('API error:', err);
-      return errorResponse(message, 500);
+      return errorResponse(message, 500); // এরর হলেও CORS হেডার যাবে
     }
   },
 };

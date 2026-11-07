@@ -4,11 +4,7 @@ export interface Env {
   DB: D1Database;
 }
 
-interface UserRow {
-  data: string;
-}
-
-// CORS headers
+// CORS headers — এই অংশটাই মূল সমস্যা সমাধান করবে
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -21,7 +17,7 @@ function jsonResponse(data: unknown, status: number = 200): Response {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...corsHeaders,
+      ...corsHeaders, // সব রেসপন্সে CORS হেডার যুক্ত হচ্ছে
     },
   });
 }
@@ -41,7 +37,7 @@ async function parseBody(request: Request): Promise<Record<string, any>> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // CORS preflight
+    // 🚨 CORS PREFLIGHT MUST BE HANDLED FIRST
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
@@ -53,20 +49,20 @@ export default {
     try {
       // ============ HEALTH CHECK ============
       if (path === '/' || path === '/health') {
-        return jsonResponse({
-          status: 'ok',
-          service: 'porabo-api',
-          time: new Date().toISOString(),
-        });
+        return jsonResponse({ status: 'ok', service: 'porabo-api', time: new Date().toISOString() });
       }
 
-
-            // ============ ADMIN AUTH ============
+      // ============ ADMIN AUTH ============
       if (path === '/api/admin/config' && method === 'GET') {
-        const result = await env.DB.prepare(
-          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
-        ).first();
-        return jsonResponse({ hasPassword: !!result });
+        try {
+          const result = await env.DB.prepare(
+            "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
+          ).first();
+          return jsonResponse({ hasPassword: !!result });
+        } catch (e) {
+          // If table doesn't exist, assume no password
+          return jsonResponse({ hasPassword: false });
+        }
       }
 
       if (path === '/api/admin/config/init' && method === 'POST') {
@@ -78,12 +74,10 @@ export default {
         ).first();
         if (existing) return errorResponse('Admin already initialized', 400);
 
-        // Hash password
         const msgBuffer = new TextEncoder().encode(body.password);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Generate Recovery Code
         const recoveryCode = crypto.randomUUID().slice(0, 8).toUpperCase();
 
         await env.DB.batch([
@@ -135,31 +129,18 @@ export default {
 
       // ============ USERS ============
       if (path === '/api/users' && method === 'GET') {
-        const result = await env.DB.prepare(
-          'SELECT data FROM users ORDER BY createdAt DESC'
-        ).all<UserRow>();
-        const users = (result.results || []).map((r) => JSON.parse(r.data));
+        const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();
+        const users = (result.results || []).map((r: any) => JSON.parse(r.data));
         return jsonResponse(users);
       }
 
       if (path === '/api/users' && method === 'POST') {
         const user = await parseBody(request);
-        if (!user.id || !user.email || !user.role) {
-          return errorResponse('Missing required fields: id, email, role');
-        }
+        if (!user.id || !user.email || !user.role) return errorResponse('Missing required fields');
         await env.DB.prepare(
-          `INSERT INTO users (id, data, role, email, createdAt)
-           VALUES (?, ?, ?, ?, ?)
+          `INSERT INTO users (id, data, role, email, createdAt) VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET data=excluded.data, role=excluded.role, email=excluded.email`
-        )
-          .bind(
-            user.id,
-            JSON.stringify(user),
-            user.role,
-            String(user.email).toLowerCase(),
-            user.verificationSubmittedAt || new Date().toISOString()
-          )
-          .run();
+        ).bind(user.id, JSON.stringify(user), user.role, String(user.email).toLowerCase(), user.verificationSubmittedAt || new Date().toISOString()).run();
         return jsonResponse({ success: true, user });
       }
 
@@ -171,31 +152,18 @@ export default {
 
       // ============ TUITION POSTS ============
       if (path === '/api/posts' && method === 'GET') {
-        const result = await env.DB.prepare(
-          'SELECT data FROM tuition_posts ORDER BY createdAt DESC'
-        ).all<UserRow>();
-        const posts = (result.results || []).map((r) => JSON.parse(r.data));
+        const result = await env.DB.prepare('SELECT data FROM tuition_posts ORDER BY createdAt DESC').all();
+        const posts = (result.results || []).map((r: any) => JSON.parse(r.data));
         return jsonResponse(posts);
       }
 
       if (path === '/api/posts' && method === 'POST') {
         const post = await parseBody(request);
-        if (!post.id || !post.studentId) {
-          return errorResponse('Missing required fields: id, studentId');
-        }
+        if (!post.id || !post.studentId) return errorResponse('Missing required fields');
         await env.DB.prepare(
-          `INSERT INTO tuition_posts (id, data, studentId, district, createdAt)
-           VALUES (?, ?, ?, ?, ?)
+          `INSERT INTO tuition_posts (id, data, studentId, district, createdAt) VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET data=excluded.data, district=excluded.district`
-        )
-          .bind(
-            post.id,
-            JSON.stringify(post),
-            post.studentId,
-            post.district || '',
-            post.createdAt || new Date().toISOString()
-          )
-          .run();
+        ).bind(post.id, JSON.stringify(post), post.studentId, post.district || '', post.createdAt || new Date().toISOString()).run();
         return jsonResponse({ success: true, post });
       }
 
@@ -207,31 +175,18 @@ export default {
 
       // ============ APPLICATIONS ============
       if (path === '/api/applications' && method === 'GET') {
-        const result = await env.DB.prepare(
-          'SELECT data FROM tuition_applications ORDER BY createdAt DESC'
-        ).all<UserRow>();
-        const apps = (result.results || []).map((r) => JSON.parse(r.data));
+        const result = await env.DB.prepare('SELECT data FROM tuition_applications ORDER BY createdAt DESC').all();
+        const apps = (result.results || []).map((r: any) => JSON.parse(r.data));
         return jsonResponse(apps);
       }
 
       if (path === '/api/applications' && method === 'POST') {
         const app = await parseBody(request);
-        if (!app.id || !app.postId || !app.tutorId) {
-          return errorResponse('Missing required fields: id, postId, tutorId');
-        }
+        if (!app.id || !app.postId || !app.tutorId) return errorResponse('Missing required fields');
         await env.DB.prepare(
-          `INSERT INTO tuition_applications (id, data, postId, tutorId, createdAt)
-           VALUES (?, ?, ?, ?, ?)
+          `INSERT INTO tuition_applications (id, data, postId, tutorId, createdAt) VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET data=excluded.data`
-        )
-          .bind(
-            app.id,
-            JSON.stringify(app),
-            app.postId,
-            app.tutorId,
-            app.createdAt || new Date().toISOString()
-          )
-          .run();
+        ).bind(app.id, JSON.stringify(app), app.postId, app.tutorId, app.createdAt || new Date().toISOString()).run();
         return jsonResponse({ success: true, application: app });
       }
 
@@ -239,65 +194,6 @@ export default {
         const id = path.replace('/api/applications/', '');
         await env.DB.prepare('DELETE FROM tuition_applications WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true });
-      }
-
-      // ============ BULK SYNC ============
-      if (path === '/api/sync' && method === 'POST') {
-        const payload = await parseBody(request);
-        const users: any[] = Array.isArray(payload.users) ? payload.users : [];
-        const posts: any[] = Array.isArray(payload.posts) ? payload.posts : [];
-        const applications: any[] = Array.isArray(payload.applications) ? payload.applications : [];
-
-        for (const u of users) {
-          await env.DB.prepare(
-            `INSERT INTO users (id, data, role, email, createdAt) VALUES (?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO NOTHING`
-          )
-            .bind(
-              u.id,
-              JSON.stringify(u),
-              u.role,
-              String(u.email).toLowerCase(),
-              u.verificationSubmittedAt || new Date().toISOString()
-            )
-            .run();
-        }
-        for (const p of posts) {
-          await env.DB.prepare(
-            `INSERT INTO tuition_posts (id, data, studentId, district, createdAt) VALUES (?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO NOTHING`
-          )
-            .bind(
-              p.id,
-              JSON.stringify(p),
-              p.studentId,
-              p.district || '',
-              p.createdAt || new Date().toISOString()
-            )
-            .run();
-        }
-        for (const a of applications) {
-          await env.DB.prepare(
-            `INSERT INTO tuition_applications (id, data, postId, tutorId, createdAt) VALUES (?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO NOTHING`
-          )
-            .bind(
-              a.id,
-              JSON.stringify(a),
-              a.postId,
-              a.tutorId,
-              a.createdAt || new Date().toISOString()
-            )
-            .run();
-        }
-        return jsonResponse({
-          success: true,
-          synced: {
-            users: users.length,
-            posts: posts.length,
-            applications: applications.length,
-          },
-        });
       }
 
       return errorResponse('Not found', 404);

@@ -4,13 +4,11 @@ export interface Env {
   DB: D1Database;
 }
 
-// CORS Headers - এই অংশটাই ব্রাউজারকে অনুমতি দেবে
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
-  'Vary': 'Origin', // এটি যোগ করা খুব জরুরি
 };
 
 function jsonResponse(data: unknown, status: number = 200): Response {
@@ -18,7 +16,7 @@ function jsonResponse(data: unknown, status: number = 200): Response {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...corsHeaders, // প্রতিটা রেসপন্সে CORS হেডার যাচ্ছে
+      ...corsHeaders,
     },
   });
 }
@@ -38,7 +36,7 @@ async function parseBody(request: Request): Promise<Record<string, any>> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // 🚨 সবচেয়ে গুরুত্বপূর্ণ: OPTIONS রিকোয়েস্ট হ্যান্ডেল করা (Preflight)
+    // ১. সবার আগে Preflight (OPTIONS) হ্যান্ডেল করা
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
@@ -50,7 +48,7 @@ export default {
     try {
       // ============ HEALTH CHECK ============
       if (path === '/' || path === '/health') {
-        return jsonResponse({ status: 'ok', service: 'porabo-api', time: new Date().toISOString() });
+        return jsonResponse({ status: 'ok', service: 'porabo-api' });
       }
 
       // ============ ADMIN AUTH ============
@@ -61,7 +59,8 @@ export default {
           ).first();
           return jsonResponse({ hasPassword: !!result });
         } catch (e) {
-          return jsonResponse({ hasPassword: false }); // টেবিল না থাকলে নতুন সেটআপ দেখাবে
+          // টেবিল না থাকলে নতুন সেটআপ দেখাবে
+          return jsonResponse({ hasPassword: false });
         }
       }
 
@@ -200,7 +199,8 @@ export default {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Internal server error';
       console.error('API error:', err);
-      return errorResponse(message, 500); // এরর হলেও CORS হেডার যাবে
+      // 🚨 এরর হলেও CORS হেডার রিটার্ন করবে, যাতে ব্রাউজার ব্লক না করে
+      return errorResponse(message, 500); 
     }
   },
 };

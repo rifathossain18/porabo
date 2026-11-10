@@ -476,6 +476,60 @@ class CloudflareD1Service {
     });
     return sql;
   }
+
+
+
+
+
+    // ==========================================================
+  // QUIZZES & EXAMS
+  // ==========================================================
+  async getQuizzes(): Promise<any[]> {
+    try {
+      return await this.apiFetch<any[]>('/api/quizzes');
+    } catch { return []; }
+  }
+
+  async saveQuiz(quiz: any): Promise<boolean> {
+    try {
+      await this.apiFetch('/api/quizzes', {
+        method: 'POST',
+        body: JSON.stringify(quiz),
+      });
+      return true;
+    } catch { return false; }
+  }
+
+  async createExamSet(exam: any): Promise<{ success: boolean; examId?: string }> {
+    try {
+      return await this.apiFetch('/api/exams', {
+        method: 'POST',
+        body: JSON.stringify(exam),
+      });
+    } catch { return { success: false }; }
+  }
+
+  async getExamSet(id: string): Promise<any> {
+    try {
+      return await this.apiFetch(`/api/exams/${id}`);
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  }
+
+  async submitExamResult(result: any): Promise<boolean> {
+    try {
+      await this.apiFetch(`/api/exams/${result.examSetId}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(result),
+      });
+      return true;
+    } catch { return false; }
+  }
+
+
+
+  
 }
 
 export const cfD1 = new CloudflareD1Service();

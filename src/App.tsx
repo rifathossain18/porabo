@@ -1,3 +1,7 @@
+import { QuizDashboard } from './components/QuizDashboard';
+import { StudentExamView } from './components/StudentExamView';
+
+
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   MapPin,
@@ -169,6 +173,10 @@ export default function App() {
     );
   };
 
+    const [allQuizzes, setAllQuizzes] = useState<any[]>([]);
+  const [isQuizDashboardOpen, setIsQuizDashboardOpen] = useState(false);
+  const [activeExamId, setActiveExamId] = useState<string | null>(null);
+
   // Navigation & Admin State (Accessible strictly via /admin or #admin)
   const [isAdminView, setIsAdminView] = useState<boolean>(() =>
     checkIsAdminRoute(),
@@ -309,11 +317,13 @@ export default function App() {
 
     const refreshFromAPI = async () => {
       try {
-        const [apiUsers, apiPosts, apiApps] = await Promise.all([
+                const [apiUsers, apiPosts, apiApps, apiQuizzes] = await Promise.all([
           cfD1.getUsers(),
           cfD1.getPosts(),
           cfD1.getApplications(),
+          cfD1.getQuizzes(),
         ]);
+        setAllQuizzes(apiQuizzes); 
         if (cancelled) return;
         setAllUsers(apiUsers);
         setTuitionPosts(filterActive70DayPosts(apiPosts));
@@ -974,12 +984,19 @@ export default function App() {
     });
   }, [studentMyPosts, studentPostStatusFilter, currentUser]);
 
-  // Applications received for student's posts
+    // Applications received for student's posts
   const studentReceivedApplications = useMemo(() => {
     if (!currentUser || currentUser.role !== "STUDENT") return [];
     const myPostIds = studentMyPosts.map((p) => p.id);
-    return applications.filter((a) => myPostIds.includes(a.postId));
-  }, [applications, studentMyPosts]);
+    const rawApps = applications.filter((a) => myPostIds.includes(a.postId));
+    
+    // 🏆 Sort by Teacher Quiz Points (Highest First)
+    return rawApps.sort((a, b) => {
+      const pointsA = allQuizzes.filter(q => q.teacherId === a.tutorId).length;
+      const pointsB = allQuizzes.filter(q => q.teacherId === b.tutorId).length;
+      return pointsB - pointsA;
+    });
+  }, [applications, studentMyPosts, allQuizzes]); // allQuizzes যুক্ত করা হয়েছে
 
   // Tutor's own submitted applications with dynamic status tracking
   const tutorMyApplications = useMemo(() => {
@@ -2058,6 +2075,24 @@ export default function App() {
       "User record and associated data permanently purged from Cloudflare D1.",
     );
   };
+
+
+
+
+  
+    // =========================================================================
+  // VIEW: STUDENT EXAM ROUTE
+  // =========================================================================
+  if (window.location.hash.startsWith('#/exam/')) {
+    const examId = window.location.hash.replace('#/exam/', '');
+    return (
+      <StudentExamView 
+        examId={examId} 
+        currentUser={currentUser} 
+        onFinish={() => window.location.hash = ''} 
+      />
+    );
+  }
 
   // =========================================================================
   // VIEW: ADMIN PANEL ROUTE (ACCESSIBLE ONLY VIA /admin or #/admin)
@@ -4533,7 +4568,15 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-center">
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setIsQuizDashboardOpen(true)}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/30 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>My Quizzes ({allQuizzes.filter(q => q.teacherId === currentUser.id).length})</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => handleOpenTeacherProfile(currentUser.id)}
@@ -5941,7 +5984,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: TUTOR DETAIL MODAL (WHEN STUDENT CLICKS TUTOR NAME IN APPLICANT INBOX) */}
+            {/* MODAL: TUTOR DETAIL MODAL (WHEN STUDENT CLICKS TUTOR NAME IN APPLICANT INBOX) */}
       {selectedTutorForDetailModal && (
         <TutorDetailModal
           isOpen={!!selectedTutorForDetailModal}
@@ -5962,6 +6005,7 @@ export default function App() {
             handleOpenTeacherProfile(tutorId);
           }}
           isStudentViewer={currentUser?.role === "STUDENT"}
+          quizPoints={allQuizzes.filter(q => q.teacherId === selectedTutorForDetailModal.id).length}
         />
       )}
 
@@ -6400,6 +6444,20 @@ export default function App() {
         shareUrl={qrModalData.shareUrl}
         type={qrModalData.type}
       />
+
+            {/* MODAL: QUIZ DASHBOARD */}
+      {isQuizDashboardOpen && currentUser?.role === 'TUTOR' && (
+        <QuizDashboard
+          isOpen={isQuizDashboardOpen}
+          onClose={() => setIsQuizDashboardOpen(false)}
+          currentUser={currentUser}
+          allQuizzes={allQuizzes}
+          onRefresh={async () => {
+            const freshQuizzes = await cfD1.getQuizzes();
+            setAllQuizzes(freshQuizzes);
+          }}
+        />
+      )}
 
       {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F19]/95 backdrop-blur-xl border-t border-blue-900/50 py-2 px-3 shadow-2xl flex items-center justify-around">

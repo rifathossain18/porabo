@@ -25,6 +25,7 @@ interface TutorDetailModalProps {
   onAcceptTutor?: (app: TuitionApplication) => void;
   onOpenFullProfile?: (tutorId: string) => void;
   isStudentViewer?: boolean;
+  quizPoints?: number; // নতুন প্রপ
 }
 
 export const CATEGORY_TOOLTIPS = {
@@ -55,7 +56,8 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
   onClose,
   onAcceptTutor,
   onOpenFullProfile,
-  isStudentViewer = true
+  isStudentViewer = true,
+  quizPoints = 0 // ডিফল্ট 0
 }) => {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
@@ -123,15 +125,23 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
               </span>
             </p>
 
-            <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+            <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1 flex-wrap">
               <MapPin className="w-3.5 h-3.5 text-slate-500" />
               <span>
                 {tutor.areaName}, {tutor.district}
               </span>
               <span className="text-slate-600">&bull;</span>
               <span className="text-slate-300 font-medium">
-                {tutor.yearsOfExperience || 4}+ Years Tutoring Experience
+                {tutor.yearsOfExperience || 4}+ Years Experience
               </span>
+              {quizPoints > 0 && (
+                <>
+                  <span className="text-slate-600">&bull;</span>
+                  <span className="text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/30 flex items-center gap-1">
+                    🏆 {quizPoints} Quiz Points
+                  </span>
+                </>
+              )}
             </p>
 
             {application && (

@@ -126,6 +126,74 @@ export default {
         return jsonResponse({ success: true });
       }
 
+
+            // ============ QUIZZES & EXAMS ============
+      if (path === '/api/quizzes' && method === 'GET') {
+        const result = await env.DB.prepare('SELECT * FROM quizzes ORDER BY createdAt DESC').all();
+        return jsonResponse(result.results || []);
+      }
+
+      if (path === '/api/quizzes' && method === 'POST') {
+        const quiz = await parseBody(request);
+        await env.DB.prepare(
+          `INSERT INTO quizzes (id, teacherId, teacherName, subject, gradeLevel, topic, questionText, options, correctIndex, createdAt) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(quiz.id, quiz.teacherId, quiz.teacherName, quiz.subject, quiz.gradeLevel, quiz.topic, quiz.questionText, JSON.stringify(quiz.options), quiz.correctIndex, new Date().toISOString()).run();
+        return jsonResponse({ success: true });
+      }
+
+      if (path === '/api/exams' && method === 'POST') {
+        const exam = await parseBody(request);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 1 day expiry
+        await env.DB.prepare(
+          `INSERT INTO exam_sets (id, teacherId, teacherName, title, questionIds, timeLimit, createdAt, expiresAt) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(exam.id, exam.teacherId, exam.teacherName, exam.title, JSON.stringify(exam.questionIds), exam.timeLimit, new Date().toISOString(), expiresAt).run();
+        return jsonResponse({ success: true, examId: exam.id });
+      }
+
+      if (path.startsWith('/api/exams/') && method === 'GET') {
+        const id = path.replace('/api/exams/', '');
+        const exam: any = await env.DB.prepare('SELECT * FROM exam_sets WHERE id = ?').bind(id).first();
+        
+        if (!exam) return errorResponse('Exam not found or expired', 404);
+        
+        // Check if expired
+        if (new Date(exam.expiresAt) < new Date()) {
+          // Lazy delete if expired
+          await env.DB.prepare('DELETE FROM exam_sets WHERE id = ?').bind(id).run();
+          return errorResponse('This exam link has expired (24 hours limit).', 410);
+        }
+
+        // Fetch questions
+        const questionIds = JSON.parse(exam.questionIds);
+        if (questionIds.length === 0) return jsonResponse({ ...exam, questions: [] });
+        
+        const placeholders = questionIds.map(() => '?').join(',');
+        const questionsResult = await env.DB.prepare(`SELECT * FROM quizzes WHERE id IN (${placeholders})`).bind(...questionIds).all();
+        
+        return jsonResponse({
+          ...exam,
+          questions: (questionsResult.results || []).map((q: any) => ({ ...q, options: JSON.parse(q.options) }))
+        });
+      }
+
+      if (path.startsWith('/api/exams/') && path.endsWith('/submit') && method === 'POST') {
+        const id = path.replace('/api/exams/', '').replace('/submit', '');
+        const result = await parseBody(request);
+        await env.DB.prepare(
+          `INSERT INTO exam_results (id, examSetId, studentId, studentName, score, total, completedAt) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(result.id, id, result.studentId, result.studentName, result.score, result.total, new Date().toISOString()).run();
+        return jsonResponse({ success: true });
+      }
+
+      if (path.startsWith('/api/exams/') && method === 'DELETE') {
+        const id = path.replace('/api/exams/', '');
+        await env.DB.prepare('DELETE FROM exam_sets WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true });
+      }
+
       // ============ USERS ============
       if (path === '/api/users' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();

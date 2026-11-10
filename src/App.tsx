@@ -3725,8 +3725,17 @@ export default function App() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
-                      {quiz.options.map((opt: string, oIdx: number) => (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                      {(Array.isArray(quiz.options)
+                        ? quiz.options
+                        : (() => {
+                            try {
+                              return JSON.parse(quiz.options || '[]');
+                            } catch {
+                              return [];
+                            }
+                          })()
+                      ).map((opt: string, oIdx: number) => (
                         <div
                           key={oIdx}
                           className={`p-2.5 rounded-xl text-xs border flex items-center justify-between ${

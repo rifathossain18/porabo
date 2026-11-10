@@ -484,10 +484,20 @@ class CloudflareD1Service {
     // ==========================================================
   // QUIZZES & EXAMS
   // ==========================================================
-  async getQuizzes(): Promise<any[]> {
+    async getQuizzes(): Promise<any[]> {
     try {
-      return await this.apiFetch<any[]>('/api/quizzes');
-    } catch { return []; }
+      const quizzes = await this.apiFetch<any[]>('/api/quizzes');
+      return quizzes.map((q: any) => ({
+        ...q,
+        options: typeof q.options === 'string'
+          ? JSON.parse(q.options)
+          : Array.isArray(q.options)
+          ? q.options
+          : [],
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async saveQuiz(quiz: any): Promise<boolean> {
@@ -529,7 +539,7 @@ class CloudflareD1Service {
 
 
 
-  
+
 }
 
 export const cfD1 = new CloudflareD1Service();

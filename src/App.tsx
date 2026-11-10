@@ -1,6 +1,5 @@
-import { QuizDashboard } from './components/QuizDashboard';
-import { StudentExamView } from './components/StudentExamView';
-
+import { QuizDashboard } from "./components/QuizDashboard";
+import { StudentExamView } from "./components/StudentExamView";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
@@ -152,7 +151,7 @@ import {
 } from "./components/EmptyStateIllustrations";
 import { QRCodeModal } from "./components/QRCodeModal";
 import { ActivityLog } from "./components/ActivityLog";
-import { Toast } from './components/Toast';
+import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 
 export default function App() {
@@ -173,9 +172,24 @@ export default function App() {
     );
   };
 
-    const [allQuizzes, setAllQuizzes] = useState<any[]>([]);
+  const [allQuizzes, setAllQuizzes] = useState<any[]>([]);
   const [isQuizDashboardOpen, setIsQuizDashboardOpen] = useState(false);
   const [activeExamId, setActiveExamId] = useState<string | null>(null);
+
+  // Sync exam ID with URL hash
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash.startsWith("#/exam/")) {
+        setActiveExamId(window.location.hash.replace("#/exam/", ""));
+      } else {
+        setActiveExamId(null);
+      }
+    };
+
+    handleHashChange(); // Check on initial load
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   // Navigation & Admin State (Accessible strictly via /admin or #admin)
   const [isAdminView, setIsAdminView] = useState<boolean>(() =>
@@ -297,39 +311,35 @@ export default function App() {
   const [gpsLoading, setGpsLoading] = useState<boolean>(false);
   const [gpsErrorMsg, setGpsErrorMsg] = useState<string | null>(null);
 
-    // ✅ Pure Cloudflare D1 — no localStorage for data. Filled by API bootstrap effect below.
+  // ✅ Pure Cloudflare D1 — no localStorage for data. Filled by API bootstrap effect below.
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>([]);
   const [applications, setApplications] = useState<TuitionApplication[]>([]);
 
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
 
-
-
-
-
-    // Initial data load from API (Cloudflare Worker) — runs once on mount.
+  // Initial data load from API (Cloudflare Worker) — runs once on mount.
   // This is what enables cross-device sync: all phones see the same data.
-    // ✅ Pure API bootstrap — every load fetches from Cloudflare D1.
+  // ✅ Pure API bootstrap — every load fetches from Cloudflare D1.
   // Auto-polls every 30s so all devices stay in sync.
   useEffect(() => {
     let cancelled = false;
 
     const refreshFromAPI = async () => {
       try {
-                const [apiUsers, apiPosts, apiApps, apiQuizzes] = await Promise.all([
+        const [apiUsers, apiPosts, apiApps, apiQuizzes] = await Promise.all([
           cfD1.getUsers(),
           cfD1.getPosts(),
           cfD1.getApplications(),
           cfD1.getQuizzes(),
         ]);
-        setAllQuizzes(apiQuizzes); 
+        setAllQuizzes(apiQuizzes);
         if (cancelled) return;
         setAllUsers(apiUsers);
         setTuitionPosts(filterActive70DayPosts(apiPosts));
         setApplications(apiApps);
       } catch (err) {
-        console.warn('[Porabo] API refresh failed:', err);
+        console.warn("[Porabo] API refresh failed:", err);
       }
     };
 
@@ -345,9 +355,7 @@ export default function App() {
     };
   }, []);
 
-
-
-    // Poll API every 30s so admin panel and student/tutor feeds stay in sync
+  // Poll API every 30s so admin panel and student/tutor feeds stay in sync
   // across devices without manual refresh.
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -357,9 +365,17 @@ export default function App() {
           cfD1.getPosts(),
           cfD1.getApplications(),
         ]);
-        setAllUsers(prev => (JSON.stringify(prev) !== JSON.stringify(apiUsers) ? apiUsers : prev));
-        setTuitionPosts(prev => (JSON.stringify(prev) !== JSON.stringify(apiPosts) ? filterActive70DayPosts(apiPosts) : prev));
-        setApplications(prev => (JSON.stringify(prev) !== JSON.stringify(apiApps) ? apiApps : prev));
+        setAllUsers((prev) =>
+          JSON.stringify(prev) !== JSON.stringify(apiUsers) ? apiUsers : prev,
+        );
+        setTuitionPosts((prev) =>
+          JSON.stringify(prev) !== JSON.stringify(apiPosts)
+            ? filterActive70DayPosts(apiPosts)
+            : prev,
+        );
+        setApplications((prev) =>
+          JSON.stringify(prev) !== JSON.stringify(apiApps) ? apiApps : prev,
+        );
       } catch {
         // silent — will retry next tick
       }
@@ -610,7 +626,7 @@ export default function App() {
 
   // Toast Alert
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-    const showToast = (msg: string) => {
+  const showToast = (msg: string) => {
     setToastMessage(msg);
     // Auto-clear after 3800ms — toast internally has its own progress bar
     // so if the user dismisses earlier via X, the onClose handler clears it.
@@ -984,16 +1000,20 @@ export default function App() {
     });
   }, [studentMyPosts, studentPostStatusFilter, currentUser]);
 
-    // Applications received for student's posts
+  // Applications received for student's posts
   const studentReceivedApplications = useMemo(() => {
     if (!currentUser || currentUser.role !== "STUDENT") return [];
     const myPostIds = studentMyPosts.map((p) => p.id);
     const rawApps = applications.filter((a) => myPostIds.includes(a.postId));
-    
+
     // 🏆 Sort by Teacher Quiz Points (Highest First)
     return rawApps.sort((a, b) => {
-      const pointsA = allQuizzes.filter(q => q.teacherId === a.tutorId).length;
-      const pointsB = allQuizzes.filter(q => q.teacherId === b.tutorId).length;
+      const pointsA = allQuizzes.filter(
+        (q) => q.teacherId === a.tutorId,
+      ).length;
+      const pointsB = allQuizzes.filter(
+        (q) => q.teacherId === b.tutorId,
+      ).length;
       return pointsB - pointsA;
     });
   }, [applications, studentMyPosts, allQuizzes]); // allQuizzes যুক্ত করা হয়েছে
@@ -1079,7 +1099,9 @@ export default function App() {
         setCurrentUser(res.user);
         setIsLocationVerified(true);
         setAuthLoading(false);
-        showToast(`Welcome back, ${res.user.fullName}. Signed in as ${res.user.role === 'TUTOR' ? 'Teacher' : 'Student'}.`);
+        showToast(
+          `Welcome back, ${res.user.fullName}. Signed in as ${res.user.role === "TUTOR" ? "Teacher" : "Student"}.`,
+        );
       } else {
         setAuthLoading(false);
         setAuthError(
@@ -1219,7 +1241,9 @@ export default function App() {
         setCurrentUser(res.user);
         setIsLocationVerified(true);
         setAuthLoading(false);
-        showToast(`Account created successfully. Signed in as ${authRoleChoice === 'STUDENT' ? 'Student' : 'Teacher'}.`);
+        showToast(
+          `Account created successfully. Signed in as ${authRoleChoice === "STUDENT" ? "Student" : "Teacher"}.`,
+        );
       } else {
         setAuthLoading(false);
         setAuthError(
@@ -1285,45 +1309,45 @@ export default function App() {
       setIsForgotPasswordOpen(false);
       setForgotPasswordSuccessMsg(null);
       setNewPasswordAfterReset("");
-      showToast('Password updated successfully. Please sign in with your new password.');
+      showToast(
+        "Password updated successfully. Please sign in with your new password.",
+      );
     } else {
       showToast(res.error || "Failed to update password.");
     }
   };
 
-
-
-
-    // Whenever state changes locally (registration, accept tutor, post created),
+  // Whenever state changes locally (registration, accept tutor, post created),
   // silently re-push to API in case a previous write failed.
   // This is a safety net — individual actions already call cfD1.save*().
   useEffect(() => {
     // Skip on initial empty state
-    if (allUsers.length === 0 && tuitionPosts.length === 0 && applications.length === 0) {
+    if (
+      allUsers.length === 0 &&
+      tuitionPosts.length === 0 &&
+      applications.length === 0
+    ) {
       return;
     }
     const timer = setTimeout(() => {
       // Poll API again after a short delay to confirm data is persisted
-      Promise.all([
-        cfD1.getUsers(),
-        cfD1.getPosts(),
-        cfD1.getApplications(),
-      ]).then(([u, p, a]) => {
-        setAllUsers(u);
-        setTuitionPosts(filterActive70DayPosts(p));
-        setApplications(a);
-      }).catch(() => {});
+      Promise.all([cfD1.getUsers(), cfD1.getPosts(), cfD1.getApplications()])
+        .then(([u, p, a]) => {
+          setAllUsers(u);
+          setTuitionPosts(filterActive70DayPosts(p));
+          setApplications(a);
+        })
+        .catch(() => {});
     }, 2000);
     return () => clearTimeout(timer);
   }, [allUsers.length, tuitionPosts.length, applications.length]);
 
   const handleLogout = async () => {
-  
     cfLogout();
     setCurrentUser(null);
     setIsLocationVerified(false);
     setViewingTeacherProfileId(null);
-    showToast('You have been signed out.');
+    showToast("You have been signed out.");
   };
 
   // Submit Categorical Rating after 1 Month
@@ -1403,8 +1427,8 @@ export default function App() {
     setIsRatingModalOpen(false);
     setRatingApplication(null);
     showToast(
-    'Review submitted. It will appear on the tutor profile after admin approval.'
-  );
+      "Review submitted. It will appear on the tutor profile after admin approval.",
+    );
   };
 
   // Handle Tutor applying to post (Strict check: MUST be VERIFIED by Admin)
@@ -1449,7 +1473,9 @@ export default function App() {
 
     setApplications((prev) => [newApp, ...prev]);
     setSelectedPostForApply(null);
-    showToast('Application submitted. The student will review your verified profile.');
+    showToast(
+      "Application submitted. The student will review your verified profile.",
+    );
     cfD1
       .saveApplication(newApp)
       .catch((err) =>
@@ -1512,7 +1538,9 @@ export default function App() {
     };
 
     setApplications((prev) => [newApp, ...prev]);
-    showToast(`Application submitted for "${post.title}". Proposed fee: ৳${proposedSalary.toLocaleString()}/month.`);
+    showToast(
+      `Application submitted for "${post.title}". Proposed fee: ৳${proposedSalary.toLocaleString()}/month.`,
+    );
     cfD1
       .saveApplication(newApp)
       .catch((err) =>
@@ -1548,7 +1576,7 @@ export default function App() {
         await navigator.clipboard.writeText(
           `${post.title} • ${post.areaName}, ${post.district} (৳ ${post.salaryBudget.toLocaleString()}/mo) • ${shareUrl}`,
         );
-        showToast('Tuition opportunity link copied to clipboard.');
+        showToast("Tuition opportunity link copied to clipboard.");
       } catch {
         showToast("Link ready to share!");
       }
@@ -1574,7 +1602,7 @@ export default function App() {
         await navigator.clipboard.writeText(
           `${tutor.fullName} - Verified Educator on Porabo - ${shareUrl}`,
         );
-        showToast('Tutor profile link copied to clipboard.');
+        showToast("Tutor profile link copied to clipboard.");
       } catch {
         showToast("Link ready to share!");
       }
@@ -1729,7 +1757,9 @@ export default function App() {
     setTuitionPosts((prev) => [newPost, ...prev]);
     setIsCreatePostOpen(false);
     setNewPostTitle("");
-    showToast('Tuition request submitted. It is under review and will go live once approved.');
+    showToast(
+      "Tuition request submitted. It is under review and will go live once approved.",
+    );
     cfD1
       .savePost(newPost)
       .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
@@ -1760,7 +1790,7 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsEditProfileOpen(false);
-    showToast('Professional bio and teaching profile updated successfully.');
+    showToast("Professional bio and teaching profile updated successfully.");
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -1824,7 +1854,9 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsProfileModalOpen(false);
-    showToast(`Profile and location updated. Active district: ${profileDistrict}.`);
+    showToast(
+      `Profile and location updated. Active district: ${profileDistrict}.`,
+    );
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -1878,7 +1910,9 @@ export default function App() {
     );
     localStorage.setItem("porabo_active_session", JSON.stringify(updatedUser));
     setIsResubmitModalOpen(false);
-    showToast('Corrected verification dossier submitted. Your application is now in the admin review queue.');
+    showToast(
+      "Corrected verification dossier submitted. Your application is now in the admin review queue.",
+    );
     cfD1
       .saveUser(updatedUser)
       .catch((err) => console.warn("Cloudflare D1 saveUser error:", err));
@@ -2076,20 +2110,19 @@ export default function App() {
     );
   };
 
-
-
-
-  
-    // =========================================================================
+  // =========================================================================
   // VIEW: STUDENT EXAM ROUTE
   // =========================================================================
-  if (window.location.hash.startsWith('#/exam/')) {
-    const examId = window.location.hash.replace('#/exam/', '');
+  if (activeExamId) {
     return (
-      <StudentExamView 
-        examId={examId} 
-        currentUser={currentUser} 
-        onFinish={() => window.location.hash = ''} 
+      <StudentExamView
+        examId={activeExamId}
+        currentUser={currentUser}
+        onFinish={() => {
+          // URL থেকে hash সরান, কিন্তু পেজ রিলোড হবে না
+          window.history.pushState({}, "", window.location.pathname);
+          setActiveExamId(null); // ইনস্ট্যান্টলি ড্যাশবোর্ডে ফিরে যাবে
+        }}
       />
     );
   }
@@ -2126,7 +2159,7 @@ export default function App() {
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
-                {/* Toast Notification */}
+        {/* Toast Notification */}
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
         {/* Top Minimal Branding Header */}
@@ -2924,8 +2957,10 @@ export default function App() {
   // =========================================================================
   // VIEW: DEDICATED TEACHER PROFILE PAGE (HIGH-TECH PERFORMANCE COVER, NO PHOTOS)
   // =========================================================================
+
   if (viewingTeacherProfileId && viewingTeacherProfile) {
     const tutor = viewingTeacherProfile;
+    const tutorQuizzes = allQuizzes.filter((q) => q.teacherId === tutor.id);
     const isStudentViewing = currentUser.role === "STUDENT";
     const isSelfViewing = currentUser.id === tutor.id;
     const isPending = tutor.verificationStatus === "PENDING";
@@ -2941,7 +2976,7 @@ export default function App() {
 
     return (
       <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-                {/* Toast Notification */}
+        {/* Toast Notification */}
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
         {/* Top Header Navigation */}
@@ -3372,6 +3407,18 @@ export default function App() {
                       </div>
                     </div>
 
+                    <div className="bg-[#0B0F19] p-3 rounded-2xl border border-indigo-950/60">
+                      <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                        Quiz Points
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Award className="w-4 h-4 text-indigo-400" />
+                        <span className="text-base font-bold text-white">
+                          {tutorQuizzes.length} Quizzes
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="bg-[#0B0F19] p-3 rounded-2xl border border-blue-950/60">
                       <span className="text-[10px] text-slate-400 uppercase font-mono block">
                         Expected Monthly Fee
@@ -3642,6 +3689,81 @@ export default function App() {
             </div>
           </div>
 
+          {/* Teacher's Quiz Bank Section */}
+          <div className="bg-[#111827] border border-indigo-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 mt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-base font-bold text-white">
+                  Teacher's Quiz Bank ({tutorQuizzes.length})
+                </h2>
+              </div>
+              <span className="text-xs font-mono text-indigo-400 bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-800/60">
+                🏆 {tutorQuizzes.length} Quiz Points
+              </span>
+            </div>
+
+            {tutorQuizzes.length === 0 ? (
+              <div className="p-6 text-center bg-[#0B0F19] rounded-2xl border border-slate-800">
+                <p className="text-xs text-slate-400">
+                  This teacher hasn't created any quizzes yet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tutorQuizzes.map((quiz, idx) => (
+                  <div
+                    key={quiz.id}
+                    className="p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/70 space-y-3"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-indigo-400 font-bold font-mono text-sm mt-0.5">
+                        Q{idx + 1}.
+                      </span>
+                      <p className="text-sm text-white font-medium">
+                        {quiz.questionText}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                      {quiz.options.map((opt: string, oIdx: number) => (
+                        <div
+                          key={oIdx}
+                          className={`p-2.5 rounded-xl text-xs border flex items-center justify-between ${
+                            quiz.correctIndex === oIdx
+                              ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-semibold"
+                              : "bg-slate-900/60 border-slate-800 text-slate-400"
+                          }`}
+                        >
+                          <span>
+                            {String.fromCharCode(65 + oIdx)}. {opt}
+                          </span>
+                          {quiz.correctIndex === oIdx && (
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 text-[10px] text-slate-500 font-mono pt-1">
+                      <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                        {quiz.subject}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                        {quiz.gradeLevel}
+                      </span>
+                      {quiz.topic && (
+                        <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                          Topic: {quiz.topic}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Student Reviews Section (Vector Avatars, Zero Photos) */}
           <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
@@ -3865,8 +3987,8 @@ export default function App() {
   // =========================================================================
   return (
     <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-              {/* Toast Notification */}
-        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+      {/* Toast Notification */}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Main Top Header */}
       <header className="sticky top-0 z-40 border-b border-blue-950/60 bg-[#0B0F19]/90 backdrop-blur-md px-3 sm:px-6 py-2.5">
@@ -4568,14 +4690,21 @@ export default function App() {
                 </button>
               </div>
 
-                            <div className="flex items-center gap-2 self-end sm:self-center">
+              <div className="flex items-center gap-2 self-end sm:self-center">
                 <button
                   type="button"
                   onClick={() => setIsQuizDashboardOpen(true)}
                   className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/30 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>My Quizzes ({allQuizzes.filter(q => q.teacherId === currentUser.id).length})</span>
+                  <span>
+                    My Quizzes (
+                    {
+                      allQuizzes.filter((q) => q.teacherId === currentUser.id)
+                        .length
+                    }
+                    )
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -5984,7 +6113,7 @@ export default function App() {
         </div>
       )}
 
-            {/* MODAL: TUTOR DETAIL MODAL (WHEN STUDENT CLICKS TUTOR NAME IN APPLICANT INBOX) */}
+      {/* MODAL: TUTOR DETAIL MODAL (WHEN STUDENT CLICKS TUTOR NAME IN APPLICANT INBOX) */}
       {selectedTutorForDetailModal && (
         <TutorDetailModal
           isOpen={!!selectedTutorForDetailModal}
@@ -6005,7 +6134,11 @@ export default function App() {
             handleOpenTeacherProfile(tutorId);
           }}
           isStudentViewer={currentUser?.role === "STUDENT"}
-          quizPoints={allQuizzes.filter(q => q.teacherId === selectedTutorForDetailModal.id).length}
+          quizPoints={
+            allQuizzes.filter(
+              (q) => q.teacherId === selectedTutorForDetailModal.id,
+            ).length
+          }
         />
       )}
 
@@ -6445,8 +6578,8 @@ export default function App() {
         type={qrModalData.type}
       />
 
-            {/* MODAL: QUIZ DASHBOARD */}
-      {isQuizDashboardOpen && currentUser?.role === 'TUTOR' && (
+      {/* MODAL: QUIZ DASHBOARD */}
+      {isQuizDashboardOpen && currentUser?.role === "TUTOR" && (
         <QuizDashboard
           isOpen={isQuizDashboardOpen}
           onClose={() => setIsQuizDashboardOpen(false)}

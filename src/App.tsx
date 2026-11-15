@@ -1623,108 +1623,135 @@ export default function App() {
   };
 
   // Handle Student confirming tutor acceptance
-  const handleConfirmAcceptTutor = () => {
-    if (!tutorToAccept) return;
+  // Handle Student confirming tutor acceptance
+  const handleConfirmAcceptTutor = async () => {
+    if (!tutorToAccept) {
+      console.warn("[accept] No tutorToAccept — aborting");
+      return;
+    }
 
     const targetPost = tuitionPosts.find((p) => p.id === tutorToAccept.postId);
+    if (!targetPost) {
+      showToast("Error: This tuition post no longer exists.");
+      setTutorToAccept(null);
+      return;
+    }
 
-    setApplications((prev) =>
-      prev.map((app) => {
-        if (app.postId === tutorToAccept.postId) {
-          if (app.id === tutorToAccept.id) {
-            const acceptedApp: TuitionApplication = {
-              ...app,
-              status: "ACCEPTED",
-              acceptedAt: new Date().toISOString(),
-              statusReason: "Accepted & Contact Unlocked! 🎉",
-              studentName: currentUser?.fullName || targetPost?.studentName,
-              studentPhone:
-                currentUser?.phone ||
-                targetPost?.studentPhone ||
-                "+880 1712-345678",
-              studentWhatsapp:
-                currentUser?.whatsapp ||
-                currentUser?.phone ||
-                targetPost?.studentWhatsapp ||
-                "+880 1712-345678",
-              studentExactAddress:
-                targetPost?.exactAddress ||
-                `${targetPost?.areaName}, ${targetPost?.district}`,
-              studentAreaName: targetPost?.areaName,
-              studentDistrict: targetPost?.district,
-            };
-            cfD1
-              .saveApplication(acceptedApp)
-              .catch((err) =>
-                console.warn("Cloudflare D1 saveApplication error:", err),
-              );
-            return acceptedApp;
-          } else {
-            const rejectedApp: TuitionApplication = {
-              ...app,
-              status: "REJECTED",
-              statusReason: "Student selected another tutor for this tuition.",
-            };
-            cfD1
-              .saveApplication(rejectedApp)
-              .catch((err) =>
-                console.warn("Cloudflare D1 saveApplication error:", err),
-              );
-            return rejectedApp;
-          }
-        }
-        return app;
-      }),
-    );
-
-    const updatedPost = {
-      ...(targetPost || {}),
-      id: tutorToAccept.postId,
-      status: "MATCHED" as const,
-      isFoundTutor: true,
-      acceptedTutorId: tutorToAccept.tutorId,
-      acceptedAt: new Date().toISOString(),
-    };
-
-    setTuitionPosts((prev) =>
-      prev.map((p) =>
-        p.id === tutorToAccept.postId ? (updatedPost as TuitionPost) : p,
-      ),
-    );
-
-    cfD1
-      .savePost(updatedPost as TuitionPost)
-      .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
-
-    // Send real-time notification to the accepted tutor
-    sendNotification({
-      userId: tutorToAccept.tutorId,
-      title: "Application Accepted! 🎉",
-      message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title || "tuition"}". Phone: ${currentUser?.phone} / Address: ${targetPost?.exactAddress || targetPost?.areaName}.`,
-      type: "APPLICATION_ACCEPTED",
+    console.log("[accept] Starting acceptance:", {
+      tutor: tutorToAccept.tutorName,
+      tutorId: tutorToAccept.tutorId,
       postId: tutorToAccept.postId,
-      linkText: "View in My Applications",
+      currentUserId: currentUser?.id,
+      hasToken: !!localStorage.getItem("porabo_cf_jwt_token"),
     });
 
-    // Notify other applicant tutors that post was filled
-    const otherApplicants = applications.filter(
-      (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
-    );
-    otherApplicants.forEach((other) => {
+    showToast("⏳ Accepting tutor, please wait...");
+
+    try {
+      const acceptedApp: TuitionApplication = {
+        ...tutorToAccept,
+        status: "ACCEPTED",
+        acceptedAt: new Date().toISOString(),
+        statusReason: "Accepted & Contact Unlocked! 🎉",
+        studentName: currentUser?.fullName || targetPost?.studentName,
+        studentPhone:
+          currentUser?.phone || targetPost?.studentPhone || "+880 1712-345678",
+        studentWhatsapp:
+          currentUser?.whatsapp || currentUser?.phone || "+880 1712-345678",
+        studentExactAddress:
+          targetPost?.exactAddress ||
+          `${targetPost?.areaName}, ${targetPost?.district}`,
+        studentAreaName: targetPost?.areaName,
+        studentDistrict: targetPost?.district,
+      };
+
+      console.log("[accept] Saving accepted application to D1...");
+      await cfD1.saveApplication(acceptedApp);
+      console.log("[accept] ✅ Accepted application saved");
+
+      // Reject all other pending applications for this post
+      const otherApps = applications.filter(
+        (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
+      );
+      console.log(
+        `[accept] Rejecting ${otherApps.length} other application(s)`,
+      );
+      for (const otherApp of otherApps) {
+        const rejectedApp: TuitionApplication = {
+          ...otherApp,
+          status: "REJECTED",
+          statusReason: "Student selected another tutor for this tuition.",
+        };
+        try {
+          await cfD1.saveApplication(rejectedApp);
+        } catch (e) {
+          console.warn("Reject other failed:", e);
+        }
+      }
+
+      // Mark post as MATCHED
+      const updatedPost: TuitionPost = {
+        ...targetPost,
+        status: "MATCHED",
+        isFoundTutor: true,
+        acceptedTutorId: tutorToAccept.tutorId,
+        acceptedAt: new Date().toISOString(),
+      };
+      console.log("[accept] Marking post as MATCHED...");
+      await cfD1.savePost(updatedPost);
+      console.log("[accept] ✅ Post updated to MATCHED");
+
+      // Now update local state after successful persistence
+      setApplications((prev) =>
+        prev.map((app) => {
+          if (app.postId !== tutorToAccept.postId) return app;
+          if (app.id === tutorToAccept.id) return acceptedApp;
+          return {
+            ...app,
+            status: "REJECTED",
+            statusReason: "Student selected another tutor for this tuition.",
+          };
+        }),
+      );
+
+      setTuitionPosts((prev) =>
+        prev.map((p) => (p.id === tutorToAccept.postId ? updatedPost : p)),
+      );
+
+      // Notifications
       sendNotification({
-        userId: other.tutorId,
-        title: "Application Status Updated",
-        message: `The student selected another tutor for "${targetPost?.title || "this tuition post"}".`,
-        type: "APPLICATION_REJECTED",
+        userId: tutorToAccept.tutorId,
+        title: "Application Accepted! 🎉",
+        message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title}". Phone: ${currentUser?.phone} / Address: ${targetPost?.exactAddress || targetPost?.areaName}.`,
+        type: "APPLICATION_ACCEPTED",
         postId: tutorToAccept.postId,
-        linkText: "Browse available tuitions",
+        linkText: "View in My Applications",
       });
-    });
 
-    const acceptedName = tutorToAccept.tutorName;
-    setRatingTutorId(tutorToAccept.tutorId);
-    setTutorToAccept(null);
-    showToast(`Tutor accepted. Contact details and address are now unlocked.`);
+      otherApps.forEach((other) => {
+        sendNotification({
+          userId: other.tutorId,
+          title: "Application Status Updated",
+          message: `The student selected another tutor for "${targetPost?.title}".`,
+          type: "APPLICATION_REJECTED",
+          postId: tutorToAccept.postId,
+          linkText: "Browse available tuitions",
+        });
+      });
+
+      setRatingTutorId(tutorToAccept.tutorId);
+      setTutorToAccept(null);
+      showToast(
+        `✅ ${tutorToAccept.tutorName} accepted! Contact details unlocked.`,
+      );
+    } catch (err: any) {
+      console.error("[accept] ❌ FAILED:", err);
+      alert(
+        `❌ Failed to accept tutor.\n\nError: ${err?.message || "Unknown error"}\n\n` +
+          `Please:\n1. Refresh the page (Ctrl+Shift+R)\n2. Log out and log in again\n3. Try accepting again`,
+      );
+      showToast(`❌ Accept failed: ${err?.message || "Network error"}`);
+    }
   };
 
   // Handle Student marking post as Tutor Found
@@ -5693,18 +5720,94 @@ export default function App() {
                               </span>
                             </div>
 
-                            <div className="mt-3 text-xs text-slate-400 space-y-1">
-                              <div className="flex items-center gap-1 text-slate-300">
+                            {/* 🆕 FULL DETAILS — visible to tutor BEFORE applying (address hidden) */}
+                            <div className="mt-3 space-y-2">
+                              {/* Tuition Mode Badge */}
+                              {post.tuitionMode && (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                      post.tuitionMode === "ONLINE"
+                                        ? "bg-cyan-950 text-cyan-400 border-cyan-800/60"
+                                        : post.tuitionMode === "OFFLINE"
+                                          ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
+                                          : "bg-purple-950 text-purple-400 border-purple-800/60"
+                                    }`}
+                                  >
+                                    {post.tuitionMode === "ONLINE"
+                                      ? "🌐 Online"
+                                      : post.tuitionMode === "OFFLINE"
+                                        ? "🏠 Offline (Home Visit)"
+                                        : "🔄 Online + Offline"}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Location (area only, no exact address) */}
+                              <div className="flex items-center gap-1 text-slate-300 text-xs">
                                 <Compass className="w-3.5 h-3.5 text-slate-500" />
                                 <span>
                                   {post.areaName}, {post.district}
                                 </span>
                               </div>
+
+                              {/* Weekly Schedule */}
+                              {post.weeklySchedule &&
+                                post.weeklySchedule.length > 0 && (
+                                  <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
+                                    <div className="text-[10px] text-slate-500 font-mono uppercase mb-1 flex items-center gap-1">
+                                      <Calendar className="w-3 h-3 text-cyan-400" />
+                                      Weekly Schedule
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      {post.weeklySchedule.map((slot, i) => {
+                                        const dayLabels: Record<
+                                          string,
+                                          string
+                                        > = {
+                                          SAT: "Saturday",
+                                          SUN: "Sunday",
+                                          MON: "Monday",
+                                          TUE: "Tuesday",
+                                          WED: "Wednesday",
+                                          THU: "Thursday",
+                                          FRI: "Friday",
+                                        };
+                                        return (
+                                          <div
+                                            key={i}
+                                            className="flex items-center justify-between text-[11px]"
+                                          >
+                                            <span className="text-slate-300">
+                                              {dayLabels[slot.day] || slot.day}
+                                            </span>
+                                            <span className="text-cyan-400 font-mono">
+                                              {slot.startTime} – {slot.endTime}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* Special Requirements */}
                               {post.specialRequirements && (
-                                <p className="text-[11px] text-slate-400 italic line-clamp-2 mt-1">
-                                  "{post.specialRequirements}"
-                                </p>
+                                <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
+                                  <div className="text-[10px] text-slate-500 font-mono uppercase mb-1">
+                                    Special Requirements
+                                  </div>
+                                  <p className="text-[11px] text-slate-300 italic line-clamp-3">
+                                    {post.specialRequirements}
+                                  </p>
+                                </div>
                               )}
+
+                              {/* Budget breakdown */}
+                              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
+                                <span>Curriculum: {post.curriculum}</span>
+                                <span>Hours/day: {post.hoursPerDay}h</span>
+                              </div>
                             </div>
                           </div>
 
@@ -5787,6 +5890,111 @@ export default function App() {
               {selectedPostForApply.title} &bull;{" "}
               {selectedPostForApply.areaName}
             </p>
+
+            {/* 🆕 Full Post Details for Tutor */}
+            <div className="mb-4 p-3 rounded-xl bg-[#0B0F19] border border-blue-950/60 space-y-2 max-h-48 overflow-y-auto">
+              <div className="text-[10px] text-cyan-400 font-mono uppercase mb-1 flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Post Details (Before You Apply)
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Subject
+                  </span>
+                  <span className="text-white font-semibold">
+                    {selectedPostForApply.subject}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Grade
+                  </span>
+                  <span className="text-white font-semibold">
+                    {selectedPostForApply.gradeLevel}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Curriculum
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.curriculum}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Budget
+                  </span>
+                  <span className="text-emerald-400 font-bold">
+                    ৳ {selectedPostForApply.salaryBudget.toLocaleString()}/mo
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Mode
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.tuitionMode || "Not specified"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Days/Week
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.daysPerWeek}
+                  </span>
+                </div>
+              </div>
+
+              {selectedPostForApply.weeklySchedule &&
+                selectedPostForApply.weeklySchedule.length > 0 && (
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
+                      Weekly Schedule
+                    </span>
+                    <div className="space-y-0.5">
+                      {selectedPostForApply.weeklySchedule.map((slot, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between text-[11px]"
+                        >
+                          <span className="text-slate-300">{slot.day}</span>
+                          <span className="text-cyan-400 font-mono">
+                            {slot.startTime} – {slot.endTime}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {selectedPostForApply.specialRequirements && (
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
+                    Special Requirements
+                  </span>
+                  <p className="text-slate-300 italic text-[11px]">
+                    {selectedPostForApply.specialRequirements}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-800">
+                <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                  Location
+                </span>
+                <span className="text-white">
+                  {selectedPostForApply.areaName},{" "}
+                  {selectedPostForApply.district}
+                </span>
+                <span className="text-[9px] text-slate-500 block mt-0.5 italic">
+                  Exact address unlocks after acceptance
+                </span>
+              </div>
+            </div>
 
             <form onSubmit={handleApplyToPost} className="space-y-4">
               <div>

@@ -1,6 +1,5 @@
 /**
- * Cloudflare D1 API Client — Phase 1 Fixed
- * Adds auth headers + server-side exam grading
+ * Cloudflare D1 API Client
  */
 
 import { User, TuitionPost, TuitionApplication } from './types';
@@ -9,9 +8,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || '';
 const IS_API_ENABLED = Boolean(API_BASE);
 
 if (!IS_API_ENABLED) {
-  console.error(
-    '[Porabo D1] ❌ VITE_API_BASE_URL is missing. Add it to .env and restart dev server.'
-  );
+  console.error('[Porabo D1] ❌ VITE_API_BASE_URL missing.');
 } else {
   console.info(`[Porabo D1] ✅ Connected to: ${API_BASE}`);
 }
@@ -63,26 +60,19 @@ class CloudflareD1Service {
     this.purgeLegacyLocalData();
   }
 
-  // ==========================================================
-  // ADMIN AUTH
-  // ==========================================================
+  // ============ ADMIN AUTH ============
   async getAdminConfig(): Promise<{ hasPassword: boolean }> {
     try {
       return await this.apiFetch<{ hasPassword: boolean }>('/api/admin/config');
-    } catch {
-      return { hasPassword: false };
-    }
+    } catch { return { hasPassword: false }; }
   }
 
   async initAdminPassword(password: string): Promise<{ success: boolean; recoveryCode?: string; error?: string }> {
     try {
       return await this.apiFetch('/api/admin/config/init', {
-        method: 'POST',
-        body: JSON.stringify({ password }),
+        method: 'POST', body: JSON.stringify({ password }),
       });
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
+    } catch (err: any) { return { success: false, error: err.message }; }
   }
 
   async verifyAdminPassword(password: string): Promise<{ success: boolean; error?: string }> {
@@ -108,6 +98,13 @@ class CloudflareD1Service {
         method: 'POST',
         body: JSON.stringify({ recoveryCode, newPassword }),
       });
+    } catch (err: any) { return { success: false, error: err.message }; }
+  }
+
+  // 🆕 Force migrate nested teacher data to flat
+  async migrateUsers(): Promise<{ success: boolean; migrated?: number; total?: number; error?: string }> {
+    try {
+      return await this.apiFetch('/api/admin/migrate-users', { method: 'POST' });
     } catch (err: any) {
       return { success: false, error: err.message };
     }
@@ -122,17 +119,10 @@ class CloudflareD1Service {
       ];
       let purged = 0;
       for (const key of KEYS) {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key);
-          purged++;
-        }
+        if (localStorage.getItem(key)) { localStorage.removeItem(key); purged++; }
       }
-      if (purged > 0) {
-        console.info(`[Porabo D1] 🧹 Purged ${purged} legacy localStorage keys.`);
-      }
-    } catch (err) {
-      console.warn('[Porabo D1] Legacy purge error:', err);
-    }
+      if (purged > 0) console.info(`[Porabo D1] 🧹 Purged ${purged} legacy keys.`);
+    } catch {}
   }
 
   public subscribeToDiagnostics(listener: (log: D1DiagnosticLog) => void): () => void {
@@ -155,11 +145,8 @@ class CloudflareD1Service {
     this.logListeners.forEach(l => { try { l(full); } catch {} });
   }
 
-  // ==========================================================
-  // HTTP HELPER
-  // ==========================================================
   private async apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-    if (!IS_API_ENABLED) throw new Error('API not configured. Set VITE_API_BASE_URL in .env');
+    if (!IS_API_ENABLED) throw new Error('API not configured. Set VITE_API_BASE_URL');
 
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
@@ -181,27 +168,10 @@ class CloudflareD1Service {
     return res.json() as Promise<T>;
   }
 
-  // ==========================================================
-  // USERS
-  // ==========================================================
+  // ============ USERS ============
   async getUsers(): Promise<User[]> {
-    const start = performance.now();
-    try {
-      const users = await this.apiFetch<User[]>('/api/users');
-      this.log({
-        operation: 'GET /api/users', status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: users.length,
-      });
-      return users;
-    } catch (err: any) {
-      this.log({
-        operation: 'GET /api/users', status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message,
-      });
-      return [];
-    }
+    try { return await this.apiFetch<User[]>('/api/users'); }
+    catch { return []; }
   }
 
   async getUserById(id: string): Promise<User | null> {
@@ -216,104 +186,51 @@ class CloudflareD1Service {
   }
 
   async saveUser(user: User): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch('/api/users', {
-        method: 'POST',
-        body: JSON.stringify(user),
-      });
-      this.log({
-        operation: 'POST /api/users', status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'POST /api/users', status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message,
-      });
-      throw err;
-    }
+    await this.apiFetch('/api/users', {
+      method: 'POST', body: JSON.stringify(user),
+    });
   }
 
   async deleteUser(id: string): Promise<void> {
-    try {
-      await this.apiFetch(`/api/users/${id}`, { method: 'DELETE' });
-    } catch (err: any) {
-      console.error('[Porabo D1] deleteUser failed:', err);
-    }
+    try { await this.apiFetch(`/api/users/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deleteUser failed:', err); }
   }
 
-  // ==========================================================
-  // POSTS
-  // ==========================================================
+  // ============ POSTS ============
   async getPosts(): Promise<TuitionPost[]> {
-    try {
-      return await this.apiFetch<TuitionPost[]>('/api/posts');
-    } catch {
-      return [];
-    }
+    try { return await this.apiFetch<TuitionPost[]>('/api/posts'); }
+    catch { return []; }
   }
 
   async savePost(post: TuitionPost): Promise<void> {
     await this.apiFetch('/api/posts', {
-      method: 'POST',
-      body: JSON.stringify(post),
+      method: 'POST', body: JSON.stringify(post),
     });
   }
 
   async deletePost(id: string): Promise<void> {
-    try {
-      await this.apiFetch(`/api/posts/${id}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('[Porabo D1] deletePost failed:', err);
-    }
+    try { await this.apiFetch(`/api/posts/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deletePost failed:', err); }
   }
 
-  // ==========================================================
-  // APPLICATIONS
-  // ==========================================================
+  // ============ APPLICATIONS ============
   async getApplications(): Promise<TuitionApplication[]> {
-    try {
-      return await this.apiFetch<TuitionApplication[]>('/api/applications');
-    } catch {
-      return [];
-    }
+    try { return await this.apiFetch<TuitionApplication[]>('/api/applications'); }
+    catch { return []; }
   }
 
   async saveApplication(app: TuitionApplication): Promise<void> {
     await this.apiFetch('/api/applications', {
-      method: 'POST',
-      body: JSON.stringify(app),
+      method: 'POST', body: JSON.stringify(app),
     });
   }
 
   async deleteApplication(id: string): Promise<void> {
-    try {
-      await this.apiFetch(`/api/applications/${id}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('[Porabo D1] deleteApplication failed:', err);
-    }
+    try { await this.apiFetch(`/api/applications/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deleteApplication failed:', err); }
   }
 
-  // ==========================================================
-  // EXPORT
-  // ==========================================================
-  async exportFullD1Dump(): Promise<string> {
-    const users = await this.getUsers();
-    const posts = await this.getPosts();
-    const apps = await this.getApplications();
-    let sql = `-- Porabo Full Export\n-- ${new Date().toISOString()}\n\n`;
-    users.forEach(u => {
-      sql += `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt) VALUES ('${u.id}', '${u.email}', 'RE_REGISTER_REQUIRED', '${JSON.stringify(u).replace(/'/g, "''")}', '${u.role}', '${new Date().toISOString()}', '${new Date().toISOString()}');\n`;
-    });
-    return sql;
-  }
-
-  // ==========================================================
-  // QUIZZES & EXAMS
-  // ==========================================================
+  // ============ QUIZZES & EXAMS ============
   async getQuizzes(): Promise<any[]> {
     try {
       const quizzes = await this.apiFetch<any[]>('/api/quizzes');
@@ -339,11 +256,8 @@ class CloudflareD1Service {
   }
 
   async getExamSet(id: string): Promise<any> {
-    try {
-      return await this.apiFetch(`/api/exams/${id}`);
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
+    try { return await this.apiFetch(`/api/exams/${id}`); }
+    catch (err: any) { throw new Error(err.message); }
   }
 
   async submitExamResult(payload: {
@@ -358,6 +272,10 @@ class CloudflareD1Service {
         { method: 'POST', body: JSON.stringify(payload) }
       );
     } catch { return null; }
+  }
+
+  async exportFullD1Dump(): Promise<string> {
+    return '-- Use wrangler d1 export';
   }
 }
 

@@ -139,7 +139,7 @@ async function recordFail(env: Env, key: string): Promise<void> {
   `).bind(key, now, now).run();
 }
 
-// 🆕 Flatten nested teacherDetails in a user object (legacy data support)
+// 🆕 Flatten nested teacherDetails into top-level (for read-time safety)
 function flattenUser(raw: any): any {
   if (!raw || typeof raw !== 'object') return raw;
   const u = { ...raw };
@@ -152,6 +152,50 @@ function flattenUser(raw: any): any {
   return u;
 }
 
+// 🆕 Auto-migrate: rewrite all existing users in D1 to flat structure (one-time)
+async function autoMigrateUsers(env: Env): Promise<{ migrated: number; total: number }> {
+  try {
+    const marker: any = await env.DB.prepare(
+      "SELECT value FROM admin_settings WHERE key = 'users_flattened_v2'"
+    ).first();
+    if (marker && marker.value === 'done') {
+      return { migrated: 0, total: 0 };
+    }
+
+    const all = await env.DB.prepare('SELECT id, data FROM users').all();
+    const rows = (all.results || []) as Array<{ id: string; data: string }>;
+    let migrated = 0;
+    const now = new Date().toISOString();
+
+    for (const row of rows) {
+      try {
+        const u = JSON.parse(row.data);
+        if (u.teacherDetails && typeof u.teacherDetails === 'object') {
+          const { teacherDetails, ...rest } = u;
+          delete rest.password;
+          delete rest.password_hash;
+          const flat = { ...rest, ...teacherDetails };
+          await env.DB.prepare('UPDATE users SET data = ?, updatedAt = ? WHERE id = ?')
+            .bind(JSON.stringify(flat), now, row.id).run();
+          migrated++;
+        }
+      } catch (err) {
+        console.warn(`Migration failed for user ${row.id}:`, err);
+      }
+    }
+
+    await env.DB.prepare(
+      "INSERT OR REPLACE INTO admin_settings (key, value, updatedAt) VALUES ('users_flattened_v2', 'done', ?)"
+    ).bind(now).run();
+
+    console.log(`[migrate] Flattened ${migrated}/${rows.length} users.`);
+    return { migrated, total: rows.length };
+  } catch (err) {
+    console.error('[migrate] Auto-migrate failed:', err);
+    return { migrated: 0, total: 0 };
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -161,11 +205,13 @@ export default {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
     try {
+      // 🆕 Auto-migrate on first request (idempotent)
       if (path === '/' || path === '/health') {
+        autoMigrateUsers(env).catch(() => {});
         return jsonResponse({ status: 'ok', time: new Date().toISOString() });
       }
 
-      // ========== REGISTER ==========
+      // ========== REGISTER (strictly flat) ==========
       if (path === '/api/auth/register' && method === 'POST') {
         const body = await parseBody(request);
         const email = String(body.email || '').trim().toLowerCase();
@@ -179,13 +225,17 @@ export default {
 
         const { password: _pw, teacherDetails, ...userData } = body;
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const user = {
+        // 🔑 STRICT FLATTEN: teacherDetails is spread into top-level
+        const user: any = {
           ...userData,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
           id: userId,
           email,
           role: body.role,
         };
+        // Never nest teacherDetails again
+        delete user.teacherDetails;
+
         const hash = await hashPassword(password);
         const now = new Date().toISOString();
 
@@ -251,6 +301,18 @@ export default {
         await env.DB.prepare('UPDATE users SET password_hash = ?, updatedAt = ? WHERE id = ?')
           .bind(hash, new Date().toISOString(), ctx.user.userId).run();
         return jsonResponse({ success: true });
+      }
+
+      // ========== ADMIN: MANUAL MIGRATE ==========
+      if (path === '/api/admin/migrate-users' && method === 'POST') {
+        const ctx = await getAuth(request, env);
+        if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
+        // Force re-run migration (delete marker first)
+        try {
+          await env.DB.prepare("DELETE FROM admin_settings WHERE key = 'users_flattened_v2'").run();
+        } catch {}
+        const result = await autoMigrateUsers(env);
+        return jsonResponse({ success: true, ...result });
       }
 
       // ========== ADMIN CONFIG ==========
@@ -326,10 +388,7 @@ export default {
       if (path === '/api/users' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();
         const users = (result.results || [])
-          .map((r: any) => {
-            try { return flattenUser(JSON.parse(r.data)); }
-            catch { return null; }
-          })
+          .map((r: any) => { try { return flattenUser(JSON.parse(r.data)); } catch { return null; } })
           .filter(Boolean);
         return jsonResponse(users);
       }
@@ -341,11 +400,13 @@ export default {
         if (!rawUser.id) return errorResponse('Missing user.id');
         if (!ctx.isAdmin && ctx.user!.userId !== rawUser.id) return errorResponse('Forbidden', 403);
 
+        // 🔑 STRICT FLATTEN on save too
         const { password: _p, password_hash: _ph, teacherDetails, ...rest } = rawUser;
-        const user = {
+        const user: any = {
           ...rest,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
         };
+        delete user.teacherDetails;
 
         const now = new Date().toISOString();
         const existing = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();

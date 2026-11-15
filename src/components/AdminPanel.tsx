@@ -17,31 +17,24 @@ import {
   Check,
   X,
   Lock,
-  IdCard,
   Database,
-  Server,
   Download,
-  Copy,
   Trash2,
   KeyRound,
   Shield,
   MapPin,
   RefreshCw,
-  Award,
   Activity,
-  Send,
-  Calendar,
-  RotateCcw,
-  FileSpreadsheet,
-  Star,
   MessageSquare,
   DollarSign,
-  TrendingUp,
   ChevronDown,
   ChevronUp,
-  EyeOff,
-  ListFilter,
-  FileText
+  FileSpreadsheet,
+  Star,
+  Calendar,
+  Briefcase,
+  User as UserIcon,
+  Mail,
 } from 'lucide-react';
 import { User, TuitionPost, TuitionApplication, StudentReview } from '../lib/types';
 import { GenderAvatar } from './GenderAvatar';
@@ -82,7 +75,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onExitAdmin,
 }) => {
   // ==========================================
-  // AUTHENTICATION STATE (Cloudflare D1)
+  // AUTHENTICATION STATE
   // ==========================================
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(
@@ -93,14 +86,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [showPasscode, setShowPasscode] = useState<boolean>(false);
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
 
-  // Initial Setup State
   const [initialPassword, setInitialPassword] = useState<string>('');
   const [initialConfirmPassword, setInitialConfirmPassword] = useState<string>('');
   const [initialPasswordError, setInitialPasswordError] = useState<string | null>(null);
   const [recoveryCodeModal, setRecoveryCodeModal] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Forgot Password State
   const [isForgotPassword, setIsForgotPassword] = useState<boolean>(false);
   const [recoveryCodeInput, setRecoveryCodeInput] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -117,12 +108,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [copiedSchema, setCopiedSchema] = useState<boolean>(false);
   const [exportedDump, setExportedDump] = useState<string>('');
 
-  // Diagnostics
   const [diagnosticLogs, setDiagnosticLogs] = useState<D1DiagnosticLog[]>(() =>
     cfD1.getDiagnosticLogs()
   );
 
-  // Modals
   const [rejectingTutorId, setRejectingTutorId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>(
     'National ID or institution credentials could not be verified.'
@@ -141,17 +130,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     name: string;
   } | null>(null);
 
-  // Filters
   const [reviewFilter, setReviewFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>(
     'PENDING'
   );
   const [expandedTeachers, setExpandedTeachers] = useState<Set<string>>(new Set());
 
-  // Check Password Status on Mount
   useEffect(() => {
-    cfD1.getAdminConfig().then(res => {
-      setHasPassword(res.hasPassword);
-    });
+    cfD1.getAdminConfig().then(res => setHasPassword(res.hasPassword));
     const unsub = cfD1.subscribeToDiagnostics((newLog: D1DiagnosticLog) => {
       setDiagnosticLogs(prev => [newLog, ...prev.slice(0, 149)]);
     });
@@ -159,19 +144,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   }, []);
 
   // ==========================================
-  // DERIVED DATA
+  // DERIVED DATA (memoized)
   // ==========================================
-  const tutors = allUsers.filter(u => u.role === 'TUTOR');
-  const students = allUsers.filter(u => u.role === 'STUDENT');
-  
-  const pendingTutors = tutors.filter(
-    t => t.verificationStatus === 'PENDING' || !t.verificationStatus
-  );
-  const verifiedTutors = tutors.filter(t => t.verificationStatus === 'VERIFIED');
+  const tutors = useMemo(() => allUsers.filter(u => u.role === 'TUTOR'), [allUsers]);
+  const students = useMemo(() => allUsers.filter(u => u.role === 'STUDENT'), [allUsers]);
 
-  const pendingPosts = tuitionPosts.filter(p => p.approvalStatus === 'PENDING');
-  const approvedPosts = tuitionPosts.filter(
-    p => p.approvalStatus === 'APPROVED' || !p.approvalStatus
+  const pendingTutors = useMemo(
+    () => tutors.filter(t => t.verificationStatus === 'PENDING' || !t.verificationStatus),
+    [tutors]
+  );
+  const verifiedTutors = useMemo(() => tutors.filter(t => t.verificationStatus === 'VERIFIED'), [tutors]);
+
+  const pendingPosts = useMemo(() => tuitionPosts.filter(p => p.approvalStatus === 'PENDING'), [tuitionPosts]);
+  const approvedPosts = useMemo(
+    () => tuitionPosts.filter(p => p.approvalStatus === 'APPROVED' || !p.approvalStatus),
+    [tuitionPosts]
   );
 
   const allReviews: FlatReview[] = useMemo(() => {
@@ -187,9 +174,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         });
       });
     });
-    return flat.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return flat.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [tutors]);
 
   const pendingReviews = allReviews.filter(r => r.status === 'PENDING');
@@ -197,7 +182,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const rejectedReviews = allReviews.filter(r => r.status === 'REJECTED');
 
   // ==========================================
-  // DATE RANGE FILTERING & EXPORTS
+  // DATE RANGE + EXPORTS
   // ==========================================
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -220,42 +205,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     return true;
   };
 
-  const handlePresetDate = (preset: 'all' | 'today' | '7days' | '30days' | 'thisMonth') => {
-    const today = new Date();
-    const formatYMD = (d: Date) => d.toISOString().slice(0, 10);
-    if (preset === 'all') {
-      setStartDate('');
-      setEndDate('');
-    } else if (preset === 'today') {
-      const ymd = formatYMD(today);
-      setStartDate(ymd);
-      setEndDate(ymd);
-    } else if (preset === '7days') {
-      const past7 = new Date(today);
-      past7.setDate(past7.getDate() - 7);
-      setStartDate(formatYMD(past7));
-      setEndDate(formatYMD(today));
-    } else if (preset === '30days') {
-      const past30 = new Date(today);
-      past30.setDate(past30.getDate() - 30);
-      setStartDate(formatYMD(past30));
-      setEndDate(formatYMD(today));
-    } else if (preset === 'thisMonth') {
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      setStartDate(formatYMD(firstDay));
-      setEndDate(formatYMD(today));
-    }
-  };
-
-  const dateFilteredPosts = useMemo(
-    () => tuitionPosts.filter(p => isWithinDateRange(p.createdAt)),
-    [tuitionPosts, startDate, endDate]
-  );
-  const dateFilteredApplications = useMemo(
-    () => applications.filter(a => isWithinDateRange(a.createdAt)),
-    [applications, startDate, endDate]
-  );
-
   const exportToExcelCSV = (
     filename: string,
     headers: string[],
@@ -263,24 +212,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   ) => {
     const escapeCell = (val: string | number | undefined | null) => {
       if (val === undefined || val === null) return '""';
-      const s = String(val).replace(/"/g, '""');
-      return `"${s}"`;
+      return `"${String(val).replace(/"/g, '""')}"`;
     };
     const csvContent =
       '\uFEFF' +
-      [
-        headers.map(escapeCell).join(','),
-        ...rows.map(row => row.map(escapeCell).join(','))
-      ].join('\r\n');
-
+      [headers.map(escapeCell).join(','), ...rows.map(row => row.map(escapeCell).join(','))].join(
+        '\r\n'
+      );
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      filename.endsWith('.csv') ? filename : `${filename}.csv`
-    );
+    link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -289,99 +232,81 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleExportTeachers = () => {
     const headers = [
-      'Teacher ID', 'Full Name', 'Phone', 'Email', 'Gender', 'District', 'Area',
-      'Institution', 'Department', 'Academic Year', 'NID', 'Student Roll', 'Student Reg',
-      'Verification Status', 'Overall Rating', 'Total Approved Reviews', 'Experience Years',
-      'Total Students Taught', 'Currently Teaching'
+      'ID', 'Full Name', 'Email', 'Phone', 'WhatsApp', 'Gender', 'District', 'Area',
+      'Institution', 'Department', 'Academic Year', 'Qualifications', 'NID', 'Roll', 'Reg',
+      'Verification Status', 'Experience (Yrs)', 'Hourly Rate', 'Rating', 'Reviews',
+      'Subjects Taught', 'Grades Taught', 'Submitted At'
     ];
-    const rows = tutors.map(t => {
-      const approvedReviewsCount = (t.reviews || []).filter(
-        r => (r.status || 'APPROVED') === 'APPROVED'
-      ).length;
-      const acceptedApps = applications.filter(
-        a => a.tutorId === t.id && a.status === 'ACCEPTED'
-      );
-      const activeApps = acceptedApps.filter(a => {
-        const post = tuitionPosts.find(p => p.id === a.postId);
-        return post && post.status !== 'CLOSED' && post.status !== 'CANCELLED';
-      });
-      return [
-        t.id, t.fullName, t.phone, t.email, t.gender || 'N/A', t.district, t.areaName,
-        t.institution || 'N/A', t.department || 'N/A', t.academicYear || 'N/A',
-        t.nidNumber || 'N/A', t.studentIdCardRoll || 'N/A', t.studentIdCardReg || 'N/A',
-        t.verificationStatus || 'PENDING', t.rating || 0.0, approvedReviewsCount,
-        t.yearsOfExperience || 0, acceptedApps.length, activeApps.length
-      ];
-    });
+    const rows = tutors.map(t => [
+      t.id, t.fullName, t.email, t.phone, t.whatsapp || t.phone, t.gender || 'N/A',
+      t.district, t.areaName, t.institution || 'N/A', t.department || 'N/A',
+      t.academicYear || 'N/A', t.qualifications || 'N/A', t.nidNumber || 'N/A',
+      t.studentIdCardRoll || 'N/A', t.studentIdCardReg || 'N/A',
+      t.verificationStatus || 'PENDING', t.yearsOfExperience || 0, t.hourlyOrMonthlyRate || 0,
+      t.rating || 0, t.totalReviews || 0,
+      (t.subjectsTaught || []).join('; '), (t.gradesTaught || []).join('; '),
+      t.verificationSubmittedAt || 'N/A'
+    ]);
     exportToExcelCSV(`porabo_teachers_${new Date().toISOString().slice(0, 10)}`, headers, rows);
   };
 
   const handleExportStudents = () => {
-    const headers = [
-      'Student ID', 'Full Name', 'Phone', 'Email', 'Gender', 'District', 'Area',
-      'Exact Address', 'Tuition Posts', 'Total Applications Received'
-    ];
+    const headers = ['ID', 'Full Name', 'Email', 'Phone', 'WhatsApp', 'Gender', 'District', 'Area', 'Exact Address', 'Posts Count'];
     const rows = students.map(s => {
       const postsCount = tuitionPosts.filter(p => p.studentId === s.id).length;
-      const myPostIds = tuitionPosts.filter(p => p.studentId === s.id).map(p => p.id);
-      const appsReceived = applications.filter(a => myPostIds.includes(a.postId)).length;
-      return [
-        s.id, s.fullName, s.phone, s.email, s.gender || 'N/A', s.district, s.areaName,
-        s.exactAddress || `${s.areaName}, ${s.district}`, postsCount, appsReceived
-      ];
+      return [s.id, s.fullName, s.email, s.phone, s.whatsapp || s.phone, s.gender || 'N/A', s.district, s.areaName, s.exactAddress || 'N/A', postsCount];
     });
     exportToExcelCSV(`porabo_students_${new Date().toISOString().slice(0, 10)}`, headers, rows);
   };
 
   const handleExportAllUsers = () => {
     const headers = [
-      'User ID', 'Role', 'Full Name', 'Phone', 'Email', 'Gender', 'District', 'Area',
-      'Exact Address', 'Institution', 'Department', 'Academic Year', 'NID', 'Student Roll',
-      'Student Reg', 'Verification Status', 'Rating', 'Total Reviews', 'Experience Years'
+      'ID', 'Role', 'Full Name', 'Email', 'Phone', 'WhatsApp', 'Gender', 'District', 'Area',
+      'Exact Address', 'Institution', 'Department', 'Academic Year', 'NID', 'Roll', 'Reg',
+      'Verification Status', 'Rating', 'Total Reviews', 'Experience (Yrs)', 'Rate',
+      'Subjects', 'Grades', 'Bio', 'Philosophy', 'Submitted At'
     ];
     const rows = allUsers.map(u => [
-      u.id, u.role, u.fullName, u.phone, u.email, u.gender || 'N/A', u.district, u.areaName,
-      u.exactAddress || `${u.areaName}, ${u.district}`, u.institution || 'N/A', u.department || 'N/A',
-      u.academicYear || 'N/A', u.nidNumber || 'N/A', u.studentIdCardRoll || 'N/A',
-      u.studentIdCardReg || 'N/A', u.verificationStatus || (u.role === 'STUDENT' ? 'VERIFIED' : 'PENDING'),
-      u.rating || 0.0, u.totalReviews || 0, u.yearsOfExperience || 0
+      u.id, u.role, u.fullName, u.email, u.phone, u.whatsapp || u.phone, u.gender || 'N/A',
+      u.district, u.areaName, u.exactAddress || 'N/A', u.institution || 'N/A',
+      u.department || 'N/A', u.academicYear || 'N/A', u.nidNumber || 'N/A',
+      u.studentIdCardRoll || 'N/A', u.studentIdCardReg || 'N/A',
+      u.verificationStatus || (u.role === 'STUDENT' ? 'VERIFIED' : 'PENDING'),
+      u.rating || 0, u.totalReviews || 0, u.yearsOfExperience || 0, u.hourlyOrMonthlyRate || 0,
+      (u.subjectsTaught || []).join('; '), (u.gradesTaught || []).join('; '),
+      u.bio || '', u.teachingPhilosophy || '', u.verificationSubmittedAt || 'N/A'
     ]);
     exportToExcelCSV(`porabo_all_users_${new Date().toISOString().slice(0, 10)}`, headers, rows);
   };
 
   const handleExportTuitionPosts = () => {
-    const postsToExport = (startDate || endDate) ? dateFilteredPosts : tuitionPosts;
     const headers = [
       'Post ID', 'Title', 'Student Name', 'Student ID', 'District', 'Area', 'Subject',
-      'Grade Level', 'Curriculum', 'Monthly Budget (BDT)', 'Days Per Week', 'Approval Status',
-      'Match Status', 'Created At'
+      'Grade Level', 'Curriculum', 'Monthly Budget', 'Days/Week', 'Tuition Mode',
+      'Approval Status', 'Match Status', 'Created At'
     ];
-    const rows = postsToExport.map(p => [
-      p.id, p.title, p.studentName, p.studentId, p.district, p.areaName, p.subject, p.gradeLevel,
-      p.curriculum || 'N/A', p.salaryBudget, p.daysPerWeek || 3, p.approvalStatus || 'APPROVED',
-      p.status || 'OPEN', p.createdAt ? new Date(p.createdAt).toISOString() : 'N/A'
+    const rows = tuitionPosts.filter(p => isWithinDateRange(p.createdAt)).map(p => [
+      p.id, p.title, p.studentName, p.studentId, p.district, p.areaName, p.subject,
+      p.gradeLevel, p.curriculum || 'N/A', p.salaryBudget, p.daysPerWeek || 3,
+      p.tuitionMode || 'N/A', p.approvalStatus || 'APPROVED', p.status || 'OPEN',
+      p.createdAt ? new Date(p.createdAt).toISOString() : 'N/A'
     ]);
-    const suffix = (startDate || endDate) ? `_${startDate || 'earliest'}_to_${endDate || 'latest'}` : `_${new Date().toISOString().slice(0, 10)}`;
-    exportToExcelCSV(`porabo_tuition_posts${suffix}`, headers, rows);
+    exportToExcelCSV(`porabo_tuition_posts_${new Date().toISOString().slice(0, 10)}`, headers, rows);
   };
 
   const handleExportReviews = () => {
-    const headers = [
-      'Review ID', 'Tutor Name', 'Student Name', 'Student Role', 'Punctuality',
-      'Subject Mastery', 'Teaching Style', 'Overall', 'Comment', 'Status', 'Submitted Date'
-    ];
+    const headers = ['ID', 'Tutor', 'Student', 'Student Role', 'Punctuality', 'Mastery', 'Style', 'Overall', 'Comment', 'Status', 'Submitted'];
     const rows = allReviews.map(r => [
       r.id, r.tutorName, r.studentName, r.studentRoleOrGrade, r.punctuality, r.subjectMastery,
-      r.teachingStyle, r.overall, r.comment, r.status,
-      r.createdAt ? new Date(r.createdAt).toISOString() : 'N/A'
+      r.teachingStyle, r.overall, r.comment, r.status, r.createdAt ? new Date(r.createdAt).toISOString() : 'N/A'
     ]);
     exportToExcelCSV(`porabo_reviews_${new Date().toISOString().slice(0, 10)}`, headers, rows);
   };
 
   const handleExportAllData = () => {
     handleExportAllUsers();
-    setTimeout(() => handleExportTuitionPosts(), 500);
-    setTimeout(() => handleExportReviews(), 1000);
+    setTimeout(() => handleExportTuitionPosts(), 400);
+    setTimeout(() => handleExportReviews(), 800);
   };
 
   // ==========================================
@@ -391,8 +316,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) ||
-      u.areaName.toLowerCase().includes(q) || u.district.toLowerCase().includes(q) ||
+      u.fullName.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.areaName.toLowerCase().includes(q) ||
+      u.district.toLowerCase().includes(q) ||
       (u.institution && u.institution.toLowerCase().includes(q))
     );
   });
@@ -401,8 +328,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) ||
-      u.areaName.toLowerCase().includes(q) || u.district.toLowerCase().includes(q) ||
+      u.fullName.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.areaName.toLowerCase().includes(q) ||
+      u.district.toLowerCase().includes(q) ||
       u.phone.includes(q)
     );
   });
@@ -412,8 +341,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      p.title.toLowerCase().includes(q) || p.subject.toLowerCase().includes(q) ||
-      p.studentName.toLowerCase().includes(q) || p.areaName.toLowerCase().includes(q) ||
+      p.title.toLowerCase().includes(q) ||
+      p.subject.toLowerCase().includes(q) ||
+      p.studentName.toLowerCase().includes(q) ||
+      p.areaName.toLowerCase().includes(q) ||
       p.district.toLowerCase().includes(q)
     );
   });
@@ -434,16 +365,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setInitialPasswordError('Passwords do not match.');
       return;
     }
-
     setIsSubmitting(true);
     const res = await cfD1.initAdminPassword(initialPassword);
     setIsSubmitting(false);
-
-    if (res.success && res.recoveryCode) {
-      setRecoveryCodeModal(res.recoveryCode);
-    } else {
-      setInitialPasswordError(res.error || 'Failed to initialize password.');
-    }
+    if (res.success && res.recoveryCode) setRecoveryCodeModal(res.recoveryCode);
+    else setInitialPasswordError(res.error || 'Failed to initialize password.');
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -452,13 +378,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmitting(true);
     const res = await cfD1.verifyAdminPassword(enteredPasscode);
     setIsSubmitting(false);
-
     if (res.success) {
       setIsAdminAuthenticated(true);
       sessionStorage.setItem('porabo_admin_auth', 'true');
-    } else {
-      setPasscodeError(res.error || 'Invalid password.');
-    }
+    } else setPasscodeError(res.error || 'Invalid password.');
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -471,7 +394,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmitting(true);
     const res = await cfD1.resetAdminPassword(recoveryCodeInput, newPassword);
     setIsSubmitting(false);
-
     if (res.success) {
       setResetSuccess(true);
       setTimeout(() => {
@@ -482,14 +404,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setEnteredPasscode('');
         setPasscodeError(null);
       }, 2500);
-    } else {
-      setResetError(res.error || 'Invalid recovery code or reset failed.');
-    }
+    } else setResetError(res.error || 'Invalid recovery code or reset failed.');
   };
 
   const handleLockAdminSession = () => {
     setIsAdminAuthenticated(false);
     sessionStorage.removeItem('porabo_admin_auth');
+    sessionStorage.removeItem('porabo_admin_token');
     setEnteredPasscode('');
     setPasscodeError(null);
   };
@@ -528,7 +449,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // ==========================================
-  // RENDER: LOADING STATE
+  // RENDER: LOADING
   // ==========================================
   if (hasPassword === null) {
     return (
@@ -558,26 +479,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 {!hasPassword ? 'Initialize Admin Password' : 'Porabo Admin Console'}
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                {!hasPassword 
-                  ? 'Create a master password. This will be required to access the admin panel on ALL devices.' 
+                {!hasPassword
+                  ? 'Create a master password. This will be required to access the admin panel on ALL devices.'
                   : 'Enter your master password to access system moderation.'}
               </p>
             </div>
           </div>
 
-          {/* FORGOT PASSWORD / RESET FLOW */}
           {isForgotPassword ? (
             <form onSubmit={handleResetPassword} className="space-y-4">
               {resetSuccess ? (
                 <div className="p-4 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-center space-y-2">
                   <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto" />
                   <p className="text-sm font-bold text-emerald-300">Password Reset Successful!</p>
-                  <p className="text-xs text-emerald-400/80">Redirecting to login...</p>
                 </div>
               ) : (
                 <>
                   <div className="text-xs text-slate-400 mb-2">
-                    Enter your 8-character Recovery Code and set a new password. If you lost your code, you cannot recover access.
+                    Enter your 8-character Recovery Code and set a new password.
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-300 block mb-1">Recovery Code</label>
@@ -608,15 +527,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
                   )}
                   <div className="flex gap-2 pt-2">
-                    <button 
-                      type="button" 
-                      onClick={() => setIsForgotPassword(false)} 
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPassword(false)}
                       className="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl text-sm font-bold transition-colors"
                     >
                       Cancel
                     </button>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       disabled={isSubmitting}
                       className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-sm font-bold transition-colors disabled:opacity-50"
                     >
@@ -627,7 +546,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               )}
             </form>
           ) : !hasPassword ? (
-            /* SETUP INITIAL PASSWORD */
             <form onSubmit={handleInitPassword} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">Master Password</label>
@@ -677,7 +595,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </form>
           ) : (
-            /* LOGIN FORM */
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300 block mb-1">Master Password</label>
@@ -737,28 +654,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
 
-        {/* RECOVERY CODE MODAL (SHOWS ONLY ONCE) */}
         {recoveryCodeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-[#111827] border border-emerald-500/50 rounded-3xl p-6 text-center space-y-4 shadow-2xl shadow-emerald-900/20">
+            <div className="w-full max-w-md bg-[#111827] border border-emerald-500/50 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center border border-emerald-500/30">
                 <KeyRound className="w-8 h-8" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Save Your Recovery Code</h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  If you forget your password, this code is the <strong className="text-white">ONLY</strong> way to reset it. Write it down and keep it safe.
+                  If you forget your password, this code is the <strong className="text-white">ONLY</strong> way to reset it.
                 </p>
               </div>
               <div className="text-3xl font-mono font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 py-4 rounded-xl tracking-widest select-all">
                 {recoveryCodeModal}
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setRecoveryCodeModal(null);
                   setIsAdminAuthenticated(true);
                   sessionStorage.setItem('porabo_admin_auth', 'true');
-                }} 
+                }}
                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm mt-4 transition-colors shadow-lg shadow-emerald-600/30"
               >
                 I have saved it. Enter Dashboard
@@ -771,11 +687,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   }
 
   // ==========================================
-  // RENDER: MAIN ADMIN CONSOLE
+  // RENDER: MAIN CONSOLE
   // ==========================================
   return (
     <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white pb-16">
-      {/* Admin Top Navigation */}
       <header className="sticky top-0 z-40 border-b border-blue-900/50 bg-[#0B0F19]/95 backdrop-blur-md px-3 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -791,9 +706,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <CheckCircle className="w-2.5 h-2.5" /> Authenticated
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                Master audit terminal &bull; Cloudflare D1 secured
-              </p>
             </div>
           </div>
 
@@ -801,27 +713,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               type="button"
               onClick={handleExportAllData}
-              className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30"
-              title="Export all users, tuition posts, and reviews"
+              className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-md"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Export All</span>
             </button>
-
             <button
               type="button"
               onClick={handleLockAdminSession}
-              title="Lock Admin Session"
-              className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-semibold flex items-center gap-1.5"
             >
               <Lock className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Lock</span>
             </button>
-
             <button
               type="button"
               onClick={onExitAdmin}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
               <span>Exit</span>
@@ -831,14 +739,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-3 sm:p-6 lg:p-8 space-y-6">
-        {/* Statistics Cards Grid */}
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-4">
           <div
             onClick={() => setActiveTab('urgent')}
             className={`p-3.5 rounded-3xl border cursor-pointer transition-all shadow-lg ${
-              activeTab === 'urgent'
-                ? 'bg-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30'
-                : 'bg-[#111827] border-blue-950/70 hover:border-amber-500/40'
+              activeTab === 'urgent' ? 'bg-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30' : 'bg-[#111827] border-blue-950/70'
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono mb-1">
@@ -856,9 +762,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div
             onClick={() => setActiveTab('reviews')}
             className={`p-3.5 rounded-3xl border cursor-pointer transition-all shadow-lg ${
-              activeTab === 'reviews'
-                ? 'bg-purple-950/30 border-purple-500/60 ring-2 ring-purple-500/30'
-                : 'bg-[#111827] border-blue-950/70 hover:border-purple-500/40'
+              activeTab === 'reviews' ? 'bg-purple-950/30 border-purple-500/60 ring-2 ring-purple-500/30' : 'bg-[#111827] border-blue-950/70'
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono mb-1">
@@ -866,17 +770,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <MessageSquare className="w-4 h-4 text-purple-400" />
             </div>
             <span className="text-xl font-black text-purple-400">{allReviews.length}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">
-              {pendingReviews.length} pending
-            </span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">{pendingReviews.length} pending</span>
           </div>
 
           <div
             onClick={() => setActiveTab('teachers')}
             className={`p-3.5 rounded-3xl border cursor-pointer transition-all shadow-lg ${
-              activeTab === 'teachers'
-                ? 'bg-blue-950/30 border-blue-500/60 ring-2 ring-blue-500/30'
-                : 'bg-[#111827] border-blue-950/70 hover:border-blue-500/40'
+              activeTab === 'teachers' ? 'bg-blue-950/30 border-blue-500/60 ring-2 ring-blue-500/30' : 'bg-[#111827] border-blue-950/70'
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono mb-1">
@@ -884,17 +784,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <GraduationCap className="w-4 h-4 text-blue-400" />
             </div>
             <span className="text-xl font-black text-white">{tutors.length}</span>
-            <span className="text-[10px] text-emerald-400 block mt-0.5">
-              {verifiedTutors.length} verified
-            </span>
+            <span className="text-[10px] text-emerald-400 block mt-0.5">{verifiedTutors.length} verified</span>
           </div>
 
           <div
             onClick={() => setActiveTab('students')}
             className={`p-3.5 rounded-3xl border cursor-pointer transition-all shadow-lg ${
-              activeTab === 'students'
-                ? 'bg-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30'
-                : 'bg-[#111827] border-blue-950/70 hover:border-cyan-500/40'
+              activeTab === 'students' ? 'bg-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30' : 'bg-[#111827] border-blue-950/70'
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono mb-1">
@@ -908,9 +804,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div
             onClick={() => setActiveTab('posts')}
             className={`p-3.5 rounded-3xl border cursor-pointer transition-all shadow-lg ${
-              activeTab === 'posts'
-                ? 'bg-emerald-950/30 border-emerald-500/60 ring-2 ring-emerald-500/30'
-                : 'bg-[#111827] border-blue-950/70 hover:border-emerald-500/40'
+              activeTab === 'posts' ? 'bg-emerald-950/30 border-emerald-500/60 ring-2 ring-emerald-500/30' : 'bg-[#111827] border-blue-950/70'
             }`}
           >
             <div className="flex items-center justify-between text-slate-400 text-xs font-mono mb-1">
@@ -918,13 +812,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <BookOpen className="w-4 h-4 text-emerald-400" />
             </div>
             <span className="text-xl font-black text-white">{tuitionPosts.length}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">
-              {approvedPosts.length} live
-            </span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">{approvedPosts.length} live</span>
           </div>
         </div>
 
-        {/* Tab Navigation Rail */}
+        {/* Tabs */}
         <div className="bg-[#111827] border border-blue-900/40 rounded-2xl p-1.5 overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-1 min-w-max">
             {[
@@ -937,15 +829,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               { id: 'cloudflare', label: 'D1/KV', icon: Database },
               { id: 'settings', label: 'Settings', icon: KeyRound },
             ].map(tab => {
-              const Icon = tab.icon as any;
+              const Icon = (tab as any).icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                    activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                      : 'text-slate-400 hover:text-white'
+                    activeTab === tab.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -961,7 +851,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
 
-        {/* Global Search */}
         {['teachers', 'students', 'posts', 'reviews'].includes(activeTab) && (
           <div className="relative w-full">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -970,28 +859,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search by name, email, district, area..."
-              className="w-full bg-[#111827] border border-blue-950/70 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors shadow-inner"
+              className="w-full bg-[#111827] border border-blue-950/70 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
           </div>
         )}
 
-        {/* TAB: URGENT QUEUE */}
+        {/* QUEUE */}
         {activeTab === 'urgent' && (
           <div className="space-y-6">
-            {/* Pending Reviews */}
             <div className="bg-[#111827] border border-purple-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">
                   {pendingReviews.length}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-white">
-                  Pending Review Approvals
-                </h2>
+                <h2 className="text-sm font-bold text-white">Pending Review Approvals</h2>
               </div>
               {pendingReviews.length === 0 ? (
                 <div className="p-6 text-center">
                   <CheckCircle className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-                  <p className="text-xs text-slate-400">All reviews moderated. No pending approvals.</p>
+                  <p className="text-xs text-slate-400">No pending approvals.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1000,45 +886,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       key={review.id}
                       review={review}
                       onApprove={() => onApproveReview(review.tutorId, review.id)}
-                      onReject={() =>
-                        setRejectingReview({ tutorId: review.tutorId, reviewId: review.id })
-                      }
+                      onReject={() => setRejectingReview({ tutorId: review.tutorId, reviewId: review.id })}
                     />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Pending Tutors */}
             <div className="bg-[#111827] border border-amber-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">
                   {pendingTutors.length}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-white">
-                  Pending Teacher Verifications
-                </h2>
+                <h2 className="text-sm font-bold text-white">Pending Teacher Verifications</h2>
               </div>
               {pendingTutors.length === 0 ? (
                 <div className="p-6 text-center">
                   <CheckCircle className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-                  <p className="text-xs text-slate-400">No pending tutor dossiers.</p>
+                  <p className="text-xs text-slate-400">No pending dossiers.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pendingTutors.map(tutor => (
-                    <div
-                      key={tutor.id}
-                      className="bg-[#0B0F19] border border-amber-500/30 rounded-2xl p-4 space-y-3"
-                    >
+                    <div key={tutor.id} className="bg-[#0B0F19] border border-amber-500/30 rounded-2xl p-4 space-y-3">
                       <div className="flex items-start gap-3">
                         <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" />
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-bold text-white text-sm">{tutor.fullName}</h3>
                           <p className="text-xs text-blue-400">{tutor.institution || '—'}</p>
-                          <p className="text-[11px] text-slate-400">
-                            {tutor.areaName}, {tutor.district}
-                          </p>
+                          <p className="text-[11px] text-slate-400">{tutor.areaName}, {tutor.district}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#111827] p-2.5 rounded-xl border border-slate-800">
@@ -1048,29 +924,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                         <div>
                           <span className="text-slate-500 block text-[9px] font-mono">ROLL/REG:</span>
-                          <span className="text-cyan-400 font-mono">
-                            {tutor.studentIdCardRoll || '—'} / {tutor.studentIdCardReg || '—'}
+                          <span className="text-cyan-400 font-mono text-[10px]">
+                            {tutor.studentIdCardRoll || '—'}/{tutor.studentIdCardReg || '—'}
                           </span>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setInspectingUser(tutor)}
-                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                         >
-                          <Eye className="w-3.5 h-3.5 text-blue-400" />
-                          Inspect
+                          <Eye className="w-3.5 h-3.5 text-blue-400" /> Full A-Z Info
                         </button>
                         <button
                           onClick={() => onApproveTutor(tutor.id)}
-                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-emerald-600/20"
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
                         >
-                          <Check className="w-3.5 h-3.5" />
-                          Approve
+                          <Check className="w-3.5 h-3.5" /> Approve
                         </button>
                         <button
                           onClick={() => setRejectingTutorId(tutor.id)}
-                          className="p-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl border border-rose-800/50 transition-colors"
+                          className="p-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl border border-rose-800/50"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1081,49 +955,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               )}
             </div>
 
-            {/* Pending Posts */}
             <div className="bg-[#111827] border border-cyan-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">
                   {pendingPosts.length}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-white">Pending Tuition Posts</h2>
+                <h2 className="text-sm font-bold text-white">Pending Tuition Posts</h2>
               </div>
               {pendingPosts.length === 0 ? (
                 <div className="p-6 text-center">
                   <CheckCircle className="w-8 h-8 mx-auto text-emerald-400 mb-2" />
-                  <p className="text-xs text-slate-400">No pending tuition posts.</p>
+                  <p className="text-xs text-slate-400">No pending posts.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pendingPosts.map(post => (
-                    <div
-                      key={post.id}
-                      className="bg-[#0B0F19] border border-cyan-500/30 rounded-2xl p-4 space-y-3"
-                    >
+                    <div key={post.id} className="bg-[#0B0F19] border border-cyan-500/30 rounded-2xl p-4 space-y-3">
                       <h3 className="font-bold text-white text-sm">{post.title}</h3>
-                      <p className="text-xs text-cyan-400">
-                        {post.subject} • {post.gradeLevel}
-                      </p>
+                      <p className="text-xs text-cyan-400">{post.subject} • {post.gradeLevel}</p>
                       <div className="text-xs text-slate-300 space-y-0.5">
                         <div>Guardian: {post.studentName}</div>
-                        <div className="text-emerald-400 font-bold">
-                          ৳ {post.salaryBudget.toLocaleString()}/mo
-                        </div>
+                        <div className="text-emerald-400 font-bold">৳ {post.salaryBudget.toLocaleString()}/mo</div>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => onApprovePost(post.id)}
-                          className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                          className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
                         >
-                          <Check className="w-3.5 h-3.5" />
                           Approve
                         </button>
                         <button
-                          onClick={() =>
-                            setItemToDelete({ type: 'post', id: post.id, name: post.title })
-                          }
-                          className="py-2 px-3 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl text-xs font-semibold border border-rose-800/50 transition-colors"
+                          onClick={() => setItemToDelete({ type: 'post', id: post.id, name: post.title })}
+                          className="py-2 px-3 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl border border-rose-800/50"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1136,23 +999,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: REVIEWS */}
+        {/* REVIEWS */}
         {activeTab === 'reviews' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-purple-400" />
-                <span>Review Moderation Center ({allReviews.length})</span>
+                <span>Reviews ({allReviews.length})</span>
               </h2>
-              <button
-                onClick={handleExportReviews}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export Reviews
+              <button onClick={handleExportReviews} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Export
               </button>
             </div>
-
             <div className="flex items-center gap-1.5 flex-wrap">
               {[
                 { id: 'PENDING', label: `Pending (${pendingReviews.length})` },
@@ -1164,21 +1022,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   key={f.id}
                   onClick={() => setReviewFilter(f.id as any)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    reviewFilter === f.id
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'bg-[#111827] text-slate-400 hover:text-white border border-blue-950/70'
+                    reviewFilter === f.id ? 'bg-purple-600 text-white' : 'bg-[#111827] text-slate-400 border border-blue-950/70'
                   }`}
                 >
                   {f.label}
                 </button>
               ))}
             </div>
-
             {filteredReviews.length === 0 ? (
               <div className="p-12 text-center bg-[#111827] border border-blue-900/30 rounded-3xl">
                 <MessageSquare className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-white">No reviews to show</p>
-                <p className="text-xs text-slate-500 mt-1">No reviews match the selected filter.</p>
+                <p className="text-sm font-semibold text-white">No reviews</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1187,16 +1041,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     key={review.id}
                     review={review}
                     showTutorName
-                    onApprove={
-                      review.status === 'PENDING'
-                        ? () => onApproveReview(review.tutorId, review.id)
-                        : undefined
-                    }
-                    onReject={
-                      review.status === 'PENDING'
-                        ? () => setRejectingReview({ tutorId: review.tutorId, reviewId: review.id })
-                        : undefined
-                    }
+                    onApprove={review.status === 'PENDING' ? () => onApproveReview(review.tutorId, review.id) : undefined}
+                    onReject={review.status === 'PENDING' ? () => setRejectingReview({ tutorId: review.tutorId, reviewId: review.id }) : undefined}
                   />
                 ))}
               </div>
@@ -1204,250 +1050,119 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: TEACHERS */}
+        {/* TEACHERS */}
         {activeTab === 'teachers' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-blue-400" />
-                  <span>Teachers &amp; Performance Dashboard ({filteredTutors.length})</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Ratings • Active students • Earnings • Moderation status
-                </p>
-              </div>
-              <button
-                onClick={handleExportTeachers}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export Teachers
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-blue-400" />
+                <span>Teachers ({filteredTutors.length})</span>
+              </h2>
+              <button onClick={handleExportTeachers} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Export
               </button>
             </div>
-
             {filteredTutors.length === 0 ? (
               <div className="p-12 text-center bg-[#111827] border border-blue-900/30 rounded-3xl">
                 <Users className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                <p className="text-sm font-semibold text-white">No teachers found</p>
+                <p className="text-sm font-semibold text-white">No teachers</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {filteredTutors.map(tutor => {
-                  const tutorReviews = (tutor.reviews || []).filter(
-                    r => (r.status || 'APPROVED') === 'APPROVED'
-                  );
-                  const pendingTutorReviews = (tutor.reviews || []).filter(
-                    r => r.status === 'PENDING'
-                  );
-                  const acceptedApps = applications.filter(
-                    a => a.tutorId === tutor.id && a.status === 'ACCEPTED'
-                  );
-                  const activeApps = acceptedApps.filter(a => {
-                    const post = tuitionPosts.find(p => p.id === a.postId);
-                    return post && post.status !== 'CLOSED' && post.status !== 'CANCELLED';
-                  });
-                  const totalEarnings = acceptedApps.reduce(
-                    (sum, a) => sum + (a.proposedSalary || 0),
-                    0
-                  );
+                  const tutorReviews = (tutor.reviews || []).filter(r => (r.status || 'APPROVED') === 'APPROVED');
+                  const acceptedApps = applications.filter(a => a.tutorId === tutor.id && a.status === 'ACCEPTED');
+                  const totalEarnings = acceptedApps.reduce((sum, a) => sum + (a.proposedSalary || 0), 0);
                   const isExpanded = expandedTeachers.has(tutor.id);
                   const isVerified = tutor.verificationStatus === 'VERIFIED';
 
                   return (
-                    <div
-                      key={tutor.id}
-                      className="bg-[#111827] border border-blue-900/40 rounded-3xl p-4 sm:p-5 space-y-4 hover:border-blue-700 transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" />
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h3 className="font-bold text-white text-base">{tutor.fullName}</h3>
-                              {isVerified ? (
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5">
-                                  <CheckCircle className="w-2.5 h-2.5" /> Verified
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                                  {tutor.verificationStatus || 'PENDING'}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-blue-400">
-                              {tutor.institution || '—'} • {tutor.department || '—'}
-                            </p>
-                            <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3" />
-                              {tutor.areaName}, {tutor.district}
-                            </p>
+                    <div key={tutor.id} className="bg-[#111827] border border-blue-900/40 rounded-3xl p-4 sm:p-5 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="font-bold text-white text-base">{tutor.fullName}</h3>
+                            {isVerified ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5">
+                                <CheckCircle className="w-2.5 h-2.5" /> Verified
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                {tutor.verificationStatus || 'PENDING'}
+                              </span>
+                            )}
                           </div>
+                          <p className="text-xs text-blue-400">{tutor.institution || '—'} • {tutor.department || '—'}</p>
+                          <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3" /> {tutor.areaName}, {tutor.district}
+                          </p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div className="bg-[#0B0F19] p-2.5 rounded-2xl border border-blue-950/70 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-mono uppercase mb-0.5">
-                            <Users className="w-3 h-3 text-blue-400" />
-                            <span>Students Taught</span>
-                          </div>
-                          <div className="text-base font-bold text-white">
-                            {acceptedApps.length}
-                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono uppercase mb-0.5">Students</div>
+                          <div className="text-base font-bold text-white">{acceptedApps.length}</div>
                         </div>
                         <div className="bg-[#0B0F19] p-2.5 rounded-2xl border border-blue-950/70 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-mono uppercase mb-0.5">
-                            <Activity className="w-3 h-3 text-cyan-400" />
-                            <span>Currently Active</span>
-                          </div>
-                          <div className="text-base font-bold text-cyan-400">
-                            {activeApps.length}
-                          </div>
-                        </div>
-                        <div className="bg-[#0B0F19] p-2.5 rounded-2xl border border-blue-950/70 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-mono uppercase mb-0.5">
-                            <Star className="w-3 h-3 text-amber-400" />
-                            <span>Rating</span>
-                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono uppercase mb-0.5">Rating</div>
                           <div className="text-base font-bold text-amber-400">
                             {tutorReviews.length > 0 ? (tutor.rating || 0).toFixed(1) : '0.0'}
-                            <span className="text-[10px] text-slate-500 font-normal"> /5</span>
                           </div>
                         </div>
                         <div className="bg-[#0B0F19] p-2.5 rounded-2xl border border-blue-950/70 text-center">
-                          <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-mono uppercase mb-0.5">
-                            <DollarSign className="w-3 h-3 text-emerald-400" />
-                            <span>Total Earnings</span>
-                          </div>
-                          <div className="text-base font-bold text-emerald-400">
+                          <div className="text-[10px] text-slate-400 font-mono uppercase mb-0.5">Reviews</div>
+                          <div className="text-base font-bold text-emerald-400">{tutorReviews.length}</div>
+                        </div>
+                        <div className="bg-[#0B0F19] p-2.5 rounded-2xl border border-blue-950/70 text-center">
+                          <div className="text-[10px] text-slate-400 font-mono uppercase mb-0.5">Earnings</div>
+                          <div className="text-base font-bold text-cyan-400">
                             ৳{totalEarnings >= 1000 ? `${(totalEarnings / 1000).toFixed(1)}K` : totalEarnings}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 flex-wrap text-xs">
-                        <span className="flex items-center gap-1 text-emerald-400">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          {tutorReviews.length} approved reviews
-                        </span>
-                        {pendingTutorReviews.length > 0 && (
-                          <span className="flex items-center gap-1 text-amber-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            {pendingTutorReviews.length} pending
-                          </span>
-                        )}
-                      </div>
-
                       <button
-                        onClick={() => toggleTeacherExpand(tutor.id)}
-                        className="w-full py-2 bg-[#0B0F19] hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 border border-blue-950/70 transition-colors"
+                        onClick={() => setInspectingUser(tutor)}
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md"
                       >
-                        {isExpanded ? (
-                          <><ChevronUp className="w-3.5 h-3.5" /> Hide Details</>
-                        ) : (
-                          <><ChevronDown className="w-3.5 h-3.5" /> Show Students &amp; Reviews</>
-                        )}
+                        <Eye className="w-3.5 h-3.5" /> View Full A-Z Info
                       </button>
 
                       {isExpanded && (
-                        <div className="space-y-3 pt-2 border-t border-slate-800/80">
-                          <div>
-                            <h4 className="text-xs font-bold text-cyan-400 mb-2 flex items-center gap-1.5">
-                              <Users className="w-3.5 h-3.5" />
-                              Current Students ({activeApps.length})
-                            </h4>
-                            {activeApps.length === 0 ? (
-                              <p className="text-xs text-slate-500 italic">No active matches yet.</p>
-                            ) : (
-                              <div className="space-y-1.5">
-                                {activeApps.map(app => {
-                                  const post = tuitionPosts.find(p => p.id === app.postId);
-                                  const student = allUsers.find(u => u.id === post?.studentId);
-                                  return (
-                                    <div
-                                      key={app.id}
-                                      className="p-2.5 bg-[#0B0F19] rounded-xl border border-slate-800 text-xs flex items-start justify-between gap-2"
-                                    >
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-semibold text-white truncate">
-                                          {student?.fullName || post?.studentName || '—'}
-                                        </div>
-                                        <div className="text-[11px] text-slate-400 truncate">
-                                          {post?.subject} • {post?.gradeLevel}
-                                        </div>
-                                        <div className="text-[10px] text-slate-500 font-mono">
-                                          {app.acceptedAt ? new Date(app.acceptedAt).toLocaleDateString() : 'recent'} • {post?.areaName}
-                                        </div>
-                                      </div>
-                                      <div className="text-right shrink-0">
-                                        <div className="font-bold text-emerald-400">
-                                          ৳{app.proposedSalary.toLocaleString()}
-                                        </div>
-                                        {post?.studentPhone && (
-                                          <a href={`tel:${post.studentPhone}`} className="text-[10px] text-blue-400 font-mono hover:underline">
-                                            {post.studentPhone}
-                                          </a>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
+                        <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                          <h4 className="text-xs font-bold text-cyan-400">Reviews ({tutorReviews.length})</h4>
+                          {(tutor.reviews || []).slice(0, 3).map(rev => (
+                            <div key={rev.id} className="p-2.5 bg-[#0B0F19] rounded-xl border border-slate-800 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-white">{rev.studentName}</span>
+                                <span className="text-amber-400">★ {rev.overall?.toFixed(1) || '0.0'}</span>
                               </div>
-                            )}
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              Reviews ({tutorReviews.length} approved{pendingTutorReviews.length > 0 && `, ${pendingTutorReviews.length} pending`})
-                            </h4>
-                            {(tutor.reviews || []).length === 0 ? (
-                              <p className="text-xs text-slate-500 italic">No reviews submitted yet.</p>
-                            ) : (
-                              <div className="space-y-1.5">
-                                {(tutor.reviews || []).slice(0, 5).map(rev => (
-                                  <div key={rev.id} className="p-2.5 bg-[#0B0F19] rounded-xl border border-slate-800 text-xs">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-semibold text-white">{rev.studentName}</span>
-                                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                                        rev.status === 'APPROVED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60'
-                                        : rev.status === 'REJECTED' ? 'bg-rose-950 text-rose-400 border border-rose-800/60'
-                                        : 'bg-amber-950 text-amber-400 border border-amber-800/60'
-                                      }`}>
-                                        {rev.status || 'APPROVED'}
-                                      </span>
-                                    </div>
-                                    <div className="text-[11px] text-slate-400 mt-0.5 italic line-clamp-2">"{rev.comment}"</div>
-                                    <div className="text-[10px] text-slate-500 font-mono mt-1">★ {(rev.overall || 0).toFixed(1)} • {new Date(rev.createdAt).toLocaleDateString()}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                              <p className="text-slate-400 mt-1 italic line-clamp-2">"{rev.comment}"</p>
+                            </div>
+                          ))}
                         </div>
                       )}
 
                       <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80">
                         <button
                           onClick={() => setInspectingUser(tutor)}
-                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                         >
-                          <Eye className="w-3.5 h-3.5 text-blue-400" />
-                          Full Dossier
+                          <Eye className="w-3.5 h-3.5 text-blue-400" /> Full Dossier
                         </button>
                         {!isVerified && (
                           <button
                             onClick={() => onApproveTutor(tutor.id)}
-                            className="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors shadow-md shadow-emerald-600/20"
+                            className="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1"
                           >
-                            <Check className="w-3.5 h-3.5" />
-                            Verify
+                            <Check className="w-3.5 h-3.5" /> Verify
                           </button>
                         )}
                         <button
                           onClick={() => setItemToDelete({ type: 'user', id: tutor.id, name: tutor.fullName })}
-                          className="p-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl border border-rose-800/50 transition-colors"
+                          className="p-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-xl border border-rose-800/50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1460,20 +1175,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: STUDENTS */}
+        {/* STUDENTS */}
         {activeTab === 'students' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <Users className="w-4 h-4 text-cyan-400" />
-                Students ({filteredStudents.length})
+                <span>Students ({filteredStudents.length})</span>
               </h2>
-              <button
-                onClick={handleExportStudents}
-                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export Students
+              <button onClick={handleExportStudents} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Export
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1483,28 +1194,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div key={student.id} className="bg-[#111827] border border-blue-900/40 rounded-2xl p-4 space-y-2">
                     <div className="flex items-center gap-2.5">
                       <GenderAvatar gender={student.gender || 'FEMALE'} role="STUDENT" size="sm" />
-                      <div className="flex-1">
-                        <div className="font-bold text-white text-sm">{student.fullName}</div>
-                        <div className="text-[11px] text-slate-400">{student.email}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-white text-sm truncate">{student.fullName}</div>
+                        <div className="text-[11px] text-slate-400 truncate">{student.email}</div>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60 font-mono">
                         {postsCount} posts
                       </span>
                     </div>
                     <div className="text-xs text-slate-300 flex items-center gap-1 font-mono">
-                      <Phone className="w-3 h-3 text-emerald-400" />
-                      {student.phone}
+                      <Phone className="w-3 h-3 text-emerald-400" /> {student.phone}
                     </div>
                     <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {student.areaName}, {student.district}
+                      <MapPin className="w-3 h-3" /> {student.areaName}, {student.district}
                     </div>
                     <button
-                      onClick={() => setItemToDelete({ type: 'user', id: student.id, name: student.fullName })}
-                      className="w-full py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-lg text-[11px] font-semibold border border-rose-800/50 flex items-center justify-center gap-1 transition-colors"
+                      onClick={() => setInspectingUser(student)}
+                      className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1"
                     >
-                      <Trash2 className="w-3 h-3" />
-                      Delete
+                      <Eye className="w-3 h-3 text-blue-400" /> View Full Info
+                    </button>
+                    <button
+                      onClick={() => setItemToDelete({ type: 'user', id: student.id, name: student.fullName })}
+                      className="w-full py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-lg text-[11px] font-semibold border border-rose-800/50 flex items-center justify-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete
                     </button>
                   </div>
                 );
@@ -1513,20 +1227,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: POSTS */}
+        {/* POSTS */}
         {activeTab === 'posts' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-purple-400" />
-                Tuition Posts ({filteredPosts.length})
+                <span>Posts ({filteredPosts.length})</span>
               </h2>
-              <button
-                onClick={handleExportTuitionPosts}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export Posts
+              <button onClick={handleExportTuitionPosts} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Export
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1539,15 +1249,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <span className="font-bold text-emerald-400">৳ {post.salaryBudget.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                    <MapPin className="w-3 h-3" />
-                    {post.areaName}, {post.district}
+                    <MapPin className="w-3 h-3" /> {post.areaName}, {post.district}
                   </div>
                   <div className="flex gap-2">
                     {post.approvalStatus === 'PENDING' ? (
-                      <button
-                        onClick={() => onApprovePost(post.id)}
-                        className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors"
-                      >
+                      <button onClick={() => onApprovePost(post.id)} className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">
                         Approve
                       </button>
                     ) : (
@@ -1557,7 +1263,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     )}
                     <button
                       onClick={() => setItemToDelete({ type: 'post', id: post.id, name: post.title })}
-                      className="p-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-lg border border-rose-800/50 transition-colors"
+                      className="p-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 rounded-lg border border-rose-800/50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1568,16 +1274,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: EXPORT */}
+        {/* EXPORT */}
         {activeTab === 'export' && (
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-emerald-950/40 to-teal-950/20 border border-emerald-500/40 rounded-3xl p-5">
               <h2 className="text-lg font-bold text-white mb-1">Export Data</h2>
               <p className="text-xs text-slate-300 mb-3">Download any dataset as Excel-compatible CSV</p>
-              <button
-                onClick={handleExportAllData}
-                className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold rounded-2xl text-sm transition-all shadow-lg shadow-emerald-600/30"
-              >
+              <button onClick={handleExportAllData} className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold rounded-2xl text-sm shadow-lg">
                 Download Full Archive
               </button>
             </div>
@@ -1587,69 +1290,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <ExportCard title="Posts" count={tuitionPosts.length} color="purple" onExport={handleExportTuitionPosts} />
               <ExportCard title="Reviews" count={allReviews.length} color="amber" onExport={handleExportReviews} />
             </div>
-            <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5">
-              <h3 className="text-sm font-bold text-white mb-2">Date Range Filter</h3>
-              <div className="flex gap-2 flex-wrap">
-                {(['all', 'today', '7days', '30days', 'thisMonth'] as const).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => handlePresetDate(p)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors"
-                  >
-                    {p === 'all' ? 'All Time' : p === 'today' ? 'Today' : p === '7days' ? '7 Days' : p === '30days' ? '30 Days' : 'This Month'}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-3 flex-wrap">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
-                  className="bg-[#0B0F19] border border-blue-950 text-white text-xs rounded-lg px-3 py-1.5 [color-scheme:dark]"
-                />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  className="bg-[#0B0F19] border border-blue-950 text-white text-xs rounded-lg px-3 py-1.5 [color-scheme:dark]"
-                />
-              </div>
-            </div>
           </div>
         )}
 
-        {/* TAB: CLOUDFLARE */}
+        {/* CLOUDFLARE */}
         {activeTab === 'cloudflare' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Database className="w-4 h-4 text-amber-400" />
-                Cloudflare D1 &amp; KV
-              </h2>
-              <button
-                onClick={async () => {
-                  const dump = await cfD1.exportFullD1Dump();
-                  setExportedDump(dump);
-                  navigator.clipboard?.writeText(dump);
-                  setCopiedSchema(true);
-                  setTimeout(() => setCopiedSchema(false), 2000);
-                }}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {copiedSchema ? 'Copied!' : 'Export SQL Dump'}
-              </button>
-            </div>
             <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5">
               <h3 className="text-sm font-bold text-white mb-2">SQL Schema</h3>
-              <pre className="bg-[#070A12] p-3 rounded-xl text-[10px] font-mono text-slate-300 overflow-auto max-h-96 scrollbar-thin">
-                {exportedDump || CLOUDFLARE_D1_SCHEMA}
+              <pre className="bg-[#070A12] p-3 rounded-xl text-[10px] font-mono text-slate-300 overflow-auto max-h-96">
+                {CLOUDFLARE_D1_SCHEMA}
               </pre>
             </div>
             <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5">
               <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-emerald-400" />
-                Real-time Query Log ({diagnosticLogs.length})
+                <Activity className="w-4 h-4 text-emerald-400" /> Query Log ({diagnosticLogs.length})
               </h3>
               <div className="overflow-auto max-h-72 rounded-xl border border-slate-800">
                 <table className="w-full text-[11px] font-mono">
@@ -1681,63 +1336,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         )}
 
-        {/* TAB: SETTINGS */}
+        {/* SETTINGS */}
         {activeTab === 'settings' && (
-          <div className="max-w-lg mx-auto space-y-4">
+          <div className="max-w-lg mx-auto">
             <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 space-y-4 text-center">
               <div className="w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center border border-blue-500/30 mb-2">
                 <Shield className="w-8 h-8" />
               </div>
               <h2 className="text-base font-bold text-white">Admin Password Security</h2>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
-                Your master password is securely hashed and stored in Cloudflare D1. It is required to access the admin panel from any device.
+                Your master password is securely hashed and stored in Cloudflare D1.
               </p>
-              <div className="bg-[#0B0F19] p-3.5 rounded-xl border border-blue-950/60 text-left mt-4">
-                <h4 className="text-xs font-semibold text-white mb-1 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                  How to reset your password?
-                </h4>
-                <p className="text-[11px] text-slate-400">
-                  If you forgot your password or want to change it, log out from this device and click <strong>"Forgot Password?"</strong> on the login screen. You will need your 8-character Recovery Code to set a new password.
-                </p>
-              </div>
               <button
                 onClick={handleLockAdminSession}
-                className="w-full py-2.5 mt-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 mt-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded-xl text-xs font-bold flex items-center justify-center gap-2"
               >
-                <Lock className="w-4 h-4" />
-                Lock Session Now
+                <Lock className="w-4 h-4" /> Lock Session Now
               </button>
             </div>
           </div>
         )}
       </main>
 
-      {/* ========================================== */}
       {/* MODALS */}
-      {/* ========================================== */}
-      
       {rejectingTutorId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-md bg-[#111827] border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl">
             <h3 className="font-bold text-lg text-white">Reject Teacher Verification</h3>
             <textarea
               rows={3}
               value={rejectionReason}
               onChange={e => setRejectionReason(e.target.value)}
-              className="w-full bg-[#0B0F19] border border-rose-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-rose-400 resize-none"
+              className="w-full bg-[#0B0F19] border border-rose-500/30 rounded-xl p-3 text-xs text-white focus:outline-none resize-none"
             />
             <div className="flex gap-2">
-              <button
-                onClick={() => setRejectingTutorId(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors"
-              >
+              <button onClick={() => setRejectingTutorId(null)} className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmRejectTutor}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
-              >
+              <button onClick={handleConfirmRejectTutor} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold">
                 Confirm
               </button>
             </div>
@@ -1746,29 +1382,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {rejectingReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-md bg-[#111827] border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl">
             <h3 className="font-bold text-lg text-white">Reject Review</h3>
-            <p className="text-xs text-slate-400">
-              Explain why this review is being rejected. Student will see this reason.
-            </p>
             <textarea
               rows={3}
               value={reviewRejectReason}
               onChange={e => setReviewRejectReason(e.target.value)}
-              className="w-full bg-[#0B0F19] border border-rose-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-rose-400 resize-none"
+              className="w-full bg-[#0B0F19] border border-rose-500/30 rounded-xl p-3 text-xs text-white focus:outline-none resize-none"
             />
             <div className="flex gap-2">
-              <button
-                onClick={() => setRejectingReview(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors"
-              >
+              <button onClick={() => setRejectingReview(null)} className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmRejectReview}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
-              >
+              <button onClick={handleConfirmRejectReview} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold">
                 Reject Review
               </button>
             </div>
@@ -1792,24 +1419,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {itemToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-[#111827] border border-rose-500/50 rounded-3xl p-6 space-y-4 text-center shadow-2xl">
             <Trash2 className="w-12 h-12 text-rose-400 mx-auto" />
             <h3 className="font-bold text-lg text-white">Permanently Delete?</h3>
             <p className="text-xs text-slate-400">
-              "<strong className="text-white">{itemToDelete.name}</strong>" will be purged from the database. Cannot undo.
+              "<strong className="text-white">{itemToDelete.name}</strong>" will be purged. Cannot undo.
             </p>
             <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setItemToDelete(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors"
-              >
+              <button onClick={() => setItemToDelete(null)} className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
-              >
+              <button onClick={handleConfirmDelete} className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold">
                 Delete
               </button>
             </div>
@@ -1821,9 +1442,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 };
 
 // ==========================================================
-// HELPER COMPONENTS
+// HELPER: ReviewCard
 // ==========================================================
-
 interface ReviewCardProps {
   review: FlatReview;
   showTutorName?: boolean;
@@ -1831,12 +1451,7 @@ interface ReviewCardProps {
   onReject?: () => void;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({
-  review,
-  showTutorName = false,
-  onApprove,
-  onReject,
-}) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({ review, showTutorName = false, onApprove, onReject }) => {
   const status = review.status || 'APPROVED';
   const statusColor =
     status === 'APPROVED'
@@ -1857,11 +1472,8 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             </div>
           )}
         </div>
-        <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${statusColor}`}>
-          {status}
-        </span>
+        <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${statusColor}`}>{status}</span>
       </div>
-
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         <div className="text-center">
           <div className="text-[9px] text-slate-500 font-mono uppercase">Punctuality</div>
@@ -1876,38 +1488,20 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
           <div className="text-indigo-400 font-bold">{review.teachingStyle.toFixed(1)}/5</div>
         </div>
       </div>
-
-      <div className="p-2.5 bg-[#111827] rounded-xl text-[11px] text-slate-300 italic">
-        "{review.comment}"
-      </div>
-
+      <div className="p-2.5 bg-[#111827] rounded-xl text-[11px] text-slate-300 italic">"{review.comment}"</div>
       <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
         <span>Submitted {new Date(review.createdAt).toLocaleDateString()}</span>
-        {review.approvedAt && (
-          <span className="text-emerald-500">
-            Approved {new Date(review.approvedAt).toLocaleDateString()}
-          </span>
-        )}
       </div>
-
       {status === 'PENDING' && (onApprove || onReject) && (
         <div className="flex gap-2 pt-2 border-t border-slate-800/80">
           {onApprove && (
-            <button
-              onClick={onApprove}
-              className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Approve &amp; Publish
+            <button onClick={onApprove} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+              <Check className="w-3.5 h-3.5" /> Approve & Publish
             </button>
           )}
           {onReject && (
-            <button
-              onClick={onReject}
-              className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-              Reject
+            <button onClick={onReject} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+              <X className="w-3.5 h-3.5" /> Reject
             </button>
           )}
         </div>
@@ -1916,6 +1510,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   );
 };
 
+// ==========================================================
+// HELPER: ExportCard
+// ==========================================================
 interface ExportCardProps {
   title: string;
   count: number;
@@ -1936,17 +1533,48 @@ const ExportCard: React.FC<ExportCardProps> = ({ title, count, color, onExport }
         <div className="text-xs text-slate-400 font-mono uppercase">{title}</div>
         <div className="text-2xl font-black text-white mt-1">{count}</div>
       </div>
-      <button
-        onClick={onExport}
-        className={`mt-3 w-full py-2 bg-gradient-to-r ${colorMap[color]} hover:brightness-110 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-${color}-600/20`}
-      >
-        <Download className="w-3.5 h-3.5" />
-        Export CSV
+      <button onClick={onExport} className={`mt-3 w-full py-2 bg-gradient-to-r ${colorMap[color]} text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5`}>
+        <Download className="w-3.5 h-3.5" /> Export CSV
       </button>
     </div>
   );
 };
 
+// ==========================================================
+// HELPER: Section (for InspectorModal)
+// ==========================================================
+const InfoSection: React.FC<{
+  title: string;
+  icon: React.FC<{ className?: string }>;
+  children: React.ReactNode;
+}> = ({ title, icon: Icon, children }) => (
+  <div className="border-b border-slate-800 pb-4">
+    <div className="flex items-center gap-1.5 mb-2.5">
+      <Icon className="w-4 h-4 text-cyan-400" />
+      <h3 className="text-xs font-bold text-white uppercase tracking-wider">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
+
+const InfoField: React.FC<{
+  label: string;
+  value?: string | number | null;
+  span?: 1 | 2;
+  mono?: boolean;
+  danger?: boolean;
+}> = ({ label, value, span, mono, danger }) => (
+  <div className={`bg-[#111827] p-2.5 rounded-xl border border-slate-800 ${span === 2 ? 'col-span-2' : ''}`}>
+    <span className="text-[10px] text-slate-500 font-mono uppercase block mb-0.5">{label}</span>
+    <span className={`text-xs font-semibold break-words ${danger ? 'text-rose-400' : 'text-white'} ${mono ? 'font-mono' : ''}`}>
+      {value ? value : <span className="text-slate-500 italic font-normal">Not provided</span>}
+    </span>
+  </div>
+);
+
+// ==========================================================
+// EXPANDED InspectorModal — A-Z View
+// ==========================================================
 interface InspectorModalProps {
   user: User;
   onClose: () => void;
@@ -1954,74 +1582,259 @@ interface InspectorModalProps {
   onReject: () => void;
 }
 
-const InspectorModal: React.FC<InspectorModalProps> = ({
-  user,
-  onClose,
-  onApprove,
-  onReject,
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150">
-    <div className="w-full max-w-2xl bg-[#0B0F19] border border-blue-900/80 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto relative scrollbar-thin">
-      <button
-        onClick={onClose}
-        className="absolute right-5 top-5 p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
+const InspectorModal: React.FC<InspectorModalProps> = ({ user, onClose, onApprove, onReject }) => {
+  const approvedReviews = (user.reviews || []).filter(r => (r.status || 'APPROVED') === 'APPROVED');
+  const pendingReviews = (user.reviews || []).filter(r => r.status === 'PENDING');
+  const isTutor = user.role === 'TUTOR';
 
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-        <GenderAvatar gender={user.gender || 'MALE'} role="TUTOR" size="lg" />
-        <div>
-          <h2 className="text-lg font-bold text-white">{user.fullName}</h2>
-          <p className="text-xs text-blue-400">
-            {user.institution || '—'} • {user.department || '—'}
-          </p>
-          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-            <MapPin className="w-3 h-3" /> {user.areaName}, {user.district}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="bg-[#111827] p-3 rounded-xl border border-blue-950">
-          <span className="text-[10px] text-slate-500 font-mono block">NID / BIRTH CERT</span>
-          <span className="text-white font-mono font-bold">
-            {user.nidNumber || 'Not provided'}
-          </span>
-        </div>
-        <div className="bg-[#111827] p-3 rounded-xl border border-blue-950">
-          <span className="text-[10px] text-slate-500 font-mono block">STUDENT ROLL</span>
-          <span className="text-cyan-400 font-mono font-bold">
-            {user.studentIdCardRoll || '—'}
-          </span>
-        </div>
-        <div className="bg-[#111827] p-3 rounded-xl border border-blue-950">
-          <span className="text-[10px] text-slate-500 font-mono block">STUDENT REG</span>
-          <span className="text-cyan-400 font-mono font-bold">
-            {user.studentIdCardReg || '—'}
-          </span>
-        </div>
-        <div className="bg-[#111827] p-3 rounded-xl border border-blue-950">
-          <span className="text-[10px] text-slate-500 font-mono block">PHONE</span>
-          <span className="text-emerald-400 font-mono font-bold">{user.phone}</span>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-        <button
-          onClick={onReject}
-          className="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/50 transition-colors"
-        >
-          Reject
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
+      <div className="w-full max-w-3xl bg-[#0B0F19] border border-blue-900/80 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto relative">
+        <button onClick={onClose} className="absolute right-4 top-4 p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+          <X className="w-5 h-5" />
         </button>
-        <button
-          onClick={onApprove}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-md shadow-emerald-600/20"
-        >
-          <Check className="w-4 h-4" />
-          Verify &amp; Award Badge
-        </button>
+
+        {/* Header */}
+        <div className="flex items-start gap-4 border-b border-slate-800 pb-4">
+          <GenderAvatar gender={user.gender || 'MALE'} role={user.role} size="lg" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-white truncate">{user.fullName}</h2>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 font-mono">
+                {user.role}
+              </span>
+              {isTutor && (
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
+                    user.verificationStatus === 'VERIFIED'
+                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60'
+                      : user.verificationStatus === 'REJECTED'
+                      ? 'bg-rose-950 text-rose-400 border border-rose-800/60'
+                      : 'bg-amber-950 text-amber-400 border border-amber-800/60'
+                  }`}
+                >
+                  {user.verificationStatus || 'PENDING'}
+                </span>
+              )}
+            </div>
+            {isTutor && (
+              <p className="text-xs text-blue-400 mt-1">
+                {user.institution || '—'} • {user.department || '—'}
+              </p>
+            )}
+            <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
+              <MapPin className="w-3 h-3" /> {user.areaName}, {user.district}
+            </p>
+          </div>
+        </div>
+
+        {/* Basic Info */}
+        <InfoSection title="Basic Information" icon={UserIcon}>
+          <div className="grid grid-cols-2 gap-2">
+            <InfoField label="Email" value={user.email} span={2} mono />
+            <InfoField label="Phone" value={user.phone} mono />
+            <InfoField label="WhatsApp" value={user.whatsapp || user.phone} mono />
+            <InfoField label="Gender" value={user.gender} />
+            <InfoField label="Role" value={user.role} />
+            <InfoField label="User ID" value={user.id} span={2} mono />
+          </div>
+        </InfoSection>
+
+        {/* Location */}
+        <InfoSection title="Location" icon={MapPin}>
+          <div className="grid grid-cols-2 gap-2">
+            <InfoField label="District" value={user.district} />
+            <InfoField label="Area" value={user.areaName} />
+            <InfoField label="Exact Address" value={user.exactAddress} span={2} />
+            <InfoField
+              label="Coordinates"
+              value={user.latitude && user.longitude ? `${user.latitude.toFixed(4)}, ${user.longitude.toFixed(4)}` : undefined}
+              span={2}
+              mono
+            />
+          </div>
+        </InfoSection>
+
+        {/* Verification (Tutor only) */}
+        {isTutor && (
+          <InfoSection title="Verification Dossier" icon={ShieldCheck}>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoField label="NID / Birth Cert No." value={user.nidNumber} mono />
+              <InfoField label="Student ID Roll" value={user.studentIdCardRoll} mono />
+              <InfoField label="Student ID Reg" value={user.studentIdCardReg} mono />
+              <InfoField label="Academic Year" value={user.academicYear} />
+              <InfoField label="Institution" value={user.institution} span={2} />
+              <InfoField label="Department" value={user.department} span={2} />
+              <InfoField
+                label="Submitted At"
+                value={user.verificationSubmittedAt ? new Date(user.verificationSubmittedAt).toLocaleString() : undefined}
+                span={2}
+              />
+              {user.verificationRejectionReason && (
+                <InfoField label="Rejection Reason" value={user.verificationRejectionReason} span={2} danger />
+              )}
+            </div>
+          </InfoSection>
+        )}
+
+        {/* Professional (Tutor only) */}
+        {isTutor && (
+          <InfoSection title="Professional Details" icon={Briefcase}>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoField label="Qualifications" value={user.qualifications} span={2} />
+              <InfoField label="Experience" value={user.yearsOfExperience ? `${user.yearsOfExperience} years` : undefined} />
+              <InfoField
+                label="Expected Rate"
+                value={user.hourlyOrMonthlyRate ? `৳ ${user.hourlyOrMonthlyRate.toLocaleString()}/mo` : undefined}
+              />
+              <InfoField
+                label="Rating"
+                value={user.totalReviews ? `${(user.rating || 0).toFixed(1)} / 5` : '0.0 / 5'}
+              />
+              <InfoField label="Total Approved Reviews" value={approvedReviews.length} />
+            </div>
+
+            {/* Subjects */}
+            <div className="mt-3">
+              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1.5">Subjects Taught</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(user.subjectsTaught || []).length > 0 ? (
+                  (user.subjectsTaught || []).map((s, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded bg-blue-950 text-blue-300 text-xs border border-blue-800/50">
+                      {s}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-500 italic">None specified</span>
+                )}
+              </div>
+            </div>
+
+            {/* Grades */}
+            <div className="mt-3">
+              <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1.5">Grades Taught</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(user.gradesTaught || []).length > 0 ? (
+                  (user.gradesTaught || []).map((g, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 text-xs border border-cyan-800/50">
+                      {g}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-500 italic">None specified</span>
+                )}
+              </div>
+            </div>
+          </InfoSection>
+        )}
+
+        {/* Bio & Philosophy */}
+        {isTutor && (user.bio || user.teachingPhilosophy) && (
+          <InfoSection title="Bio & Teaching Philosophy" icon={UserIcon}>
+            {user.bio && (
+              <div className="mb-3">
+                <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Bio</span>
+                <p className="text-xs text-slate-300 leading-relaxed">{user.bio}</p>
+              </div>
+            )}
+            {user.teachingPhilosophy && (
+              <div>
+                <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">Teaching Philosophy</span>
+                <p className="text-xs text-slate-300 leading-relaxed italic">"{user.teachingPhilosophy}"</p>
+              </div>
+            )}
+          </InfoSection>
+        )}
+
+        {/* Degrees */}
+        {isTutor && (user.degrees || []).length > 0 && (
+          <InfoSection title={`Degrees (${user.degrees!.length})`} icon={GraduationCap}>
+            <div className="space-y-2">
+              {user.degrees!.map((deg, i) => (
+                <div key={i} className="p-2.5 bg-[#111827] rounded-xl border border-slate-800 text-xs">
+                  <div className="font-semibold text-white">{deg.degreeName}</div>
+                  <div className="text-blue-400 text-[11px] mt-0.5">{deg.institution}</div>
+                  <div className="text-slate-400 mt-1">
+                    Year: {deg.passingYear} {deg.result ? `• Result: ${deg.result}` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </InfoSection>
+        )}
+
+        {/* Teaching History */}
+        {isTutor && (user.teachingHistory || []).length > 0 && (
+          <InfoSection title="Teaching History" icon={Calendar}>
+            <div className="space-y-2">
+              {user.teachingHistory!.map((h, i) => (
+                <div key={i} className="p-2.5 bg-[#111827] rounded-xl border border-slate-800 text-xs">
+                  <div className="font-semibold text-white">{h.title}</div>
+                  <div className="text-blue-400 text-[11px] mt-0.5">{h.year} • {h.organizationOrArea}</div>
+                  <p className="text-slate-400 mt-1">{h.highlight}</p>
+                  <div className="text-slate-500 text-[11px] mt-1">Students: {h.studentsCount}</div>
+                </div>
+              ))}
+            </div>
+          </InfoSection>
+        )}
+
+        {/* Reviews */}
+        {isTutor && (user.reviews || []).length > 0 && (
+          <InfoSection
+            title={`Reviews (${approvedReviews.length} approved${pendingReviews.length > 0 ? `, ${pendingReviews.length} pending` : ''})`}
+            icon={MessageSquare}
+          >
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {(user.reviews || []).slice(0, 10).map(rev => (
+                <div key={rev.id} className="p-2.5 bg-[#111827] rounded-xl border border-slate-800 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white">{rev.studentName}</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] ${
+                        rev.status === 'APPROVED'
+                          ? 'bg-emerald-950 text-emerald-400'
+                          : rev.status === 'REJECTED'
+                          ? 'bg-rose-950 text-rose-400'
+                          : 'bg-amber-950 text-amber-400'
+                      }`}
+                    >
+                      {rev.status || 'APPROVED'}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 mt-1 italic">"{rev.comment}"</p>
+                  <div className="text-slate-500 mt-1">
+                    ★ {(rev.overall || 0).toFixed(1)} • Punctuality: {rev.punctuality} • Mastery: {rev.subjectMastery} • Style: {rev.teachingStyle}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </InfoSection>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 sticky bottom-0 bg-[#0B0F19] pb-1">
+          <button onClick={onClose} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">
+            Close
+          </button>
+          {isTutor && user.verificationStatus !== 'VERIFIED' && (
+            <>
+              <button
+                onClick={onReject}
+                className="px-4 py-2.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/50"
+              >
+                Reject
+              </button>
+              <button
+                onClick={onApprove}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" /> Verify & Award Badge
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};

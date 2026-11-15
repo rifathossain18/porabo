@@ -1622,59 +1622,60 @@ export default function App() {
     }
   };
 
-  // Handle Student confirming tutor acceptance
-  const handleConfirmAcceptTutor = async () => {
-    console.log("[accept] 🔵 handleConfirmAcceptTutor CALLED");
-    console.log("[accept] tutorToAccept:", tutorToAccept);
-
-    if (!tutorToAccept) {
-      console.warn("[accept] ❌ No tutorToAccept — aborting");
-      showToast("⚠️ No tutor selected. Please refresh and try again.");
-      return;
-    }
-
-    const targetPost = tuitionPosts.find((p) => p.id === tutorToAccept.postId);
-    if (!targetPost) {
-      console.warn("[accept] ❌ Post not found:", tutorToAccept.postId);
-      showToast("Error: This tuition post no longer exists.");
-      setTutorToAccept(null);
-      return;
-    }
-
-    console.log("[accept] ✅ Proceeding:", {
-      tutor: tutorToAccept.tutorName,
-      tutorId: tutorToAccept.tutorId,
-      postId: tutorToAccept.postId,
-      currentUserId: currentUser?.id,
-      hasToken: !!localStorage.getItem("porabo_cf_jwt_token"),
+  // Handle Student accepting a tutor — DIRECT (bypasses confirmation modal)
+  const acceptTutorDirectly = async (appToAccept: TuitionApplication) => {
+    console.log("[accept] 🔵 acceptTutorDirectly CALLED with:", {
+      tutor: appToAccept.tutorName,
+      tutorId: appToAccept.tutorId,
+      postId: appToAccept.postId,
     });
+
+    if (!currentUser) {
+      showToast("❌ You must be logged in to accept tutors.");
+      return;
+    }
+
+    const targetPost = tuitionPosts.find((p) => p.id === appToAccept.postId);
+    if (!targetPost) {
+      showToast("❌ This tuition post no longer exists.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Accept ${appToAccept.tutorName}?\n\nThis will unlock their contact details and mark your tuition as matched.`,
+      )
+    ) {
+      console.log("[accept] Cancelled by user");
+      return;
+    }
 
     showToast("⏳ Accepting tutor, please wait...");
 
     try {
       const acceptedApp: TuitionApplication = {
-        ...tutorToAccept,
+        ...appToAccept,
         status: "ACCEPTED",
         acceptedAt: new Date().toISOString(),
         statusReason: "Accepted & Contact Unlocked! 🎉",
-        studentName: currentUser?.fullName || targetPost?.studentName,
+        studentName: currentUser.fullName,
         studentPhone:
-          currentUser?.phone || targetPost?.studentPhone || "+880 1712-345678",
+          currentUser.phone || targetPost.studentPhone || "+880 1712-345678",
         studentWhatsapp:
-          currentUser?.whatsapp || currentUser?.phone || "+880 1712-345678",
+          currentUser.whatsapp || currentUser.phone || "+880 1712-345678",
         studentExactAddress:
-          targetPost?.exactAddress ||
-          `${targetPost?.areaName}, ${targetPost?.district}`,
-        studentAreaName: targetPost?.areaName,
-        studentDistrict: targetPost?.district,
+          targetPost.exactAddress ||
+          `${targetPost.areaName}, ${targetPost.district}`,
+        studentAreaName: targetPost.areaName,
+        studentDistrict: targetPost.district,
       };
 
-      console.log("[accept] 📤 Saving accepted application...");
+      console.log("[accept] 📤 Saving accepted application to D1...");
       await cfD1.saveApplication(acceptedApp);
-      console.log("[accept] ✅ Application saved to D1");
+      console.log("[accept] ✅ Application saved");
 
       const otherApps = applications.filter(
-        (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
+        (a) => a.postId === appToAccept.postId && a.id !== appToAccept.id,
       );
       console.log(
         `[accept] Rejecting ${otherApps.length} other applicant(s)...`,
@@ -1696,20 +1697,19 @@ export default function App() {
         ...targetPost,
         status: "MATCHED",
         isFoundTutor: true,
-        acceptedTutorId: tutorToAccept.tutorId,
+        acceptedTutorId: appToAccept.tutorId,
         acceptedAt: new Date().toISOString(),
       };
-      console.log("[accept] 📤 Updating post to MATCHED...");
+      console.log("[accept] 📤 Marking post as MATCHED...");
       await cfD1.savePost(updatedPost);
-      console.log("[accept] ✅ Post updated to MATCHED");
+      console.log("[accept] ✅ Post updated");
 
-      // Update local state AFTER successful persistence
       setApplications((prev) =>
-        prev.map((app) => {
-          if (app.postId !== tutorToAccept.postId) return app;
-          if (app.id === tutorToAccept.id) return acceptedApp;
+        prev.map((a) => {
+          if (a.postId !== appToAccept.postId) return a;
+          if (a.id === appToAccept.id) return acceptedApp;
           return {
-            ...app,
+            ...a,
             status: "REJECTED",
             statusReason: "Student selected another tutor for this tuition.",
           };
@@ -1717,31 +1717,30 @@ export default function App() {
       );
 
       setTuitionPosts((prev) =>
-        prev.map((p) => (p.id === tutorToAccept.postId ? updatedPost : p)),
+        prev.map((p) => (p.id === appToAccept.postId ? updatedPost : p)),
       );
 
       sendNotification({
-        userId: tutorToAccept.tutorId,
+        userId: appToAccept.tutorId,
         title: "Application Accepted! 🎉",
-        message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title}".`,
+        message: `Congratulations! ${currentUser.fullName} accepted your application for "${targetPost.title}". Phone: ${currentUser.phone}. Address: ${targetPost.exactAddress || targetPost.areaName}`,
         type: "APPLICATION_ACCEPTED",
-        postId: tutorToAccept.postId,
+        postId: appToAccept.postId,
         linkText: "View in My Applications",
       });
 
-      setRatingTutorId(tutorToAccept.tutorId);
-      setTutorToAccept(null);
+      setRatingTutorId(appToAccept.tutorId);
       showToast(
-        `✅ ${tutorToAccept.tutorName} accepted! Contact details unlocked.`,
+        `✅ ${appToAccept.tutorName} accepted! Contact details unlocked.`,
       );
-      console.log("[accept] 🎉 SUCCESS — all done");
+      console.log("[accept] 🎉 SUCCESS");
     } catch (err: any) {
       console.error("[accept] ❌ FAILED:", err);
       alert(
         `❌ Failed to accept tutor.\n\nError: ${err?.message || "Unknown error"}\n\n` +
-          `Please:\n1. Refresh the page (Ctrl+Shift+R)\n2. Log out and log in again\n3. Try accepting again`,
+          `Try:\n1. Refresh page (Ctrl+Shift+R)\n2. Log out and log in again\n3. Then click Accept Tutor again`,
       );
-      showToast(`❌ Accept failed: ${err?.message || "Network error"}`);
+      showToast(`❌ Accept failed: ${err?.message || "Unknown error"}`);
     }
   };
 
@@ -4491,7 +4490,7 @@ export default function App() {
                             {!isAccepted && app.status !== "REJECTED" && (
                               <button
                                 type="button"
-                                onClick={() => setTutorToAccept(app)}
+                                onClick={() => acceptTutorDirectly(app)}
                                 className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1"
                               >
                                 <Check className="w-3.5 h-3.5" />

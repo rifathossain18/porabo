@@ -153,6 +153,7 @@ import { QRCodeModal } from "./components/QRCodeModal";
 import { ActivityLog } from "./components/ActivityLog";
 import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
+import { TuitionPostForm } from "./components/TuitionPostForm";
 
 export default function App() {
   // Fast Admin Route Checker (Immediate response to /admin, #/admin, #admin, ?admin)
@@ -1725,29 +1726,33 @@ export default function App() {
   };
 
   // Handle Student creating new post (Sent for Admin Moderation)
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPostTitle || !currentUser) return;
+  // Handle Student creating new post (Sent for Admin Moderation)
+  const handleCreatePostSubmit = (
+    postData: Omit<
+      TuitionPost,
+      | "id"
+      | "createdAt"
+      | "studentId"
+      | "studentName"
+      | "status"
+      | "approvalStatus"
+      | "isSystemPost"
+      | "isFoundTutor"
+      | "latitude"
+      | "longitude"
+    >,
+  ) => {
+    if (!currentUser) return;
 
     const newPost: TuitionPost = {
+      ...postData,
       id: `post_${Date.now()}`,
       studentId: currentUser.id,
       studentName: currentUser.fullName,
-      title: newPostTitle,
-      subject: newPostSubject,
-      gradeLevel: newPostGrade,
-      curriculum: newPostCurriculum,
-      daysPerWeek: newPostDays,
-      hoursPerDay: 1.5,
-      salaryBudget: newPostBudget,
-      genderPreference: "ANY",
-      district: newPostDistrict,
-      areaName: newPostArea,
-      exactAddress: newPostAddress,
       latitude: baseLat + (Math.random() * 0.01 - 0.005),
       longitude: baseLng + (Math.random() * 0.01 - 0.005),
       status: "OPEN",
-      approvalStatus: "PENDING", // Awaiting Admin Approval
+      approvalStatus: "PENDING",
       isSystemPost: false,
       isFoundTutor: false,
       createdAt: new Date().toISOString(),
@@ -1756,7 +1761,6 @@ export default function App() {
 
     setTuitionPosts((prev) => [newPost, ...prev]);
     setIsCreatePostOpen(false);
-    setNewPostTitle("");
     showToast(
       "Tuition request submitted. It is under review and will go live once approved.",
     );
@@ -3725,12 +3729,12 @@ export default function App() {
                       </p>
                     </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
                       {(Array.isArray(quiz.options)
                         ? quiz.options
                         : (() => {
                             try {
-                              return JSON.parse(quiz.options || '[]');
+                              return JSON.parse(quiz.options || "[]");
                             } catch {
                               return [];
                             }
@@ -5737,200 +5741,12 @@ export default function App() {
       )}
 
       {/* MODAL: CREATE NEW TUITION POST */}
+            {/* MODAL: CREATE NEW TUITION POST */}
       {isCreatePostOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[#111827] border border-blue-900/40 rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => setIsCreatePostOpen(false)}
-              className="absolute right-5 top-5 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white mb-1">
-              Post Tuition Requirement
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Enter your curriculum details and budget. Posts are reviewed by
-              admin for safety.
-            </p>
-
-            <form onSubmit={handleCreatePost} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={newPostTitle}
-                  onChange={(e) => setNewPostTitle(e.target.value)}
-                  placeholder="e.g. Class 10 Higher Math & Physics Mentor"
-                  required
-                  className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Subject
-                  </label>
-                  <select
-                    value={newPostSubject}
-                    onChange={(e) => setNewPostSubject(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    {SUBJECT_OPTIONS.filter((s) => s !== "All Subjects").map(
-                      (s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Grade Level
-                  </label>
-                  <select
-                    value={newPostGrade}
-                    onChange={(e) => setNewPostGrade(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    {GRADE_OPTIONS.filter((g) => g !== "All Grades").map(
-                      (g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Curriculum
-                  </label>
-                  <select
-                    value={newPostCurriculum}
-                    onChange={(e) => setNewPostCurriculum(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="English Version">English Version</option>
-                    <option value="Bangla Medium">Bangla Medium</option>
-                    <option value="Cambridge International">
-                      Cambridge International
-                    </option>
-                    <option value="Edexcel">Edexcel</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Monthly Budget (৳)
-                  </label>
-                  <input
-                    type="number"
-                    value={newPostBudget}
-                    onChange={(e) => setNewPostBudget(Number(e.target.value))}
-                    required
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <DistrictSelect
-                    value={newPostDistrict}
-                    onChange={setNewPostDistrict}
-                    label="District (Search 64 Districts)"
-                    placeholder="Search Bangladesh districts..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Neighborhood Area
-                  </label>
-                  <input
-                    type="text"
-                    value={newPostArea}
-                    onChange={(e) => setNewPostArea(e.target.value)}
-                    placeholder="e.g. Dhanmondi 27"
-                    required
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Exact Address (Protected - Unlocks only when tutor accepted)
-                </label>
-                <input
-                  type="text"
-                  value={newPostAddress}
-                  onChange={(e) => setNewPostAddress(e.target.value)}
-                  placeholder="e.g. House 42, Road 8/A, Apt 3-B"
-                  required
-                  className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 mt-2"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Submit Tuition Request</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: CONFIRM ACCEPT TUTOR */}
-      {tutorToAccept && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#111827] border border-blue-500/40 rounded-3xl p-6 shadow-2xl relative">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-
-            <h3 className="font-bold text-lg text-white mb-2">
-              Accept {tutorToAccept.tutorName}?
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              By accepting this tutor, your tuition request will be matched.
-              Both parties will unlock mutual direct phone and WhatsApp contact
-              numbers.
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTutorToAccept(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAcceptTutor}
-                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Confirm &amp; Unlock</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <TuitionPostForm
+          onClose={() => setIsCreatePostOpen(false)}
+          onSubmit={handleCreatePostSubmit}
+        />
       )}
 
       {/* MODAL: 1-MONTH RATING MODAL */}

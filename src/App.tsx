@@ -155,6 +155,7 @@ import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 import { compressImage } from "./lib/imageUtils";
 import { TuitionPostForm } from "./components/TuitionPostForm";
+import { PostCountdown } from "./components/PostCountdown";
 
 export default function App() {
   // Fast Admin Route Checker (Immediate response to /admin, #/admin, #admin, ?admin)
@@ -4684,58 +4685,288 @@ export default function App() {
                     const isMatched =
                       post.status === "MATCHED" || post.isFoundTutor;
                     const isPendingApproval = post.approvalStatus === "PENDING";
+                    const postApps = applications.filter(
+                      (a) => a.postId === post.id,
+                    );
+                    const acceptedApp = postApps.find(
+                      (a) => a.status === "ACCEPTED",
+                    );
+                    const pendingApps = postApps.filter(
+                      (a) => a.status === "PENDING",
+                    );
+                    const rejectedApps = postApps.filter(
+                      (a) => a.status === "REJECTED",
+                    );
+                    const acceptedTutor = acceptedApp
+                      ? allUsers.find((u) => u.id === acceptedApp.tutorId)
+                      : null;
+
+                    const dayLabels: Record<string, string> = {
+                      SAT: "Sat",
+                      SUN: "Sun",
+                      MON: "Mon",
+                      TUE: "Tue",
+                      WED: "Wed",
+                      THU: "Thu",
+                      FRI: "Fri",
+                    };
 
                     return (
                       <div
                         key={post.id}
                         className="p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/70 space-y-3"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="font-bold text-sm sm:text-base text-white">
-                              {post.title}
-                            </span>
+                        {/* Header with countdown */}
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm sm:text-base text-white">
+                                {post.title}
+                              </span>
+                              <PostCountdown createdAt={post.createdAt} />
+                            </div>
                             <div className="text-xs text-blue-400 mt-0.5">
-                              {post.subject} &bull; {post.gradeLevel}
+                              {post.subject} • {post.gradeLevel}
                             </div>
                           </div>
-
-                          {/* Dynamic Verification & Match Badge */}
                           <div className="shrink-0">
                             {isPendingApproval ? (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>Under Admin Review</span>
+                                <Clock className="w-3 h-3" /> Under Review
                               </span>
                             ) : isMatched ? (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" />
-                                <span>Matched / Tutor Found</span>
+                                <CheckCircle className="w-3 h-3" /> Matched
                               </span>
                             ) : (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                                <Check className="w-3 h-3" />
-                                <span>Approved &amp; Live</span>
+                                <Check className="w-3 h-3" /> Live
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/60">
-                          <span>{post.curriculum}</span>
-                          <span>&bull;</span>
-                          <span>{post.daysPerWeek} days/wk</span>
-                          <span>&bull;</span>
-                          <span className="text-emerald-400 font-semibold">
-                            ৳ {post.salaryBudget}/mo
-                          </span>
+                        {/* Details grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Budget
+                            </div>
+                            <div className="text-[11px] font-bold text-emerald-400">
+                              ৳ {post.salaryBudget.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Curriculum
+                            </div>
+                            <div className="text-[11px] font-semibold text-white truncate">
+                              {post.curriculum}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Mode
+                            </div>
+                            <div className="text-[11px] font-semibold text-white">
+                              {post.tuitionMode === "ONLINE"
+                                ? "🌐 Online"
+                                : post.tuitionMode === "OFFLINE"
+                                  ? "🏠 Offline"
+                                  : post.tuitionMode === "BOTH"
+                                    ? "🔄 Both"
+                                    : "—"}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Days/Wk
+                            </div>
+                            <div className="text-[11px] font-semibold text-white">
+                              {post.daysPerWeek}
+                            </div>
+                          </div>
                         </div>
 
+                        {/* Address */}
+                        <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                          <div className="text-[9px] text-slate-500 font-mono uppercase">
+                            Your Address
+                          </div>
+                          <div className="text-white mt-0.5">
+                            {post.exactAddress ||
+                              `${post.areaName}, ${post.district}`}
+                          </div>
+                        </div>
+
+                        {/* Weekly schedule */}
+                        {post.weeklySchedule &&
+                          post.weeklySchedule.length > 0 && (
+                            <div className="p-2 rounded-lg bg-[#111827] border border-cyan-900/50">
+                              <div className="text-[9px] text-cyan-400 font-mono uppercase mb-1">
+                                Weekly Schedule
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {post.weeklySchedule.map((slot, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 text-[10px] font-mono"
+                                  >
+                                    {dayLabels[slot.day] || slot.day}{" "}
+                                    {slot.startTime}–{slot.endTime}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {post.specialRequirements && (
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Special Requirements
+                            </div>
+                            <p className="text-slate-300 italic mt-0.5">
+                              {post.specialRequirements}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Accepted tutor */}
+                        {acceptedApp && acceptedTutor && (
+                          <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/50">
+                            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono uppercase mb-1">
+                              <CheckCircle className="w-3.5 h-3.5" /> Accepted
+                              Tutor — Contact Unlocked
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <GenderAvatar
+                                gender={acceptedTutor.gender || "MALE"}
+                                role="TUTOR"
+                                size="sm"
+                                profilePicture={acceptedTutor.profilePicture}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-bold text-white truncate">
+                                  {acceptedApp.tutorName}
+                                </div>
+                                <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                  📞{" "}
+                                  {acceptedApp.tutorPhone ||
+                                    acceptedTutor.phone}
+                                </div>
+                                <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                  💬 WhatsApp:{" "}
+                                  {acceptedApp.tutorWhatsapp ||
+                                    acceptedTutor.whatsapp ||
+                                    acceptedTutor.phone}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-emerald-400/80 mt-1">
+                              Matched on{" "}
+                              {new Date(
+                                acceptedApp.acceptedAt || acceptedApp.createdAt,
+                              ).toLocaleString()}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Applicants list */}
+                        {postApps.length > 0 ? (
+                          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1">
+                                <Users className="w-3 h-3 text-blue-400" />{" "}
+                                Applicants ({postApps.length})
+                              </div>
+                              <div className="text-[9px] font-mono text-slate-500">
+                                {pendingApps.length} pending •{" "}
+                                {acceptedApp ? 1 : 0} accepted •{" "}
+                                {rejectedApps.length} rejected
+                              </div>
+                            </div>
+                            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                              {postApps
+                                .slice()
+                                .sort((a, b) => {
+                                  const order: any = {
+                                    ACCEPTED: 0,
+                                    PENDING: 1,
+                                    REJECTED: 2,
+                                  };
+                                  return (
+                                    (order[a.status] ?? 3) -
+                                    (order[b.status] ?? 3)
+                                  );
+                                })
+                                .map((app) => {
+                                  const appTutor = allUsers.find(
+                                    (u) => u.id === app.tutorId,
+                                  );
+                                  const statusColor =
+                                    app.status === "ACCEPTED"
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
+                                      : app.status === "REJECTED"
+                                        ? "bg-rose-950 text-rose-400 border-rose-800/60"
+                                        : "bg-amber-950 text-amber-400 border-amber-800/60";
+                                  return (
+                                    <div
+                                      key={app.id}
+                                      className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800 text-[11px] flex items-start gap-2"
+                                    >
+                                      <GenderAvatar
+                                        gender={appTutor?.gender || "MALE"}
+                                        role="TUTOR"
+                                        size="xs"
+                                        profilePicture={
+                                          appTutor?.profilePicture
+                                        }
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-semibold text-white truncate">
+                                            {app.tutorName}
+                                          </span>
+                                          <span
+                                            className={`text-[9px] px-1.5 py-0.5 rounded border font-mono ${statusColor}`}
+                                          >
+                                            {app.status}
+                                          </span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 truncate">
+                                          {appTutor?.institution ||
+                                            app.tutorInstitution ||
+                                            "—"}{" "}
+                                          • {appTutor?.areaName || "—"}
+                                        </div>
+                                        <div className="text-[10px] text-emerald-400 font-mono">
+                                          ৳{" "}
+                                          {app.proposedSalary.toLocaleString()}
+                                          /mo
+                                        </div>
+                                        {app.message && (
+                                          <div className="text-[10px] text-slate-400 italic mt-0.5 line-clamp-2">
+                                            "{app.message}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center text-[11px] text-slate-500 italic">
+                            No applicants yet. Verified tutors will appear here
+                            once they apply.
+                          </div>
+                        )}
+
+                        {/* Footer */}
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
                           <span className="text-slate-500">
-                            {post.applicationsCount || 0} applicant(s)
+                            {postApps.length} applicant(s)
                           </span>
-
                           {!isMatched && (
                             <button
                               type="button"
@@ -5610,26 +5841,39 @@ export default function App() {
                         (a) => a.postId === post.id,
                       );
 
+                      const dayLabels: Record<string, string> = {
+                        SAT: "Sat",
+                        SUN: "Sun",
+                        MON: "Mon",
+                        TUE: "Tue",
+                        WED: "Wed",
+                        THU: "Thu",
+                        FRI: "Fri",
+                      };
+
                       return (
                         <div
                           key={post.id}
                           className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 shadow-xl hover:border-blue-700/60 transition-all flex flex-col justify-between space-y-4 relative group"
                         >
                           <div>
-                            {/* Card Header with Badges & Action Buttons */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="px-2.5 py-1 rounded-full bg-blue-950 text-blue-400 text-[11px] font-mono font-semibold border border-blue-800/60 flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-blue-400" />
-                                <span>
-                                  {post.distanceKm !== undefined
-                                    ? formatDistanceAnnotation(post.distanceKm)
-                                        .badgeText
-                                    : "Nearby"}
+                            {/* Card Header with countdown */}
+                            <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="px-2.5 py-1 rounded-full bg-blue-950 text-blue-400 text-[11px] font-mono font-semibold border border-blue-800/60 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-blue-400" />
+                                  <span>
+                                    {post.distanceKm !== undefined
+                                      ? formatDistanceAnnotation(
+                                          post.distanceKm,
+                                        ).badgeText
+                                      : "Nearby"}
+                                  </span>
                                 </span>
-                              </span>
+                                <PostCountdown createdAt={post.createdAt} />
+                              </div>
 
                               <div className="flex items-center gap-1">
-                                {/* Share via QR Code */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -5644,51 +5888,37 @@ export default function App() {
                                       type: "post",
                                     });
                                   }}
-                                  title="Share via QR Code for offline neighborhood matching"
+                                  title="Share via QR Code"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-cyan-300 transition-colors"
                                 >
                                   <QrCode className="w-3.5 h-3.5" />
                                 </button>
-
-                                {/* Web Share API */}
                                 <button
                                   type="button"
                                   onClick={(e) => handleSharePost(post, e)}
-                                  title="Share tuition post link"
+                                  title="Share"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-white transition-colors"
                                 >
                                   <Share2 className="w-3.5 h-3.5" />
                                 </button>
-
-                                {/* Hide Post */}
                                 <button
                                   type="button"
                                   onClick={(e) => handleHidePost(post.id, e)}
-                                  title="Hide this post from your feed"
+                                  title="Hide"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-slate-800 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-rose-400 transition-colors"
                                 >
                                   <EyeOff className="w-3.5 h-3.5" />
                                 </button>
-
-                                {/* Bookmark */}
                                 <button
                                   type="button"
                                   onClick={(e) =>
                                     handleToggleBookmark(post.id, e)
                                   }
-                                  title={
-                                    post.isBookmarked
-                                      ? "Remove Bookmark"
-                                      : "Bookmark this post"
-                                  }
+                                  title="Bookmark"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-slate-800 flex items-center justify-center border border-blue-950/70 transition-colors"
                                 >
                                   <Heart
-                                    className={`w-3.5 h-3.5 ${
-                                      post.isBookmarked
-                                        ? "text-rose-500 fill-rose-500"
-                                        : "text-slate-400 hover:text-white"
-                                    }`}
+                                    className={`w-3.5 h-3.5 ${post.isBookmarked ? "text-rose-500 fill-rose-500" : "text-slate-400 hover:text-white"}`}
                                   />
                                 </button>
                               </div>
@@ -5698,7 +5928,7 @@ export default function App() {
                               {post.title}
                             </h3>
                             <p className="text-xs text-blue-400 font-medium mt-1">
-                              {post.subject} &bull; {post.gradeLevel}
+                              {post.subject} • {post.gradeLevel}
                             </p>
 
                             <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -5706,98 +5936,64 @@ export default function App() {
                                 {post.curriculum}
                               </span>
                               <span className="px-2 py-0.5 rounded bg-[#0B0F19] text-slate-300 text-[10px] border border-slate-800">
-                                {post.daysPerWeek} days/week
+                                {post.daysPerWeek} days/wk
                               </span>
+                              {post.tuitionMode && (
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${post.tuitionMode === "ONLINE" ? "bg-cyan-950 text-cyan-400 border-cyan-800/60" : post.tuitionMode === "OFFLINE" ? "bg-emerald-950 text-emerald-400 border-emerald-800/60" : "bg-purple-950 text-purple-400 border-purple-800/60"}`}
+                                >
+                                  {post.tuitionMode === "ONLINE"
+                                    ? "🌐 Online"
+                                    : post.tuitionMode === "OFFLINE"
+                                      ? "🏠 Offline"
+                                      : "🔄 Both"}
+                                </span>
+                              )}
                             </div>
 
-                            {/* 🆕 FULL DETAILS — visible to tutor BEFORE applying (address hidden) */}
-                            <div className="mt-3 space-y-2">
-                              {/* Tuition Mode Badge */}
-                              {post.tuitionMode && (
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span
-                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                      post.tuitionMode === "ONLINE"
-                                        ? "bg-cyan-950 text-cyan-400 border-cyan-800/60"
-                                        : post.tuitionMode === "OFFLINE"
-                                          ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
-                                          : "bg-purple-950 text-purple-400 border-purple-800/60"
-                                    }`}
-                                  >
-                                    {post.tuitionMode === "ONLINE"
-                                      ? "🌐 Online"
-                                      : post.tuitionMode === "OFFLINE"
-                                        ? "🏠 Offline (Home Visit)"
-                                        : "🔄 Online + Offline"}
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Location (area only, no exact address) */}
-                              <div className="flex items-center gap-1 text-slate-300 text-xs">
+                            {/* Location (area only — exact address hidden) */}
+                            <div className="mt-3 text-xs text-slate-400 space-y-1.5">
+                              <div className="flex items-center gap-1 text-slate-300">
                                 <Compass className="w-3.5 h-3.5 text-slate-500" />
                                 <span>
                                   {post.areaName}, {post.district}
                                 </span>
+                                <span className="text-[9px] text-slate-600 ml-1 italic">
+                                  (exact address unlocks after acceptance)
+                                </span>
                               </div>
 
-                              {/* Weekly Schedule */}
+                              {/* Weekly schedule preview */}
                               {post.weeklySchedule &&
                                 post.weeklySchedule.length > 0 && (
                                   <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
-                                    <div className="text-[10px] text-slate-500 font-mono uppercase mb-1 flex items-center gap-1">
-                                      <Calendar className="w-3 h-3 text-cyan-400" />
-                                      Weekly Schedule
+                                    <div className="text-[9px] text-cyan-400 font-mono uppercase mb-1">
+                                      Schedule
                                     </div>
-                                    <div className="space-y-0.5">
-                                      {post.weeklySchedule.map((slot, i) => {
-                                        const dayLabels: Record<
-                                          string,
-                                          string
-                                        > = {
-                                          SAT: "Saturday",
-                                          SUN: "Sunday",
-                                          MON: "Monday",
-                                          TUE: "Tuesday",
-                                          WED: "Wednesday",
-                                          THU: "Thursday",
-                                          FRI: "Friday",
-                                        };
-                                        return (
-                                          <div
-                                            key={i}
-                                            className="flex items-center justify-between text-[11px]"
-                                          >
-                                            <span className="text-slate-300">
-                                              {dayLabels[slot.day] || slot.day}
-                                            </span>
-                                            <span className="text-cyan-400 font-mono">
-                                              {slot.startTime} – {slot.endTime}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
+                                    <div className="flex flex-wrap gap-1">
+                                      {post.weeklySchedule.map((slot, i) => (
+                                        <span
+                                          key={i}
+                                          className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 text-[9px] font-mono"
+                                        >
+                                          {dayLabels[slot.day] || slot.day}{" "}
+                                          {slot.startTime}–{slot.endTime}
+                                        </span>
+                                      ))}
                                     </div>
                                   </div>
                                 )}
 
-                              {/* Special Requirements */}
                               {post.specialRequirements && (
                                 <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
-                                  <div className="text-[10px] text-slate-500 font-mono uppercase mb-1">
+                                  <div className="text-[9px] text-slate-500 font-mono uppercase mb-0.5">
                                     Special Requirements
                                   </div>
-                                  <p className="text-[11px] text-slate-300 italic line-clamp-3">
+                                  <p className="text-[10px] text-slate-300 italic line-clamp-2">
                                     {post.specialRequirements}
                                   </p>
                                 </div>
                               )}
-
-                              {/* Budget breakdown */}
-                              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
-                                <span>Curriculum: {post.curriculum}</span>
-                                <span>Hours/day: {post.hoursPerDay}h</span>
-                              </div>
                             </div>
                           </div>
 
@@ -5813,29 +6009,26 @@ export default function App() {
 
                             {alreadyApplied ? (
                               <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30 flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Applied</span>
+                                <Check className="w-3.5 h-3.5" /> Applied
                               </span>
                             ) : currentUser.verificationStatus !==
                               "VERIFIED" ? (
                               <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/30">
-                                Verification Pending
+                                Pending Verification
                               </span>
                             ) : (
                               <div className="flex items-center gap-1.5">
-                                {/* Quick Apply Button (Bypasses modal for verified tutors) */}
                                 <button
                                   type="button"
                                   onClick={(e) =>
                                     handleQuickApplyToPost(post, e)
                                   }
                                   className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all flex items-center gap-1"
-                                  title="Quick Apply using verified default profile &amp; salary"
+                                  title="Quick Apply"
                                 >
                                   <Zap className="w-3.5 h-3.5" />
-                                  <span>Quick Apply</span>
+                                  <span>Quick</span>
                                 </button>
-
                                 <button
                                   type="button"
                                   onClick={() => {

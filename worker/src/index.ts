@@ -47,8 +47,7 @@ async function hashPassword(password: string, salt?: string): Promise<string> {
 }
 
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (!stored || !stored.includes(':')) return false;
-  if (stored.startsWith('LEGACY:') || stored === 'RE_REGISTER_REQUIRED') return false;
+  if (!stored || !stored.includes(':') || stored.startsWith('LEGACY:') || stored === 'RE_REGISTER_REQUIRED') return false;
   const [salt] = stored.split(':');
   return (await hashPassword(password, salt)) === stored;
 }
@@ -140,6 +139,19 @@ async function recordFail(env: Env, key: string): Promise<void> {
   `).bind(key, now, now).run();
 }
 
+// 🆕 Flatten nested teacherDetails in a user object (legacy data support)
+function flattenUser(raw: any): any {
+  if (!raw || typeof raw !== 'object') return raw;
+  const u = { ...raw };
+  delete u.password;
+  delete u.password_hash;
+  if (u.teacherDetails && typeof u.teacherDetails === 'object') {
+    const { teacherDetails, ...flat } = u;
+    return { ...flat, ...teacherDetails };
+  }
+  return u;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -165,9 +177,15 @@ export default {
         const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
         if (existing) return errorResponse('Email already registered', 409);
 
-        const { password: _pw, ...userData } = body;
+        const { password: _pw, teacherDetails, ...userData } = body;
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const user = { ...userData, id: userId, email, role: body.role };
+        const user = {
+          ...userData,
+          ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
+          id: userId,
+          email,
+          role: body.role,
+        };
         const hash = await hashPassword(password);
         const now = new Date().toISOString();
 
@@ -200,10 +218,9 @@ export default {
           return errorResponse('Invalid email or password', 401);
         }
 
-        // If LEGACY or RE_REGISTER_REQUIRED → must reset
         if (!row.password_hash || row.password_hash.startsWith('LEGACY:') || row.password_hash === 'RE_REGISTER_REQUIRED') {
           return errorResponse(
-            'This account needs a password reset. Please contact Porabo support (WhatsApp: +880 1642-695161) or use Admin Panel to reset.',
+            'This account needs a password reset. Contact Porabo support on WhatsApp: +880 1642-695161',
             403
           );
         }
@@ -214,8 +231,7 @@ export default {
           return errorResponse('Invalid email or password', 401);
         }
 
-        const user = JSON.parse(row.data);
-        delete user.password;
+        const user = flattenUser(JSON.parse(row.data));
         user.id = row.id;
         user.email = row.email;
         user.role = row.role;
@@ -309,23 +325,28 @@ export default {
       // ========== USERS ==========
       if (path === '/api/users' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();
-        const users = (result.results || []).map((r: any) => {
-          const u = JSON.parse(r.data);
-          delete u.password;
-          delete u.password_hash;
-          return u;
-        });
+        const users = (result.results || [])
+          .map((r: any) => {
+            try { return flattenUser(JSON.parse(r.data)); }
+            catch { return null; }
+          })
+          .filter(Boolean);
         return jsonResponse(users);
       }
 
       if (path === '/api/users' && method === 'POST') {
         const ctx = await getAuth(request, env);
         if (!ctx.isAdmin && !ctx.user) return errorResponse('Unauthorized', 401);
-        const user = await parseBody(request);
-        if (!user.id) return errorResponse('Missing user.id');
-        if (!ctx.isAdmin && ctx.user!.userId !== user.id) return errorResponse('Forbidden', 403);
-        delete user.password;
-        delete user.password_hash;
+        const rawUser = await parseBody(request);
+        if (!rawUser.id) return errorResponse('Missing user.id');
+        if (!ctx.isAdmin && ctx.user!.userId !== rawUser.id) return errorResponse('Forbidden', 403);
+
+        const { password: _p, password_hash: _ph, teacherDetails, ...rest } = rawUser;
+        const user = {
+          ...rest,
+          ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
+        };
+
         const now = new Date().toISOString();
         const existing = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();
         if (existing) {

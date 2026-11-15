@@ -153,6 +153,7 @@ import { QRCodeModal } from "./components/QRCodeModal";
 import { ActivityLog } from "./components/ActivityLog";
 import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
+import { compressImage } from "./lib/imageUtils";
 import { TuitionPostForm } from "./components/TuitionPostForm";
 
 export default function App() {
@@ -256,6 +257,10 @@ export default function App() {
     useState<string>("");
   const [regTeacherStudentIdReg, setRegTeacherStudentIdReg] =
     useState<string>("");
+
+  const [regTeacherProfilePic, setRegTeacherProfilePic] = useState<
+    string | null
+  >(null);
 
   // Teacher verification credential stepper (1: Campus & Dept, 2: National ID, 3: Student ID Roll/Reg, 4: Experience & Subjects)
   const [regTeacherDocStep, setRegTeacherDocStep] = useState<1 | 2 | 3 | 4>(1);
@@ -1174,6 +1179,12 @@ export default function App() {
         );
         return;
       }
+      if (!regTeacherProfilePic) {
+        setAuthError(
+          "Please upload a profile picture. This is required for teacher verification.",
+        );
+        return;
+      }
     }
 
     setAuthLoading(true);
@@ -1232,6 +1243,7 @@ export default function App() {
                   },
                 ],
                 reviews: [],
+                profilePicture: regTeacherProfilePic || undefined,
                 verificationSubmittedAt: new Date().toISOString(),
               }
             : undefined,
@@ -2594,6 +2606,87 @@ export default function App() {
                             />
                           </div>
                         </div>
+                        {/* Profile Picture Upload — Mandatory for Teachers */}
+                        <div className="p-3 rounded-xl bg-[#0B0F19] border border-cyan-800/50 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-medium text-cyan-300 flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5" />
+                              <span>Profile Picture (Required)</span>
+                            </label>
+                            {regTeacherProfilePic && (
+                              <button
+                                type="button"
+                                onClick={() => setRegTeacherProfilePic(null)}
+                                className="text-[10px] text-rose-400 hover:text-rose-300"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-cyan-700/50 bg-[#111827] shrink-0">
+                              {regTeacherProfilePic ? (
+                                <img
+                                  src={regTeacherProfilePic}
+                                  alt="Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Camera className="w-6 h-6 text-slate-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                id="teacher-profile-pic-input"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (!file.type.startsWith("image/")) {
+                                    setAuthError(
+                                      "Please select a valid image file.",
+                                    );
+                                    return;
+                                  }
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setAuthError("Image must be under 5MB.");
+                                    return;
+                                  }
+                                  try {
+                                    const compressed = await compressImage(
+                                      file,
+                                      200,
+                                      0.6,
+                                    );
+                                    setRegTeacherProfilePic(compressed);
+                                    setAuthError(null);
+                                  } catch {
+                                    setAuthError(
+                                      "Failed to process image. Try another file.",
+                                    );
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor="teacher-profile-pic-input"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                {regTeacherProfilePic
+                                  ? "Change Photo"
+                                  : "Upload Photo"}
+                              </label>
+                              <p className="text-[10px] text-slate-500 mt-1">
+                                Auto-resized to 200×200. Max 5MB.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="flex justify-end pt-1">
                           <button
                             type="button"
@@ -3227,6 +3320,17 @@ export default function App() {
                     role="TUTOR"
                     size="xl"
                     className="border-4 border-[#111827] shadow-2xl"
+                    profilePicture={
+                      isSelfViewing ||
+                      applications.some(
+                        (a) =>
+                          a.tutorId === tutor.id &&
+                          a.status === "ACCEPTED" &&
+                          studentMyPosts.some((p) => p.id === a.postId),
+                      )
+                        ? tutor.profilePicture
+                        : undefined
+                    }
                   />
                   <div className="mb-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -4289,6 +4393,9 @@ export default function App() {
                   {studentReceivedApplications.map((app) => {
                     const post = tuitionPosts.find((p) => p.id === app.postId);
                     const isAccepted = app.status === "ACCEPTED";
+                    const tutorUser = allUsers.find(
+                      (u) => u.id === app.tutorId,
+                    );
 
                     return (
                       <div
@@ -4302,9 +4409,14 @@ export default function App() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-start gap-3">
                             <GenderAvatar
-                              gender="MALE"
+                              gender={tutorUser?.gender || "MALE"}
                               role="TUTOR"
                               size="md"
+                              profilePicture={
+                                isAccepted
+                                  ? tutorUser?.profilePicture
+                                  : undefined
+                              }
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -5741,7 +5853,7 @@ export default function App() {
       )}
 
       {/* MODAL: CREATE NEW TUITION POST */}
-            {/* MODAL: CREATE NEW TUITION POST */}
+      {/* MODAL: CREATE NEW TUITION POST */}
       {isCreatePostOpen && (
         <TuitionPostForm
           onClose={() => setIsCreatePostOpen(false)}

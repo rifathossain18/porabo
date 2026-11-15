@@ -910,7 +910,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   {pendingTutors.map(tutor => (
                     <div key={tutor.id} className="bg-[#0B0F19] border border-amber-500/30 rounded-2xl p-4 space-y-3">
                       <div className="flex items-start gap-3">
-                        <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" />
+                        <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" profilePicture={tutor.profilePicture} />
                         <div className="flex-1">
                           <h3 className="font-bold text-white text-sm">{tutor.fullName}</h3>
                           <p className="text-xs text-blue-400">{tutor.institution || '—'}</p>
@@ -1079,7 +1079,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   return (
                     <div key={tutor.id} className="bg-[#111827] border border-blue-900/40 rounded-3xl p-4 sm:p-5 space-y-4">
                       <div className="flex items-start gap-3">
-                        <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" />
+                        <GenderAvatar gender={tutor.gender || 'MALE'} role="TUTOR" size="md" profilePicture={tutor.profilePicture} />
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <h3 className="font-bold text-white text-base">{tutor.fullName}</h3>
@@ -1596,7 +1596,7 @@ const InspectorModal: React.FC<InspectorModalProps> = ({ user, onClose, onApprov
 
         {/* Header */}
         <div className="flex items-start gap-4 border-b border-slate-800 pb-4">
-          <GenderAvatar gender={user.gender || 'MALE'} role={user.role} size="lg" />
+          <GenderAvatar gender={user.gender || 'MALE'} role={user.role} size="lg" profilePicture={user.profilePicture} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-white truncate">{user.fullName}</h2>

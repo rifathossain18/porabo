@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   X,
   Award,
@@ -12,10 +12,10 @@ import {
   BookOpen,
   Info,
   Check,
-  MessageSquare
-} from 'lucide-react';
-import { User, TuitionApplication } from '../lib/types';
-import { GenderAvatar } from './GenderAvatar';
+  MessageSquare,
+} from "lucide-react";
+import { User, TuitionApplication } from "../lib/types";
+import { GenderAvatar } from "./GenderAvatar";
 
 interface TutorDetailModalProps {
   tutor: User;
@@ -30,23 +30,23 @@ interface TutorDetailModalProps {
 
 export const CATEGORY_TOOLTIPS = {
   punctuality: {
-    title: 'Punctuality & Schedule Discipline',
+    title: "Punctuality & Schedule Discipline",
     description:
-      'Reflects on-time arrival rate, consistency across scheduled weekly sessions, and proactive communication without unexpected cancellations.',
-    metric: '99% On-Time Record • 0 No-Shows'
+      "Reflects on-time arrival rate, consistency across scheduled weekly sessions, and proactive communication without unexpected cancellations.",
+    metric: "99% On-Time Record • 0 No-Shows",
   },
   subjectMastery: {
-    title: 'Subject Mastery & Conceptual Clarity',
+    title: "Subject Mastery & Conceptual Clarity",
     description:
-      'Evaluates syllabus mastery, clarity in breaking down advanced formulas and theorems, and verified student academic exam improvements.',
-    metric: 'Verified Degree • Board & Cambridge Curriculum'
+      "Evaluates syllabus mastery, clarity in breaking down advanced formulas and theorems, and verified student academic exam improvements.",
+    metric: "Verified Degree • Board & Cambridge Curriculum",
   },
   teachingStyle: {
-    title: 'Teaching Pedagogy & Student Engagement',
+    title: "Teaching Pedagogy & Student Engagement",
     description:
-      'Measures patience, adaptive pacing tailored to student learning speed, weekly evaluation tests, and motivational mentorship.',
-    metric: '96% Positive Student Feedback • Regular Mock Tests'
-  }
+      "Measures patience, adaptive pacing tailored to student learning speed, weekly evaluation tests, and motivational mentorship.",
+    metric: "96% Positive Student Feedback • Regular Mock Tests",
+  },
 };
 
 export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
@@ -57,22 +57,22 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
   onAcceptTutor,
   onOpenFullProfile,
   isStudentViewer = true,
-  quizPoints = 0 // ডিফল্ট 0
+  quizPoints = 0, // ডিফল্ট 0
 }) => {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   const approvedReviews = (tutor.reviews || []).filter(
-    r => (r.status || 'APPROVED') === 'APPROVED'
+    (r) => (r.status || "APPROVED") === "APPROVED",
   );
   const hasReviews = approvedReviews.length > 0;
   const punctualityScore = hasReviews
-    ? tutor.ratingsBreakdown?.punctuality ?? (tutor.rating || 0.0)
+    ? (tutor.ratingsBreakdown?.punctuality ?? (tutor.rating || 0.0))
     : 0.0;
   const masteryScore = hasReviews
-    ? tutor.ratingsBreakdown?.subjectMastery ?? (tutor.rating || 0.0)
+    ? (tutor.ratingsBreakdown?.subjectMastery ?? (tutor.rating || 0.0))
     : 0.0;
   const styleScore = hasReviews
-    ? tutor.ratingsBreakdown?.teachingStyle ?? (tutor.rating || 0.0)
+    ? (tutor.ratingsBreakdown?.teachingStyle ?? (tutor.rating || 0.0))
     : 0.0;
 
   if (!isOpen) return null;
@@ -92,10 +92,15 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-5 pb-5 border-b border-blue-950/60">
           <GenderAvatar
-            gender={tutor.gender || 'MALE'}
+            gender={tutor.gender || "MALE"}
             role="TUTOR"
             size="lg"
             className="border-2 border-blue-500/40 shadow-lg shrink-0 self-start sm:self-auto"
+            profilePicture={
+              application?.status === "ACCEPTED"
+                ? tutor.profilePicture
+                : undefined
+            }
           />
 
           <div className="flex-1">
@@ -105,23 +110,23 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
               </h2>
               <span
                 className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full flex items-center gap-1 border ${
-                  tutor.verificationStatus === 'VERIFIED'
-                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60'
-                    : 'bg-amber-950/80 text-amber-400 border-amber-800/60'
+                  tutor.verificationStatus === "VERIFIED"
+                    ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/60"
+                    : "bg-amber-950/80 text-amber-400 border-amber-800/60"
                 }`}
               >
                 <ShieldCheck className="w-3 h-3" />
-                {tutor.verificationStatus === 'VERIFIED'
-                  ? 'Admin Verified Scholar'
-                  : 'Pending Verification'}
+                {tutor.verificationStatus === "VERIFIED"
+                  ? "Admin Verified Scholar"
+                  : "Pending Verification"}
               </span>
             </div>
 
             <p className="text-xs sm:text-sm text-blue-400 flex items-center gap-1.5 mt-1">
               <Building2 className="w-3.5 h-3.5" />
               <span>
-                {tutor.institution || 'University of Dhaka'} &bull;{' '}
-                {tutor.department || 'Science & Mathematics'}
+                {tutor.institution || "University of Dhaka"} &bull;{" "}
+                {tutor.department || "Science & Mathematics"}
               </span>
             </p>
 
@@ -146,12 +151,16 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
 
             {application && (
               <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 bg-blue-950/40 border border-blue-800/50 rounded-xl text-xs text-slate-300">
-                <span className="text-blue-400 font-semibold">Applied Fee:</span>
+                <span className="text-blue-400 font-semibold">
+                  Applied Fee:
+                </span>
                 <span className="text-emerald-400 font-bold">
                   ৳ {application.proposedSalary.toLocaleString()} / month
                 </span>
                 <span className="text-slate-500">&bull;</span>
-                <span className="text-slate-300">{application.availableSchedule}</span>
+                <span className="text-slate-300">
+                  {application.availableSchedule}
+                </span>
               </div>
             )}
           </div>
@@ -168,7 +177,11 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             </div>
             <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
               <Info className="w-3.5 h-3.5 text-blue-400" />
-              <span>{hasReviews ? `${approvedReviews.length} approved` : 'New Tutor'}</span>
+              <span>
+                {hasReviews
+                  ? `${approvedReviews.length} approved`
+                  : "New Tutor"}
+              </span>
             </span>
           </div>
 
@@ -176,31 +189,39 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             {/* Punctuality */}
             <div
               className="relative group cursor-pointer"
-              onMouseEnter={() => setActiveTooltip('punctuality')}
+              onMouseEnter={() => setActiveTooltip("punctuality")}
               onMouseLeave={() => setActiveTooltip(null)}
               onClick={() =>
-                setActiveTooltip(activeTooltip === 'punctuality' ? null : 'punctuality')
+                setActiveTooltip(
+                  activeTooltip === "punctuality" ? null : "punctuality",
+                )
               }
             >
               <div className="flex justify-between items-center text-xs mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-200">1. Punctuality</span>
+                  <span className="font-semibold text-slate-200">
+                    1. Punctuality
+                  </span>
                   <span className="text-[10px] text-blue-400 font-mono hidden sm:inline">
                     (Time discipline)
                   </span>
                   <Info className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
                 </div>
                 <span className="font-bold text-blue-400">
-                  {hasReviews ? `${punctualityScore.toFixed(1)} / 5.0` : '0.0 / 5.0'}
+                  {hasReviews
+                    ? `${punctualityScore.toFixed(1)} / 5.0`
+                    : "0.0 / 5.0"}
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-blue-950/60 p-0.5">
                 <div
                   className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-500 group-hover:brightness-125"
-                  style={{ width: `${hasReviews ? (punctualityScore / 5) * 100 : 0}%` }}
+                  style={{
+                    width: `${hasReviews ? (punctualityScore / 5) * 100 : 0}%`,
+                  }}
                 />
               </div>
-              {activeTooltip === 'punctuality' && (
+              {activeTooltip === "punctuality" && (
                 <div className="mt-2 p-3 bg-blue-950 border border-blue-500/50 rounded-xl text-xs text-slate-200 shadow-2xl">
                   <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
                     <Clock className="w-3.5 h-3.5 text-blue-400" />
@@ -216,33 +237,39 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             {/* Subject Mastery */}
             <div
               className="relative group cursor-pointer"
-              onMouseEnter={() => setActiveTooltip('subjectMastery')}
+              onMouseEnter={() => setActiveTooltip("subjectMastery")}
               onMouseLeave={() => setActiveTooltip(null)}
               onClick={() =>
                 setActiveTooltip(
-                  activeTooltip === 'subjectMastery' ? null : 'subjectMastery'
+                  activeTooltip === "subjectMastery" ? null : "subjectMastery",
                 )
               }
             >
               <div className="flex justify-between items-center text-xs mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-200">2. Subject Mastery</span>
+                  <span className="font-semibold text-slate-200">
+                    2. Subject Mastery
+                  </span>
                   <span className="text-[10px] text-cyan-400 font-mono hidden sm:inline">
                     (Curriculum depth)
                   </span>
                   <Info className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
                 </div>
                 <span className="font-bold text-cyan-400">
-                  {hasReviews ? `${masteryScore.toFixed(1)} / 5.0` : '0.0 / 5.0'}
+                  {hasReviews
+                    ? `${masteryScore.toFixed(1)} / 5.0`
+                    : "0.0 / 5.0"}
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-blue-950/60 p-0.5">
                 <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-teal-400 rounded-full transition-all duration-500 group-hover:brightness-125"
-                  style={{ width: `${hasReviews ? (masteryScore / 5) * 100 : 0}%` }}
+                  style={{
+                    width: `${hasReviews ? (masteryScore / 5) * 100 : 0}%`,
+                  }}
                 />
               </div>
-              {activeTooltip === 'subjectMastery' && (
+              {activeTooltip === "subjectMastery" && (
                 <div className="mt-2 p-3 bg-blue-950 border border-cyan-500/50 rounded-xl text-xs text-slate-200 shadow-2xl">
                   <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
                     <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
@@ -258,33 +285,37 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             {/* Teaching Style */}
             <div
               className="relative group cursor-pointer"
-              onMouseEnter={() => setActiveTooltip('teachingStyle')}
+              onMouseEnter={() => setActiveTooltip("teachingStyle")}
               onMouseLeave={() => setActiveTooltip(null)}
               onClick={() =>
                 setActiveTooltip(
-                  activeTooltip === 'teachingStyle' ? null : 'teachingStyle'
+                  activeTooltip === "teachingStyle" ? null : "teachingStyle",
                 )
               }
             >
               <div className="flex justify-between items-center text-xs mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-200">3. Teaching Style</span>
+                  <span className="font-semibold text-slate-200">
+                    3. Teaching Style
+                  </span>
                   <span className="text-[10px] text-indigo-400 font-mono hidden sm:inline">
                     (Patience &amp; clarity)
                   </span>
                   <Info className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
                 </div>
                 <span className="font-bold text-indigo-400">
-                  {hasReviews ? `${styleScore.toFixed(1)} / 5.0` : '0.0 / 5.0'}
+                  {hasReviews ? `${styleScore.toFixed(1)} / 5.0` : "0.0 / 5.0"}
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-blue-950/60 p-0.5">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-400 rounded-full transition-all duration-500 group-hover:brightness-125"
-                  style={{ width: `${hasReviews ? (styleScore / 5) * 100 : 0}%` }}
+                  style={{
+                    width: `${hasReviews ? (styleScore / 5) * 100 : 0}%`,
+                  }}
                 />
               </div>
-              {activeTooltip === 'teachingStyle' && (
+              {activeTooltip === "teachingStyle" && (
                 <div className="mt-2 p-3 bg-blue-950 border border-indigo-500/50 rounded-xl text-xs text-slate-200 shadow-2xl">
                   <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
                     <Star className="w-3.5 h-3.5 text-indigo-400" />
@@ -313,7 +344,7 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             </div>
 
             <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-              {approvedReviews.slice(0, 5).map(rev => (
+              {approvedReviews.slice(0, 5).map((rev) => (
                 <div
                   key={rev.id}
                   className="p-3 bg-[#111827] rounded-xl border border-slate-800/80 space-y-1.5"
@@ -352,23 +383,29 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {(tutor.degrees || [
-              {
-                degreeName: 'B.Sc (Hons) in Mathematics',
-                institution: tutor.institution || 'University of Dhaka',
-                passingYear: '2024',
-                result: 'CGPA 3.88 / 4.00'
-              }
-            ]).map((deg, idx) => (
+            {(
+              tutor.degrees || [
+                {
+                  degreeName: "B.Sc (Hons) in Mathematics",
+                  institution: tutor.institution || "University of Dhaka",
+                  passingYear: "2024",
+                  result: "CGPA 3.88 / 4.00",
+                },
+              ]
+            ).map((deg, idx) => (
               <div
                 key={idx}
                 className="p-3 bg-[#0B0F19] rounded-xl border border-blue-950/70 text-xs"
               >
                 <div className="font-semibold text-white">{deg.degreeName}</div>
-                <div className="text-blue-400 text-[11px] mt-0.5">{deg.institution}</div>
+                <div className="text-blue-400 text-[11px] mt-0.5">
+                  {deg.institution}
+                </div>
                 <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 pt-1 border-t border-slate-800">
                   <span>Year: {deg.passingYear}</span>
-                  <span className="font-semibold text-emerald-400">{deg.result}</span>
+                  <span className="font-semibold text-emerald-400">
+                    {deg.result}
+                  </span>
                 </div>
               </div>
             ))}
@@ -382,16 +419,21 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             <span>Specialized Subjects Taught</span>
           </h3>
           <div className="flex flex-wrap gap-1.5">
-            {(tutor.subjectsTaught || ['Higher Math', 'Physics', 'General Science', 'ICT']).map(
-              (sub, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-300 text-xs font-medium"
-                >
-                  #{sub}
-                </span>
-              )
-            )}
+            {(
+              tutor.subjectsTaught || [
+                "Higher Math",
+                "Physics",
+                "General Science",
+                "ICT",
+              ]
+            ).map((sub, idx) => (
+              <span
+                key={idx}
+                className="px-2.5 py-1 rounded-lg bg-blue-950/60 border border-blue-800/60 text-blue-300 text-xs font-medium"
+              >
+                #{sub}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -411,19 +453,22 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             </button>
           )}
 
-          {isStudentViewer && application && onAcceptTutor && application.status !== 'ACCEPTED' && (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onAcceptTutor(application);
-              }}
-              className="w-full sm:flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              <span>Accept Tutor &amp; Unlock Contact</span>
-            </button>
-          )}
+          {isStudentViewer &&
+            application &&
+            onAcceptTutor &&
+            application.status !== "ACCEPTED" && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onAcceptTutor(application);
+                }}
+                className="w-full sm:flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Accept Tutor &amp; Unlock Contact</span>
+              </button>
+            )}
 
           <button
             type="button"

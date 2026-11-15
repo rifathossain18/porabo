@@ -8,8 +8,8 @@ export type WeekDay = 'SAT' | 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI';
 
 export interface WeeklyScheduleSlot {
   day: WeekDay;
-  startTime: string; // "16:30" format
-  endTime: string;   // "18:00" format
+  startTime: string;
+  endTime: string;
 }
 
 export interface EducationalDegree {
@@ -76,6 +76,9 @@ export interface User {
   latitude: number;
   longitude: number;
 
+  // 🆕 Profile Picture (base64 data URL, ~15-30KB compressed)
+  profilePicture?: string;
+
   verificationStatus?: VerificationStatus;
   verificationRejectionReason?: string;
   selfiePhotoUrl?: string;
@@ -136,8 +139,6 @@ export interface TuitionPost {
   distanceKm?: number;
   applicationsCount?: number;
   isBookmarked?: boolean;
-
-  // 🆕 New fields for Tuition Mode & Weekly Schedule
   tuitionMode?: TuitionMode;
   weeklySchedule?: WeeklyScheduleSlot[];
 }

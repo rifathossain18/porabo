@@ -1623,7 +1623,6 @@ export default function App() {
   };
 
   // Handle Student confirming tutor acceptance
-  // Handle Student confirming tutor acceptance
   const handleConfirmAcceptTutor = async () => {
     if (!tutorToAccept) {
       console.warn("[accept] No tutorToAccept — aborting");
@@ -1669,12 +1668,8 @@ export default function App() {
       await cfD1.saveApplication(acceptedApp);
       console.log("[accept] ✅ Accepted application saved");
 
-      // Reject all other pending applications for this post
       const otherApps = applications.filter(
         (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
-      );
-      console.log(
-        `[accept] Rejecting ${otherApps.length} other application(s)`,
       );
       for (const otherApp of otherApps) {
         const rejectedApp: TuitionApplication = {
@@ -1689,7 +1684,6 @@ export default function App() {
         }
       }
 
-      // Mark post as MATCHED
       const updatedPost: TuitionPost = {
         ...targetPost,
         status: "MATCHED",
@@ -1701,7 +1695,6 @@ export default function App() {
       await cfD1.savePost(updatedPost);
       console.log("[accept] ✅ Post updated to MATCHED");
 
-      // Now update local state after successful persistence
       setApplications((prev) =>
         prev.map((app) => {
           if (app.postId !== tutorToAccept.postId) return app;
@@ -1718,25 +1711,13 @@ export default function App() {
         prev.map((p) => (p.id === tutorToAccept.postId ? updatedPost : p)),
       );
 
-      // Notifications
       sendNotification({
         userId: tutorToAccept.tutorId,
         title: "Application Accepted! 🎉",
-        message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title}". Phone: ${currentUser?.phone} / Address: ${targetPost?.exactAddress || targetPost?.areaName}.`,
+        message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title}".`,
         type: "APPLICATION_ACCEPTED",
         postId: tutorToAccept.postId,
         linkText: "View in My Applications",
-      });
-
-      otherApps.forEach((other) => {
-        sendNotification({
-          userId: other.tutorId,
-          title: "Application Status Updated",
-          message: `The student selected another tutor for "${targetPost?.title}".`,
-          type: "APPLICATION_REJECTED",
-          postId: tutorToAccept.postId,
-          linkText: "Browse available tuitions",
-        });
       });
 
       setRatingTutorId(tutorToAccept.tutorId);

@@ -1624,19 +1624,24 @@ export default function App() {
 
   // Handle Student confirming tutor acceptance
   const handleConfirmAcceptTutor = async () => {
+    console.log("[accept] 🔵 handleConfirmAcceptTutor CALLED");
+    console.log("[accept] tutorToAccept:", tutorToAccept);
+
     if (!tutorToAccept) {
-      console.warn("[accept] No tutorToAccept — aborting");
+      console.warn("[accept] ❌ No tutorToAccept — aborting");
+      showToast("⚠️ No tutor selected. Please refresh and try again.");
       return;
     }
 
     const targetPost = tuitionPosts.find((p) => p.id === tutorToAccept.postId);
     if (!targetPost) {
+      console.warn("[accept] ❌ Post not found:", tutorToAccept.postId);
       showToast("Error: This tuition post no longer exists.");
       setTutorToAccept(null);
       return;
     }
 
-    console.log("[accept] Starting acceptance:", {
+    console.log("[accept] ✅ Proceeding:", {
       tutor: tutorToAccept.tutorName,
       tutorId: tutorToAccept.tutorId,
       postId: tutorToAccept.postId,
@@ -1664,12 +1669,15 @@ export default function App() {
         studentDistrict: targetPost?.district,
       };
 
-      console.log("[accept] Saving accepted application to D1...");
+      console.log("[accept] 📤 Saving accepted application...");
       await cfD1.saveApplication(acceptedApp);
-      console.log("[accept] ✅ Accepted application saved");
+      console.log("[accept] ✅ Application saved to D1");
 
       const otherApps = applications.filter(
         (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
+      );
+      console.log(
+        `[accept] Rejecting ${otherApps.length} other applicant(s)...`,
       );
       for (const otherApp of otherApps) {
         const rejectedApp: TuitionApplication = {
@@ -1680,7 +1688,7 @@ export default function App() {
         try {
           await cfD1.saveApplication(rejectedApp);
         } catch (e) {
-          console.warn("Reject other failed:", e);
+          console.warn("[accept] Reject other failed (non-fatal):", e);
         }
       }
 
@@ -1691,10 +1699,11 @@ export default function App() {
         acceptedTutorId: tutorToAccept.tutorId,
         acceptedAt: new Date().toISOString(),
       };
-      console.log("[accept] Marking post as MATCHED...");
+      console.log("[accept] 📤 Updating post to MATCHED...");
       await cfD1.savePost(updatedPost);
       console.log("[accept] ✅ Post updated to MATCHED");
 
+      // Update local state AFTER successful persistence
       setApplications((prev) =>
         prev.map((app) => {
           if (app.postId !== tutorToAccept.postId) return app;
@@ -1725,6 +1734,7 @@ export default function App() {
       showToast(
         `✅ ${tutorToAccept.tutorName} accepted! Contact details unlocked.`,
       );
+      console.log("[accept] 🎉 SUCCESS — all done");
     } catch (err: any) {
       console.error("[accept] ❌ FAILED:", err);
       alert(

@@ -139,7 +139,7 @@ async function recordFail(env: Env, key: string): Promise<void> {
   `).bind(key, now, now).run();
 }
 
-// 🆕 Flatten nested teacherDetails into top-level (for read-time safety)
+// Flatten nested teacherDetails into top-level
 function flattenUser(raw: any): any {
   if (!raw || typeof raw !== 'object') return raw;
   const u = { ...raw };
@@ -152,7 +152,7 @@ function flattenUser(raw: any): any {
   return u;
 }
 
-// 🆕 Auto-migrate: rewrite all existing users in D1 to flat structure (one-time)
+// Auto-migrate old nested data
 async function autoMigrateUsers(env: Env): Promise<{ migrated: number; total: number }> {
   try {
     const marker: any = await env.DB.prepare(
@@ -205,13 +205,12 @@ export default {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
     try {
-      // 🆕 Auto-migrate on first request (idempotent)
       if (path === '/' || path === '/health') {
         autoMigrateUsers(env).catch(() => {});
         return jsonResponse({ status: 'ok', time: new Date().toISOString() });
       }
 
-      // ========== REGISTER (strictly flat) ==========
+      // ========== REGISTER ==========
       if (path === '/api/auth/register' && method === 'POST') {
         const body = await parseBody(request);
         const email = String(body.email || '').trim().toLowerCase();
@@ -225,7 +224,6 @@ export default {
 
         const { password: _pw, teacherDetails, ...userData } = body;
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        // 🔑 STRICT FLATTEN: teacherDetails is spread into top-level
         const user: any = {
           ...userData,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
@@ -233,7 +231,6 @@ export default {
           email,
           role: body.role,
         };
-        // Never nest teacherDetails again
         delete user.teacherDetails;
 
         const hash = await hashPassword(password);
@@ -307,7 +304,6 @@ export default {
       if (path === '/api/admin/migrate-users' && method === 'POST') {
         const ctx = await getAuth(request, env);
         if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
-        // Force re-run migration (delete marker first)
         try {
           await env.DB.prepare("DELETE FROM admin_settings WHERE key = 'users_flattened_v2'").run();
         } catch {}
@@ -400,7 +396,6 @@ export default {
         if (!rawUser.id) return errorResponse('Missing user.id');
         if (!ctx.isAdmin && ctx.user!.userId !== rawUser.id) return errorResponse('Forbidden', 403);
 
-        // 🔑 STRICT FLATTEN on save too
         const { password: _p, password_hash: _ph, teacherDetails, ...rest } = rawUser;
         const user: any = {
           ...rest,
@@ -468,7 +463,7 @@ export default {
         return jsonResponse({ success: true });
       }
 
-      // ========== APPLICATIONS ==========
+      // ========== APPLICATIONS (with ownership check for student accept) ==========
       if (path === '/api/applications' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM tuition_applications ORDER BY createdAt DESC').all();
         return jsonResponse((result.results || []).map((r: any) => JSON.parse(r.data)));
@@ -479,7 +474,30 @@ export default {
         if (!ctx.isAdmin && !ctx.user) return errorResponse('Unauthorized', 401);
         const app = await parseBody(request);
         if (!app.id || !app.postId || !app.tutorId) return errorResponse('Missing fields');
-        if (!ctx.isAdmin && ctx.user!.userId !== app.tutorId) return errorResponse('Forbidden', 403);
+
+        // 🔑 PERMISSION: admin OR tutor (own app) OR student (owns the post)
+        let hasPermission = ctx.isAdmin;
+
+        if (!hasPermission && ctx.user) {
+          // Tutor can save their own application
+          if (ctx.user.userId === app.tutorId) {
+            hasPermission = true;
+          }
+          // Student can save (accept/reject) applications for their own post
+          if (!hasPermission) {
+            const post: any = await env.DB.prepare(
+              'SELECT studentId FROM tuition_posts WHERE id = ?'
+            ).bind(app.postId).first();
+            if (post && post.studentId === ctx.user.userId) {
+              hasPermission = true;
+            }
+          }
+        }
+
+        if (!hasPermission) {
+          return errorResponse('Forbidden: You do not own this application or post', 403);
+        }
+
         const now = new Date().toISOString();
         await env.DB.prepare(
           `INSERT INTO tuition_applications (id, postId, tutorId, data, status, createdAt, updatedAt)
@@ -495,8 +513,15 @@ export default {
         if (!ctx.isAdmin && !ctx.user) return errorResponse('Unauthorized', 401);
         const id = path.replace('/api/applications/', '');
         if (!ctx.isAdmin) {
-          const a: any = await env.DB.prepare('SELECT tutorId FROM tuition_applications WHERE id = ?').bind(id).first();
-          if (a && a.tutorId !== ctx.user!.userId) return errorResponse('Forbidden', 403);
+          const a: any = await env.DB.prepare('SELECT tutorId, postId FROM tuition_applications WHERE id = ?').bind(id).first();
+          if (a) {
+            let allowed = a.tutorId === ctx.user!.userId;
+            if (!allowed) {
+              const post: any = await env.DB.prepare('SELECT studentId FROM tuition_posts WHERE id = ?').bind(a.postId).first();
+              if (post && post.studentId === ctx.user!.userId) allowed = true;
+            }
+            if (!allowed) return errorResponse('Forbidden', 403);
+          }
         }
         await env.DB.prepare('DELETE FROM tuition_applications WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true });

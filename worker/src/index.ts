@@ -139,7 +139,6 @@ async function recordFail(env: Env, key: string): Promise<void> {
   `).bind(key, now, now).run();
 }
 
-// Flatten nested teacherDetails into top-level
 function flattenUser(raw: any): any {
   if (!raw || typeof raw !== 'object') return raw;
   const u = { ...raw };
@@ -152,15 +151,15 @@ function flattenUser(raw: any): any {
   return u;
 }
 
-// Auto-migrate old nested data
+// ══════════════════════════════════════════════════════════
+// AUTO-MIGRATIONS
+// ══════════════════════════════════════════════════════════
 async function autoMigrateUsers(env: Env): Promise<{ migrated: number; total: number }> {
   try {
     const marker: any = await env.DB.prepare(
       "SELECT value FROM admin_settings WHERE key = 'users_flattened_v2'"
     ).first();
-    if (marker && marker.value === 'done') {
-      return { migrated: 0, total: 0 };
-    }
+    if (marker && marker.value === 'done') return { migrated: 0, total: 0 };
 
     const all = await env.DB.prepare('SELECT id, data FROM users').all();
     const rows = (all.results || []) as Array<{ id: string; data: string }>;
@@ -187,12 +186,117 @@ async function autoMigrateUsers(env: Env): Promise<{ migrated: number; total: nu
     await env.DB.prepare(
       "INSERT OR REPLACE INTO admin_settings (key, value, updatedAt) VALUES ('users_flattened_v2', 'done', ?)"
     ).bind(now).run();
-
-    console.log(`[migrate] Flattened ${migrated}/${rows.length} users.`);
     return { migrated, total: rows.length };
   } catch (err) {
     console.error('[migrate] Auto-migrate failed:', err);
     return { migrated: 0, total: 0 };
+  }
+}
+
+// 🆕 Migrate existing ACCEPTED applications to include studentId (so review survives post deletion)
+async function autoMigrateAcceptedApps(env: Env): Promise<{ migrated: number; total: number }> {
+  try {
+    const marker: any = await env.DB.prepare(
+      "SELECT value FROM admin_settings WHERE key = 'accepted_apps_v1'"
+    ).first();
+    if (marker && marker.value === 'done') return { migrated: 0, total: 0 };
+
+    const all = await env.DB.prepare("SELECT id, postId, data FROM tuition_applications WHERE status = 'ACCEPTED'").all();
+    const rows = (all.results || []) as Array<{ id: string; postId: string; data: string }>;
+    let migrated = 0;
+    const now = new Date().toISOString();
+
+    for (const row of rows) {
+      try {
+        const appData = JSON.parse(row.data);
+        if (appData.studentId) continue;
+
+        // Look up post to find studentId
+        const post: any = await env.DB.prepare(
+          'SELECT studentId FROM tuition_posts WHERE id = ?'
+        ).bind(row.postId).first();
+        if (post && post.studentId) {
+          appData.studentId = post.studentId;
+          await env.DB.prepare('UPDATE tuition_applications SET data = ?, updatedAt = ? WHERE id = ?')
+            .bind(JSON.stringify(appData), now, row.id).run();
+          migrated++;
+        }
+      } catch (err) {
+        console.warn(`Migration failed for app ${row.id}:`, err);
+      }
+    }
+
+    await env.DB.prepare(
+      "INSERT OR REPLACE INTO admin_settings (key, value, updatedAt) VALUES ('accepted_apps_v1', 'done', ?)"
+    ).bind(now).run();
+    return { migrated, total: rows.length };
+  } catch (err) {
+    console.error('[migrate] Accepted-apps migrate failed:', err);
+    return { migrated: 0, total: 0 };
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 🆕 30-DAY AUTO-CLEANUP: Delete posts from database
+// Preserves ACCEPTED applications so students can still review tutors
+// ══════════════════════════════════════════════════════════
+async function autoCleanupOldPosts(env: Env, force = false): Promise<{ deleted: number; preserved: number; skipped: boolean }> {
+  try {
+    const marker: any = await env.DB.prepare(
+      "SELECT value FROM admin_settings WHERE key = 'last_post_cleanup'"
+    ).first();
+
+    const now = Date.now();
+    if (!force && marker && marker.value) {
+      const lastRun = parseInt(marker.value) || 0;
+      // Run once per hour max
+      if (now - lastRun < 60 * 60 * 1000) {
+        return { deleted: 0, preserved: 0, skipped: true };
+      }
+    }
+
+    const cutoff = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Find posts older than 30 days
+    const oldPosts = await env.DB.prepare(
+      'SELECT id FROM tuition_posts WHERE createdAt < ?'
+    ).bind(cutoff).all();
+    const postIds = (oldPosts.results || []).map((p: any) => p.id);
+
+    if (postIds.length === 0) {
+      await env.DB.prepare(
+        "INSERT OR REPLACE INTO admin_settings (key, value, updatedAt) VALUES ('last_post_cleanup', ?, ?)"
+      ).bind(String(now), new Date().toISOString()).run();
+      return { deleted: 0, preserved: 0, skipped: false };
+    }
+
+    // Count accepted apps before cleanup (for report)
+    const placeholders = postIds.map(() => '?').join(',');
+    const acceptedBefore = await env.DB.prepare(
+      `SELECT COUNT(*) as c FROM tuition_applications WHERE postId IN (${placeholders}) AND status = 'ACCEPTED'`
+    ).bind(...postIds).first();
+    const preservedCount = (acceptedBefore as any)?.c || 0;
+
+    // Step 1: Delete non-accepted applications for these posts (cleanup)
+    await env.DB.prepare(
+      `DELETE FROM tuition_applications WHERE postId IN (${placeholders}) AND status != 'ACCEPTED'`
+    ).bind(...postIds).run();
+
+    // Step 2: Delete the posts themselves
+    await env.DB.prepare(
+      `DELETE FROM tuition_posts WHERE id IN (${placeholders})`
+    ).bind(...postIds).run();
+
+    await env.DB.prepare(
+      "INSERT OR REPLACE INTO admin_settings (key, value, updatedAt) VALUES ('last_post_cleanup', ?, ?)"
+    ).bind(String(now), new Date().toISOString()).run();
+
+    console.log(`[cleanup] Deleted ${postIds.length} posts, preserved ${preservedCount} accepted applications`);
+
+    return { deleted: postIds.length, preserved: preservedCount, skipped: false };
+  } catch (err) {
+    console.error('[cleanup] Failed:', err);
+    return { deleted: 0, preserved: 0, skipped: false };
   }
 }
 
@@ -207,6 +311,8 @@ export default {
     try {
       if (path === '/' || path === '/health') {
         autoMigrateUsers(env).catch(() => {});
+        autoMigrateAcceptedApps(env).catch(() => {});
+        autoCleanupOldPosts(env).catch(() => {});
         return jsonResponse({ status: 'ok', time: new Date().toISOString() });
       }
 
@@ -227,9 +333,7 @@ export default {
         const user: any = {
           ...userData,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
-          id: userId,
-          email,
-          role: body.role,
+          id: userId, email, role: body.role,
         };
         delete user.teacherDetails;
 
@@ -237,8 +341,7 @@ export default {
         const now = new Date().toISOString();
 
         await env.DB.prepare(
-          `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`
         ).bind(userId, email, hash, JSON.stringify(user), body.role, now, now).run();
 
         const token = await signJwt({ sub: userId, email, role: body.role }, env.JWT_SECRET);
@@ -251,38 +354,23 @@ export default {
         const email = String(body.email || '').trim().toLowerCase();
         const password = String(body.password || '');
         if (!email || !password) return errorResponse('Email and password required');
-
-        if (!(await rateLimit(env, ip, 10, 15 * 60 * 1000))) {
-          return errorResponse('Too many attempts. Try again in 15 minutes.', 429);
-        }
+        if (!(await rateLimit(env, ip, 10, 15 * 60 * 1000))) return errorResponse('Too many attempts. Try again in 15 minutes.', 429);
 
         const row: any = await env.DB.prepare(
           'SELECT id, email, password_hash, data, role FROM users WHERE email = ?'
         ).bind(email).first();
 
-        if (!row) {
-          await recordFail(env, ip);
-          return errorResponse('Invalid email or password', 401);
-        }
-
+        if (!row) { await recordFail(env, ip); return errorResponse('Invalid email or password', 401); }
         if (!row.password_hash || row.password_hash.startsWith('LEGACY:') || row.password_hash === 'RE_REGISTER_REQUIRED') {
-          return errorResponse(
-            'This account needs a password reset. Contact Porabo support on WhatsApp: +880 1642-695161',
-            403
-          );
+          return errorResponse('Account needs password reset. Contact support: +880 1642-695161', 403);
         }
-
-        const isValid = await verifyPassword(password, row.password_hash);
-        if (!isValid) {
+        if (!(await verifyPassword(password, row.password_hash))) {
           await recordFail(env, ip);
           return errorResponse('Invalid email or password', 401);
         }
 
         const user = flattenUser(JSON.parse(row.data));
-        user.id = row.id;
-        user.email = row.email;
-        user.role = row.role;
-
+        user.id = row.id; user.email = row.email; user.role = row.role;
         const token = await signJwt({ sub: row.id, email: row.email, role: row.role }, env.JWT_SECRET);
         return jsonResponse({ success: true, user, token });
       }
@@ -304,27 +392,29 @@ export default {
       if (path === '/api/admin/migrate-users' && method === 'POST') {
         const ctx = await getAuth(request, env);
         if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
-        try {
-          await env.DB.prepare("DELETE FROM admin_settings WHERE key = 'users_flattened_v2'").run();
-        } catch {}
+        try { await env.DB.prepare("DELETE FROM admin_settings WHERE key = 'users_flattened_v2'").run(); } catch {}
         const result = await autoMigrateUsers(env);
+        return jsonResponse({ success: true, ...result });
+      }
+
+      // 🆕 ADMIN: MANUAL CLEANUP (force immediate)
+      if (path === '/api/admin/cleanup-posts' && method === 'POST') {
+        const ctx = await getAuth(request, env);
+        if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
+        const result = await autoCleanupOldPosts(env, true);
         return jsonResponse({ success: true, ...result });
       }
 
       // ========== ADMIN CONFIG ==========
       if (path === '/api/admin/config' && method === 'GET') {
         try {
-          const row = await env.DB.prepare(
-            "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
-          ).first();
+          const row = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'admin_password_hash'").first();
           return jsonResponse({ hasPassword: !!row });
         } catch { return jsonResponse({ hasPassword: false }); }
       }
 
       if (path === '/api/admin/config/init' && method === 'POST') {
-        const existing = await env.DB.prepare(
-          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
-        ).first();
+        const existing = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'admin_password_hash'").first();
         if (existing) return errorResponse('Admin already initialized', 400);
         const body = await parseBody(request);
         const pw = String(body.password || '');
@@ -340,43 +430,28 @@ export default {
       }
 
       if (path === '/api/admin/config/login' && method === 'POST') {
-        if (!(await rateLimit(env, ip, 5, 15 * 60 * 1000))) {
-          return errorResponse('Too many attempts. Try again in 15 minutes.', 429);
-        }
+        if (!(await rateLimit(env, ip, 5, 15 * 60 * 1000))) return errorResponse('Too many attempts. Try again in 15 minutes.', 429);
         const body = await parseBody(request);
-        const row: any = await env.DB.prepare(
-          "SELECT value FROM admin_settings WHERE key = 'admin_password_hash'"
-        ).first();
+        const row: any = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'admin_password_hash'").first();
         if (!row) return errorResponse('Admin not initialized', 400);
         if (!(await verifyPassword(String(body.password || ''), row.value))) {
           await recordFail(env, ip);
           return errorResponse('Invalid password', 401);
         }
-        const adminToken = await signJwt(
-          { sub: 'admin', email: 'admin@porabo.local', role: 'ADMIN' },
-          env.ADMIN_JWT_SECRET
-        );
+        const adminToken = await signJwt({ sub: 'admin', email: 'admin@porabo.local', role: 'ADMIN' }, env.ADMIN_JWT_SECRET);
         return jsonResponse({ success: true, adminToken });
       }
 
       if (path === '/api/admin/config/reset' && method === 'POST') {
-        if (!(await rateLimit(env, ip, 3, 60 * 60 * 1000))) {
-          return errorResponse('Too many reset attempts. Try again in 1 hour.', 429);
-        }
+        if (!(await rateLimit(env, ip, 3, 60 * 60 * 1000))) return errorResponse('Too many reset attempts. Try again in 1 hour.', 429);
         const body = await parseBody(request);
         const code = String(body.recoveryCode || '').toUpperCase();
         const pw = String(body.newPassword || '');
         if (pw.length < 6) return errorResponse('Password must be at least 6 chars');
-        const row: any = await env.DB.prepare(
-          "SELECT value FROM admin_settings WHERE key = 'admin_recovery_code'"
-        ).first();
-        if (!row || row.value !== code) {
-          await recordFail(env, ip);
-          return errorResponse('Invalid recovery code', 401);
-        }
-        await env.DB.prepare(
-          "UPDATE admin_settings SET value = ?, updatedAt = ? WHERE key = 'admin_password_hash'"
-        ).bind(await hashPassword(pw), new Date().toISOString()).run();
+        const row: any = await env.DB.prepare("SELECT value FROM admin_settings WHERE key = 'admin_recovery_code'").first();
+        if (!row || row.value !== code) { await recordFail(env, ip); return errorResponse('Invalid recovery code', 401); }
+        await env.DB.prepare("UPDATE admin_settings SET value = ?, updatedAt = ? WHERE key = 'admin_password_hash'")
+          .bind(await hashPassword(pw), new Date().toISOString()).run();
         return jsonResponse({ success: true });
       }
 
@@ -397,22 +472,17 @@ export default {
         if (!ctx.isAdmin && ctx.user!.userId !== rawUser.id) return errorResponse('Forbidden', 403);
 
         const { password: _p, password_hash: _ph, teacherDetails, ...rest } = rawUser;
-        const user: any = {
-          ...rest,
-          ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
-        };
+        const user: any = { ...rest, ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}) };
         delete user.teacherDetails;
 
         const now = new Date().toISOString();
         const existing = await env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(user.id).first();
         if (existing) {
-          await env.DB.prepare(
-            'UPDATE users SET data = ?, role = ?, updatedAt = ? WHERE id = ?'
-          ).bind(JSON.stringify(user), user.role || 'STUDENT', now, user.id).run();
+          await env.DB.prepare('UPDATE users SET data = ?, role = ?, updatedAt = ? WHERE id = ?')
+            .bind(JSON.stringify(user), user.role || 'STUDENT', now, user.id).run();
         } else {
           await env.DB.prepare(
-            `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt)
-             VALUES (?, ?, 'RE_REGISTER_REQUIRED', ?, ?, ?, ?)`
+            `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt) VALUES (?, ?, 'RE_REGISTER_REQUIRED', ?, ?, ?, ?)`
           ).bind(user.id, user.email || '', JSON.stringify(user), user.role || 'STUDENT', now, now).run();
         }
         return jsonResponse({ success: true, user });
@@ -429,6 +499,8 @@ export default {
 
       // ========== POSTS ==========
       if (path === '/api/posts' && method === 'GET') {
+        // 🆕 Fire-and-forget cleanup
+        autoCleanupOldPosts(env).catch(() => {});
         const result = await env.DB.prepare('SELECT data FROM tuition_posts ORDER BY createdAt DESC').all();
         return jsonResponse((result.results || []).map((r: any) => JSON.parse(r.data)));
       }
@@ -463,7 +535,7 @@ export default {
         return jsonResponse({ success: true });
       }
 
-      // ========== APPLICATIONS (with ownership check for student accept) ==========
+      // ========== APPLICATIONS ==========
       if (path === '/api/applications' && method === 'GET') {
         const result = await env.DB.prepare('SELECT data FROM tuition_applications ORDER BY createdAt DESC').all();
         return jsonResponse((result.results || []).map((r: any) => JSON.parse(r.data)));
@@ -475,28 +547,21 @@ export default {
         const app = await parseBody(request);
         if (!app.id || !app.postId || !app.tutorId) return errorResponse('Missing fields');
 
-        // 🔑 PERMISSION: admin OR tutor (own app) OR student (owns the post)
+        // Permission: admin OR tutor (own app) OR student (owns the post)
         let hasPermission = ctx.isAdmin;
-
         if (!hasPermission && ctx.user) {
-          // Tutor can save their own application
-          if (ctx.user.userId === app.tutorId) {
+          if (ctx.user.userId === app.tutorId) hasPermission = true;
+          if (!hasPermission) {
+            const post: any = await env.DB.prepare('SELECT studentId FROM tuition_posts WHERE id = ?').bind(app.postId).first();
+            if (post && post.studentId === ctx.user.userId) hasPermission = true;
+          }
+          // 🆕 Also allow if application is ACCEPTED and currentUser is the saved studentId
+          // (handles post-deleted scenario where post lookup fails)
+          if (!hasPermission && app.status === 'ACCEPTED' && app.studentId === ctx.user.userId) {
             hasPermission = true;
           }
-          // Student can save (accept/reject) applications for their own post
-          if (!hasPermission) {
-            const post: any = await env.DB.prepare(
-              'SELECT studentId FROM tuition_posts WHERE id = ?'
-            ).bind(app.postId).first();
-            if (post && post.studentId === ctx.user.userId) {
-              hasPermission = true;
-            }
-          }
         }
-
-        if (!hasPermission) {
-          return errorResponse('Forbidden: You do not own this application or post', 403);
-        }
+        if (!hasPermission) return errorResponse('Forbidden: You do not own this application or post', 403);
 
         const now = new Date().toISOString();
         await env.DB.prepare(
@@ -513,15 +578,8 @@ export default {
         if (!ctx.isAdmin && !ctx.user) return errorResponse('Unauthorized', 401);
         const id = path.replace('/api/applications/', '');
         if (!ctx.isAdmin) {
-          const a: any = await env.DB.prepare('SELECT tutorId, postId FROM tuition_applications WHERE id = ?').bind(id).first();
-          if (a) {
-            let allowed = a.tutorId === ctx.user!.userId;
-            if (!allowed) {
-              const post: any = await env.DB.prepare('SELECT studentId FROM tuition_posts WHERE id = ?').bind(a.postId).first();
-              if (post && post.studentId === ctx.user!.userId) allowed = true;
-            }
-            if (!allowed) return errorResponse('Forbidden', 403);
-          }
+          const a: any = await env.DB.prepare('SELECT tutorId FROM tuition_applications WHERE id = ?').bind(id).first();
+          if (a && a.tutorId !== ctx.user!.userId) return errorResponse('Forbidden', 403);
         }
         await env.DB.prepare('DELETE FROM tuition_applications WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true });
@@ -540,11 +598,8 @@ export default {
         if (!ctx.isAdmin && ctx.user?.role !== 'TUTOR') return errorResponse('Only tutors', 403);
         const q = await parseBody(request);
         await env.DB.prepare(
-          `INSERT INTO quizzes (id, teacherId, teacherName, subject, gradeLevel, topic, questionText, options, correctIndex, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(q.id, q.teacherId, q.teacherName, q.subject, q.gradeLevel,
-          q.topic || '', q.questionText, JSON.stringify(q.options),
-          q.correctIndex, new Date().toISOString()).run();
+          `INSERT INTO quizzes (id, teacherId, teacherName, subject, gradeLevel, topic, questionText, options, correctIndex, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(q.id, q.teacherId, q.teacherName, q.subject, q.gradeLevel, q.topic || '', q.questionText, JSON.stringify(q.options), q.correctIndex, new Date().toISOString()).run();
         return jsonResponse({ success: true });
       }
 
@@ -555,10 +610,8 @@ export default {
         const e = await parseBody(request);
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         await env.DB.prepare(
-          `INSERT INTO exam_sets (id, teacherId, teacherName, title, questionIds, timeLimit, createdAt, expiresAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(e.id, e.teacherId, e.teacherName, e.title, JSON.stringify(e.questionIds),
-          e.timeLimit, new Date().toISOString(), expiresAt).run();
+          `INSERT INTO exam_sets (id, teacherId, teacherName, title, questionIds, timeLimit, createdAt, expiresAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(e.id, e.teacherId, e.teacherName, e.title, JSON.stringify(e.questionIds), e.timeLimit, new Date().toISOString(), expiresAt).run();
         return jsonResponse({ success: true, examId: e.id });
       }
 
@@ -572,14 +625,10 @@ export default {
         }
         const ids = JSON.parse(exam.questionIds);
         const ph = ids.map(() => '?').join(',');
-        const qs = await env.DB.prepare(
-          `SELECT id, questionText, options FROM quizzes WHERE id IN (${ph})`
-        ).bind(...ids).all();
+        const qs = await env.DB.prepare(`SELECT id, questionText, options FROM quizzes WHERE id IN (${ph})`).bind(...ids).all();
         return jsonResponse({
           ...exam,
-          questions: (qs.results || []).map((q: any) => ({
-            id: q.id, questionText: q.questionText, options: JSON.parse(q.options),
-          })),
+          questions: (qs.results || []).map((q: any) => ({ id: q.id, questionText: q.questionText, options: JSON.parse(q.options) })),
         });
       }
 
@@ -591,9 +640,7 @@ export default {
         if (!exam) return errorResponse('Exam not found', 404);
         const ids = JSON.parse(exam.questionIds);
         const ph = ids.map(() => '?').join(',');
-        const qs = await env.DB.prepare(
-          `SELECT id, correctIndex FROM quizzes WHERE id IN (${ph})`
-        ).bind(...ids).all();
+        const qs = await env.DB.prepare(`SELECT id, correctIndex FROM quizzes WHERE id IN (${ph})`).bind(...ids).all();
         const map = new Map((qs.results || []).map((q: any) => [q.id, q]));
         let score = 0;
         ids.forEach((qid: string, i: number) => {
@@ -602,10 +649,8 @@ export default {
         });
         const rid = `res_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         await env.DB.prepare(
-          `INSERT INTO exam_results (id, examSetId, studentId, studentName, score, total, answers, completedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(rid, examId, body.studentId || 'anon', body.studentName || 'Anon',
-          score, ids.length, JSON.stringify(answers), new Date().toISOString()).run();
+          `INSERT INTO exam_results (id, examSetId, studentId, studentName, score, total, answers, completedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(rid, examId, body.studentId || 'anon', body.studentName || 'Anon', score, ids.length, JSON.stringify(answers), new Date().toISOString()).run();
         return jsonResponse({ success: true, score, total: ids.length, resultId: rid });
       }
 

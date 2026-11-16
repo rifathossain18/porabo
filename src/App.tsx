@@ -3445,17 +3445,7 @@ export default function App() {
                     role="TUTOR"
                     size="xl"
                     className="border-4 border-[#111827] shadow-2xl"
-                    profilePicture={
-                      isSelfViewing ||
-                      applications.some(
-                        (a) =>
-                          a.tutorId === tutor.id &&
-                          a.status === "ACCEPTED" &&
-                          studentMyPosts.some((p) => p.id === a.postId),
-                      )
-                        ? tutor.profilePicture
-                        : undefined
-                    }
+                    profilePicture={tutor.profilePicture}
                   />
                   <div className="mb-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -4537,11 +4527,7 @@ export default function App() {
                               gender={tutorUser?.gender || "MALE"}
                               role="TUTOR"
                               size="md"
-                              profilePicture={
-                                isAccepted
-                                  ? tutorUser?.profilePicture
-                                  : undefined
-                              }
+                              profilePicture={tutorUser?.profilePicture}
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">

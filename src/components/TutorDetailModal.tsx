@@ -96,11 +96,7 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
             role="TUTOR"
             size="lg"
             className="border-2 border-blue-500/40 shadow-lg shrink-0 self-start sm:self-auto"
-            profilePicture={
-              application?.status === "ACCEPTED"
-                ? tutor.profilePicture
-                : undefined
-            }
+            profilePicture={tutor.profilePicture}
           />
 
           <div className="flex-1">

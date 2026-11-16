@@ -76,7 +76,7 @@ export interface User {
   latitude: number;
   longitude: number;
 
-  // 🆕 Profile Picture (base64 data URL, ~15-30KB compressed)
+  // 🆕 Profile Picture (base64 data URL)
   profilePicture?: string;
 
   verificationStatus?: VerificationStatus;
@@ -165,6 +165,8 @@ export interface TuitionApplication {
   createdAt: string;
   tutorPhone?: string;
   tutorWhatsapp?: string;
+  // 🆕 Student info captured on accept (survives post deletion)
+  studentId?: string;
   studentName?: string;
   studentPhone?: string;
   studentWhatsapp?: string;

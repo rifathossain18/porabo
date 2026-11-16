@@ -155,6 +155,7 @@ import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 import { compressImage } from "./lib/imageUtils";
 import { TuitionPostForm } from "./components/TuitionPostForm";
+import { LandingPage } from "./components/LandingPage";
 import { PostCountdown } from "./components/PostCountdown";
 
 export default function App() {
@@ -312,6 +313,9 @@ export default function App() {
   // Auth Loading & Error state
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // 🆕 Premium landing page state (shown before auth form)
+  const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
 
   // Location Gate disabled per user requirement - matching is strictly profile district-based
   const [isLocationVerified, setIsLocationVerified] = useState<boolean>(true);
@@ -1025,6 +1029,19 @@ export default function App() {
     });
   }, [applications, studentMyPosts, allQuizzes]); // allQuizzes যুক্ত করা হয়েছে
 
+  // 🆕 My Accepted Tutors — survives post deletion, enables permanent review access
+  const myAcceptedApplications = useMemo(() => {
+    if (!currentUser || currentUser.role !== "STUDENT") return [];
+    return applications.filter((a) => {
+      if (a.status !== "ACCEPTED") return false;
+      // Primary: use studentId (added by new accept logic)
+      if (a.studentId) return a.studentId === currentUser.id;
+      // Fallback for legacy accepted apps: check post ownership (only if post exists)
+      const post = tuitionPosts.find((p) => p.id === a.postId);
+      return post ? post.studentId === currentUser.id : false;
+    });
+  }, [applications, tuitionPosts, currentUser]);
+
   // Tutor's own submitted applications with dynamic status tracking
   const tutorMyApplications = useMemo(() => {
     if (!currentUser || currentUser.role !== "TUTOR") return [];
@@ -1361,6 +1378,7 @@ export default function App() {
     setCurrentUser(null);
     setIsLocationVerified(false);
     setViewingTeacherProfileId(null);
+    setShowAuthForm(false);
     showToast("You have been signed out.");
   };
 
@@ -1659,6 +1677,7 @@ export default function App() {
         status: "ACCEPTED",
         acceptedAt: new Date().toISOString(),
         statusReason: "Accepted & Contact Unlocked! 🎉",
+        studentId: currentUser.id,
         studentName: currentUser.fullName,
         studentPhone:
           currentUser.phone || targetPost.studentPhone || "+880 1712-345678",
@@ -2188,6 +2207,24 @@ export default function App() {
   }
 
   // =========================================================================
+  // VIEW: PREMIUM LANDING PAGE (shown first for non-logged-in users)
+  // =========================================================================
+  if (!currentUser && !showAuthForm) {
+    return (
+      <>
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+        <LandingPage
+          onProceedToAuth={(role, mode) => {
+            setAuthRoleChoice(role);
+            setAuthViewTab(mode);
+            setShowAuthForm(true);
+          }}
+        />
+      </>
+    );
+  }
+
+  // =========================================================================
   // VIEW: AUTHENTICATION GATE (EMAIL & PASSWORD)
   // =========================================================================
   if (!currentUser) {
@@ -2217,8 +2254,18 @@ export default function App() {
             <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
               <span className="flex items-center gap-1.5 text-blue-400">
                 <ShieldCheck className="w-4 h-4" />
-                <span>Verified Credentials Only</span>
+                <span className="hidden sm:inline">
+                  Verified Credentials Only
+                </span>
               </span>
+              <button
+                type="button"
+                onClick={() => setShowAuthForm(false)}
+                className="text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-800/60 transition-colors"
+                title="Back to landing"
+              >
+                ← Back
+              </button>
             </div>
           </div>
         </header>
@@ -4628,6 +4675,147 @@ export default function App() {
                 </div>
               )}
             </div>
+
+            {/* 🆕 My Hired Tutors — Permanent Review Access (survives post deletion) */}
+            {myAcceptedApplications.length > 0 && (
+              <div className="bg-[#111827] border border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-white">
+                        My Hired Tutors ({myAcceptedApplications.length})
+                      </h2>
+                      <p className="text-xs text-emerald-400">
+                        ✅ Review unlocked after 30 days — never expires
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {myAcceptedApplications.map((app) => {
+                    const tutorUser = allUsers.find(
+                      (u) => u.id === app.tutorId,
+                    );
+                    const post = tuitionPosts.find((p) => p.id === app.postId);
+                    const acceptedAtIso =
+                      app.acceptedAt || app.statusUpdatedAt || app.createdAt;
+                    const daysSince = Math.floor(
+                      (Date.now() - new Date(acceptedAtIso).getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    );
+                    const myReview = (tutorUser?.reviews || []).find(
+                      (r) => r.applicationId === app.id,
+                    );
+                    const canReview = daysSince >= 30 && !myReview;
+
+                    return (
+                      <div
+                        key={app.id}
+                        className="p-4 rounded-2xl bg-[#0B0F19] border border-emerald-500/40 space-y-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <GenderAvatar
+                            gender={tutorUser?.gender || "MALE"}
+                            role="TUTOR"
+                            size="md"
+                            profilePicture={tutorUser?.profilePicture}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm text-white truncate">
+                              {app.tutorName}
+                            </div>
+                            <div className="text-[11px] text-blue-400 truncate">
+                              {tutorUser?.institution ||
+                                app.tutorInstitution ||
+                                "—"}
+                            </div>
+                            <div className="text-[10px] text-emerald-400 font-mono mt-0.5 truncate">
+                              📞 {app.tutorPhone || tutorUser?.phone}
+                            </div>
+                            <div className="text-[10px] text-emerald-300 font-mono truncate">
+                              💬{" "}
+                              {app.tutorWhatsapp ||
+                                tutorUser?.whatsapp ||
+                                tutorUser?.phone}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs space-y-0.5">
+                          <div className="text-slate-400">
+                            <span className="font-mono text-[10px]">
+                              Matched:
+                            </span>{" "}
+                            {new Date(acceptedAtIso).toLocaleDateString()}
+                          </div>
+                          {post ? (
+                            <div className="text-slate-300 truncate">
+                              <span className="font-mono text-[10px]">
+                                Post:
+                              </span>{" "}
+                              {post.title}
+                            </div>
+                          ) : (
+                            <div className="text-slate-500 italic text-[10px]">
+                              📦 Post archived (30-day auto-cleanup)
+                            </div>
+                          )}
+                          <div className="text-emerald-400 font-mono text-[10px]">
+                            ৳ {app.proposedSalary.toLocaleString()}/mo
+                          </div>
+                        </div>
+
+                        {myReview ? (
+                          <span
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 justify-center ${
+                              myReview.status === "APPROVED"
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                : myReview.status === "REJECTED"
+                                  ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }`}
+                          >
+                            <Star className="w-3.5 h-3.5" />
+                            <span>
+                              {myReview.status === "APPROVED"
+                                ? "✅ Review Approved"
+                                : myReview.status === "REJECTED"
+                                  ? "Review Rejected"
+                                  : "⏳ Review Pending Approval"}
+                            </span>
+                          </span>
+                        ) : canReview ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRatingApplication(app);
+                              setRatingTutorId(app.tutorId);
+                              setIsRatingModalOpen(true);
+                            }}
+                            className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-semibold border border-amber-500/40 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                            <span>⭐ Rate This Tutor</span>
+                          </button>
+                        ) : (
+                          <span className="px-3 py-2 rounded-xl bg-slate-800/80 text-slate-400 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>
+                              Review unlocks in {30 - daysSince} day
+                              {30 - daysSince !== 1 ? "s" : ""}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Student's My Posts List with Status Filter & Full Tracking */}
             <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">

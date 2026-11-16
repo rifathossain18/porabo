@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Navigation,
   Compass,
+  Download,
   GraduationCap,
   Sparkles,
   Users,
@@ -156,6 +157,7 @@ import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 import { compressImage } from "./lib/imageUtils";
 import { TuitionPostForm } from "./components/TuitionPostForm";
 import { LandingPage } from "./components/LandingPage";
+import { downloadTuitionCard } from "./lib/cardGenerator";
 import { PostCountdown } from "./components/PostCountdown";
 
 export default function App() {
@@ -316,6 +318,11 @@ export default function App() {
 
   // 🆕 Premium landing page state (shown before auth form)
   const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
+
+  // 🆕 Card download state
+  const [downloadingPostId, setDownloadingPostId] = useState<string | null>(
+    null,
+  );
 
   // Location Gate disabled per user requirement - matching is strictly profile district-based
   const [isLocationVerified, setIsLocationVerified] = useState<boolean>(true);
@@ -1816,6 +1823,23 @@ export default function App() {
     cfD1
       .savePost(newPost)
       .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
+  };
+
+  // 🆕 Download beautiful premium PNG card
+  const handleDownloadCard = async (post: TuitionPost) => {
+    if (downloadingPostId) return;
+    setDownloadingPostId(post.id);
+    try {
+      await downloadTuitionCard(post);
+      showToast(
+        `✅ Premium card downloaded for "${post.title.slice(0, 30)}..."`,
+      );
+    } catch (err: any) {
+      console.error("Card download failed:", err);
+      showToast(`❌ Download failed: ${err?.message || "Try again"}`);
+    } finally {
+      setDownloadingPostId(null);
+    }
   };
 
   // Helper to open teacher profile page
@@ -5151,20 +5175,37 @@ export default function App() {
                         )}
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs gap-2 flex-wrap">
                           <span className="text-slate-500">
                             {postApps.length} applicant(s)
                           </span>
-                          {!isMatched && (
+                          <div className="flex items-center gap-1.5">
+                            {/* 🆕 Download Card Button */}
                             <button
                               type="button"
-                              onClick={() => handleMarkTutorFound(post.id)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                              onClick={() => handleDownloadCard(post)}
+                              disabled={downloadingPostId === post.id}
+                              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors flex items-center gap-1 disabled:opacity-50 shadow-md shadow-blue-600/20"
+                              title="Download beautiful PNG card"
                             >
-                              <CheckSquare className="w-3 h-3 text-emerald-400" />
-                              <span>Mark Tutor Found</span>
+                              <Download
+                                className={`w-3 h-3 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
+                              />
+                              <span>
+                                {downloadingPostId === post.id ? "..." : "Card"}
+                              </span>
                             </button>
-                          )}
+                            {!isMatched && (
+                              <button
+                                type="button"
+                                onClick={() => handleMarkTutorFound(post.id)}
+                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                              >
+                                <CheckSquare className="w-3 h-3 text-emerald-400" />
+                                <span>Mark Tutor Found</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -6089,6 +6130,23 @@ export default function App() {
                                 >
                                   <Share2 className="w-3.5 h-3.5" />
                                 </button>
+
+                                {/* 🆕 Download Premium Card */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadCard(post);
+                                  }}
+                                  disabled={downloadingPostId === post.id}
+                                  title="Download beautiful PNG card"
+                                  className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                >
+                                  <Download
+                                    className={`w-3.5 h-3.5 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
+                                  />
+                                </button>
+
                                 <button
                                   type="button"
                                   onClick={(e) => handleHidePost(post.id, e)}

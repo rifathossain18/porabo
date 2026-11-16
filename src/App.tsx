@@ -157,7 +157,7 @@ import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
 import { compressImage } from "./lib/imageUtils";
 import { TuitionPostForm } from "./components/TuitionPostForm";
 import { LandingPage } from "./components/LandingPage";
-import { downloadTuitionCard } from "./lib/cardGenerator";
+import { downloadTuitionCard, downloadTeacherCard } from "./lib/cardGenerator";
 import { PostCountdown } from "./components/PostCountdown";
 
 export default function App() {
@@ -323,6 +323,11 @@ export default function App() {
   const [downloadingPostId, setDownloadingPostId] = useState<string | null>(
     null,
   );
+
+  // 🆕 Teacher bio card download state
+  const [downloadingTeacherCardId, setDownloadingTeacherCardId] = useState<
+    string | null
+  >(null);
 
   // Location Gate disabled per user requirement - matching is strictly profile district-based
   const [isLocationVerified, setIsLocationVerified] = useState<boolean>(true);
@@ -1842,6 +1847,21 @@ export default function App() {
     }
   };
 
+  // 🆕 Download premium teacher bio card (profile picture, institution, degrees, QR)
+  const handleDownloadTeacherCard = async (tutor: User) => {
+    if (downloadingTeacherCardId) return;
+    setDownloadingTeacherCardId(tutor.id);
+    try {
+      await downloadTeacherCard(tutor);
+      showToast(`✅ Bio card downloaded for ${tutor.fullName}`);
+    } catch (err: any) {
+      console.error("Teacher card download failed:", err);
+      showToast(`❌ Download failed: ${err?.message || "Try again"}`);
+    } finally {
+      setDownloadingTeacherCardId(null);
+    }
+  };
+
   // Helper to open teacher profile page
   const handleOpenTeacherProfile = (tutorId: string) => {
     setViewingTeacherProfileId(tutorId);
@@ -3210,6 +3230,22 @@ export default function App() {
               >
                 <Share2 className="w-3.5 h-3.5 text-blue-400" />
                 <span className="hidden sm:inline">Share</span>
+              </button>
+
+              {/* 🆕 Download Premium Bio Card */}
+              <button
+                type="button"
+                onClick={() => handleDownloadTeacherCard(tutor)}
+                disabled={downloadingTeacherCardId === tutor.id}
+                className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white border border-cyan-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
+                title="Download premium bio card with QR code"
+              >
+                <Download
+                  className={`w-3.5 h-3.5 ${downloadingTeacherCardId === tutor.id ? "animate-pulse" : ""}`}
+                />
+                <span className="hidden sm:inline">
+                  {downloadingTeacherCardId === tutor.id ? "..." : "Bio Card"}
+                </span>
               </button>
 
               {isSelfViewing && (

@@ -441,8 +441,8 @@ export async function downloadTuitionCard(post: TuitionPost): Promise<void> {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 🎬 TEACHER BIO CARD — FULL CINEMATIC DESIGN
-// Profile picture fills entire canvas; text overlays in cinematic gradient
+// 🎨 TEACHER BIO CARD — Elegant magazine layout
+// Small circular photo (280px) with premium cinematic background
 // ═══════════════════════════════════════════════════════════════════
 export async function generateTeacherCard(
   tutor: User,
@@ -454,86 +454,37 @@ export async function generateTeacherCard(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not available');
 
-  // ─── 1. FULL-BLEED BACKGROUND (photo or gradient) ───
-  let photoLoaded = false;
-  if (tutor.profilePicture) {
-    try {
-      const img = await loadImage(tutor.profilePicture, true);
-      const scale = Math.max(CARD_WIDTH / img.width, CARD_HEIGHT / img.height);
-      const dw = img.width * scale;
-      const dh = img.height * scale;
-      const dx = (CARD_WIDTH - dw) / 2;
-      const dy = (CARD_HEIGHT - dh) / 2;
-      ctx.drawImage(img, dx, dy, dw, dh);
-      photoLoaded = true;
-    } catch (err) {
-      console.warn('Profile pic load failed:', err);
+  // ─── 1. Background ───
+  const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  bg.addColorStop(0, '#070A12');
+  bg.addColorStop(0.5, '#0B1428');
+  bg.addColorStop(1, '#050810');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  const g1 = ctx.createRadialGradient(CARD_WIDTH, 0, 0, CARD_WIDTH, 0, 800);
+  g1.addColorStop(0, 'rgba(6,182,212,0.28)');
+  g1.addColorStop(1, 'rgba(6,182,212,0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  const g2 = ctx.createRadialGradient(0, CARD_HEIGHT, 0, 0, CARD_HEIGHT, 700);
+  g2.addColorStop(0, 'rgba(16,185,129,0.22)');
+  g2.addColorStop(1, 'rgba(16,185,129,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  // Dot grid
+  ctx.fillStyle = 'rgba(56,189,248,0.06)';
+  for (let x = 0; x < CARD_WIDTH; x += 40) {
+    for (let y = 0; y < CARD_HEIGHT; y += 40) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
-  if (!photoLoaded) {
-    // Cinematic gradient background as fallback
-    const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    bg.addColorStop(0, '#0A1628');
-    bg.addColorStop(0.5, '#0B1428');
-    bg.addColorStop(1, '#070A12');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-    // Giant initial
-    const initial = tutor.fullName.trim().charAt(0).toUpperCase() || 'P';
-    ctx.fillStyle = 'rgba(56,189,248,0.12)';
-    ctx.font = 'bold 720px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(initial, CARD_WIDTH / 2, CARD_HEIGHT / 2 - 60);
-
-    // Ambient glows
-    const g1 = ctx.createRadialGradient(CARD_WIDTH, 0, 0, CARD_WIDTH, 0, 720);
-    g1.addColorStop(0, 'rgba(59,130,246,0.4)');
-    g1.addColorStop(1, 'rgba(59,130,246,0)');
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-    const g2 = ctx.createRadialGradient(0, CARD_HEIGHT, 0, 0, CARD_HEIGHT, 600);
-    g2.addColorStop(0, 'rgba(16,185,129,0.3)');
-    g2.addColorStop(1, 'rgba(16,185,129,0)');
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  }
-
-  // ─── 2. CINEMATIC GRADIENT OVERLAYS ───
-  // Top vignette (logo visibility)
-  const topVignette = ctx.createLinearGradient(0, 0, 0, 420);
-  topVignette.addColorStop(0, 'rgba(7,10,18,0.98)');
-  topVignette.addColorStop(0.5, 'rgba(7,10,18,0.7)');
-  topVignette.addColorStop(1, 'rgba(7,10,18,0)');
-  ctx.fillStyle = topVignette;
-  ctx.fillRect(0, 0, CARD_WIDTH, 420);
-
-  // Bottom cinematic gradient (dark, tall for text legibility)
-  const bottomVignette = ctx.createLinearGradient(0, CARD_HEIGHT - 950, 0, CARD_HEIGHT);
-  bottomVignette.addColorStop(0, 'rgba(7,10,18,0)');
-  bottomVignette.addColorStop(0.25, 'rgba(7,10,18,0.75)');
-  bottomVignette.addColorStop(0.5, 'rgba(7,10,18,0.95)');
-  bottomVignette.addColorStop(1, 'rgba(7,10,18,1)');
-  ctx.fillStyle = bottomVignette;
-  ctx.fillRect(0, CARD_HEIGHT - 950, CARD_WIDTH, 950);
-
-  // Cinematic color grade overlays
-  const blueTint = ctx.createRadialGradient(0, CARD_HEIGHT, 0, 0, CARD_HEIGHT, 750);
-  blueTint.addColorStop(0, 'rgba(59,130,246,0.32)');
-  blueTint.addColorStop(1, 'rgba(59,130,246,0)');
-  ctx.fillStyle = blueTint;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  const emTint = ctx.createRadialGradient(CARD_WIDTH, 0, 0, CARD_WIDTH, 0, 620);
-  emTint.addColorStop(0, 'rgba(16,185,129,0.22)');
-  emTint.addColorStop(1, 'rgba(16,185,129,0)');
-  ctx.fillStyle = emTint;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  // ─── 3. TOP ACCENT LINE ───
+  // Top accent line
   const topLine = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
   topLine.addColorStop(0, 'rgba(59,130,246,0)');
   topLine.addColorStop(0.5, 'rgba(52,211,153,0.9)');
@@ -541,17 +492,47 @@ export async function generateTeacherCard(
   ctx.fillStyle = topLine;
   ctx.fillRect(0, 0, CARD_WIDTH, 3);
 
-  // ─── 4. LOGO (Top Left) ───
-  const logoX = PADDING + 28;
-  const logoY = 90;
-  const logoR = 28;
+  // ─── 2. Premium corner accents ───
+  const cornerSize = 40;
+  const cornerPad = 24;
+  ctx.strokeStyle = 'rgba(52,211,153,0.5)';
+  ctx.lineWidth = 3;
+  // Top-left
+  ctx.beginPath();
+  ctx.moveTo(cornerPad, cornerPad + cornerSize);
+  ctx.lineTo(cornerPad, cornerPad);
+  ctx.lineTo(cornerPad + cornerSize, cornerPad);
+  ctx.stroke();
+  // Top-right
+  ctx.beginPath();
+  ctx.moveTo(CARD_WIDTH - cornerPad - cornerSize, cornerPad);
+  ctx.lineTo(CARD_WIDTH - cornerPad, cornerPad);
+  ctx.lineTo(CARD_WIDTH - cornerPad, cornerPad + cornerSize);
+  ctx.stroke();
+  // Bottom-left
+  ctx.beginPath();
+  ctx.moveTo(cornerPad, CARD_HEIGHT - cornerPad - cornerSize);
+  ctx.lineTo(cornerPad, CARD_HEIGHT - cornerPad);
+  ctx.lineTo(cornerPad + cornerSize, CARD_HEIGHT - cornerPad);
+  ctx.stroke();
+  // Bottom-right
+  ctx.beginPath();
+  ctx.moveTo(CARD_WIDTH - cornerPad - cornerSize, CARD_HEIGHT - cornerPad);
+  ctx.lineTo(CARD_WIDTH - cornerPad, CARD_HEIGHT - cornerPad);
+  ctx.lineTo(CARD_WIDTH - cornerPad, CARD_HEIGHT - cornerPad - cornerSize);
+  ctx.stroke();
 
-  const lglow = ctx.createRadialGradient(logoX, logoY, 0, logoX, logoY, 70);
-  lglow.addColorStop(0, 'rgba(56,189,248,0.7)');
+  // ─── 3. Header: Logo + Verified Badge ───
+  const logoX = PADDING + 24;
+  const logoY = 92;
+  const logoR = 24;
+
+  const lglow = ctx.createRadialGradient(logoX, logoY, 0, logoX, logoY, 60);
+  lglow.addColorStop(0, 'rgba(56,189,248,0.6)');
   lglow.addColorStop(1, 'rgba(56,189,248,0)');
   ctx.fillStyle = lglow;
   ctx.beginPath();
-  ctx.arc(logoX, logoY, 70, 0, Math.PI * 2);
+  ctx.arc(logoX, logoY, 60, 0, Math.PI * 2);
   ctx.fill();
 
   const lbg = ctx.createLinearGradient(logoX - logoR, logoY - logoR, logoX + logoR, logoY + logoR);
@@ -562,7 +543,7 @@ export async function generateTeacherCard(
   ctx.arc(logoX, logoY, logoR, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = '#38BDF8';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   try {
@@ -580,23 +561,23 @@ export async function generateTeacherCard(
     ctx.restore();
   } catch {
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('P', logoX, logoY + 2);
   }
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Porabo', PADDING + 78, logoY - 4);
+  ctx.fillText('Porabo', PADDING + 66, logoY - 2);
 
   ctx.fillStyle = '#38BDF8';
-  ctx.font = '600 12px "SF Mono", Monaco, monospace';
-  ctx.fillText("BANGLADESH'S LARGEST TUITION NETWORK", PADDING + 80, logoY + 20);
+  ctx.font = '600 11px "SF Mono", Monaco, monospace';
+  ctx.fillText("BANGLADESH'S LARGEST TUITION NETWORK", PADDING + 68, logoY + 18);
 
-  // ─── 5. VERIFIED BADGE (Top Right) ───
+  // Verified badge (top-right)
   const badgeText = '✓ VERIFIED';
   ctx.font = 'bold 14px "SF Mono", Monaco, monospace';
   const bTextW = ctx.measureText(badgeText).width;
@@ -604,102 +585,216 @@ export async function generateTeacherCard(
   const bX = CARD_WIDTH - PADDING - bW;
 
   ctx.fillStyle = 'rgba(16,185,129,0.28)';
-  roundRect(ctx, bX, 76, bW, 42, 21);
+  roundRect(ctx, bX, 78, bW, 42, 21);
   ctx.fill();
   ctx.strokeStyle = 'rgba(52,211,153,0.8)';
   ctx.lineWidth = 2;
-  roundRect(ctx, bX, 76, bW, 42, 21);
+  roundRect(ctx, bX, 78, bW, 42, 21);
   ctx.stroke();
 
   ctx.fillStyle = '#6EE7B7';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
-  ctx.fillText(badgeText, bX + bW / 2, 97);
+  ctx.fillText(badgeText, bX + bW / 2, 99);
 
-  // ─── 6. Film strip decoration (top) ───
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = 'rgba(56,189,248,0.25)';
-    roundRect(ctx, PADDING + i * 22, 148, 14, 3, 1);
-    ctx.fill();
+  // ─── 4. Circular Profile Photo (280px) ───
+  const photoR = 140;
+  const photoCX = CARD_WIDTH / 2;
+  const photoCY = 365;
+
+  // Outer glow
+  const photoGlow = ctx.createRadialGradient(photoCX, photoCY, 0, photoCX, photoCY, photoR + 60);
+  photoGlow.addColorStop(0, 'rgba(52,211,153,0.35)');
+  photoGlow.addColorStop(0.6, 'rgba(6,182,212,0.15)');
+  photoGlow.addColorStop(1, 'rgba(6,182,212,0)');
+  ctx.fillStyle = photoGlow;
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR + 60, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outer orbital ring
+  ctx.strokeStyle = 'rgba(56,189,248,0.3)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR + 28, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Dashed decorative ring
+  ctx.strokeStyle = 'rgba(52,211,153,0.5)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 8]);
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR + 16, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Photo background (placeholder)
+  const pbg = ctx.createLinearGradient(
+    photoCX - photoR, photoCY - photoR,
+    photoCX + photoR, photoCY + photoR
+  );
+  pbg.addColorStop(0, '#065F46');
+  pbg.addColorStop(1, '#0E7490');
+  ctx.fillStyle = pbg;
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Photo border
+  ctx.strokeStyle = '#34D399';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Inner white ring
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(photoCX, photoCY, photoR - 8, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Draw photo or initial
+  let photoDrawn = false;
+  if (tutor.profilePicture) {
+    try {
+      const img = await loadImage(tutor.profilePicture, true);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(photoCX, photoCY, photoR - 8, 0, Math.PI * 2);
+      ctx.clip();
+      const scale = Math.max((photoR * 2) / img.width, (photoR * 2) / img.height);
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      ctx.drawImage(img, photoCX - dw / 2, photoCY - dh / 2, dw, dh);
+      ctx.restore();
+      photoDrawn = true;
+    } catch (err) {
+      console.warn('Photo load failed:', err);
+    }
   }
 
-  // ─── 7. NAME (bottom, huge bold) ───
-  let yPos = CARD_HEIGHT - 620;
+  if (!photoDrawn) {
+    const initial = tutor.fullName.trim().charAt(0).toUpperCase() || 'P';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 110px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initial, photoCX, photoCY + 10);
+  }
+
+  // Small sparkle badge (bottom-right of photo)
+  const sparkleX = photoCX + photoR * 0.72;
+  const sparkleY = photoCY + photoR * 0.72;
+  ctx.fillStyle = '#34D399';
+  ctx.beginPath();
+  ctx.arc(sparkleX, sparkleY, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✓', sparkleX, sparkleY + 2);
+
+  // ─── 5. Name ───
+  let yPos = 570;
   const maxW = CARD_WIDTH - PADDING * 2;
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.9)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 6;
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 20;
 
-  ctx.font = 'bold 82px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.font = 'bold 62px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'left';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
 
   const nameLines = wrapText(ctx, tutor.fullName, maxW, 2);
   nameLines.forEach((line) => {
-    ctx.fillText(line, PADDING, yPos);
-    yPos += 95;
+    ctx.fillText(line, CARD_WIDTH / 2, yPos);
+    yPos += 74;
   });
-
   ctx.restore();
 
-  // ─── 8. INSTITUTION • DEPARTMENT ───
-  yPos += 12;
+  // ─── 6. Institution • Department ───
+  yPos += 4;
   const instDept = [tutor.institution, tutor.department].filter(Boolean).join('  •  ') || 'Verified Educator';
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = '#22D3EE';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
   const instDeptLines = wrapText(ctx, instDept, maxW, 1);
-  ctx.fillText(instDeptLines[0] || instDept, PADDING, yPos);
-  yPos += 58;
+  ctx.fillText(instDeptLines[0] || instDept, CARD_WIDTH / 2, yPos);
+  yPos += 55;
 
-  // ─── 9. QUALIFICATIONS CHIP ───
+  // ─── 7. Divider ───
+  const divGrad = ctx.createLinearGradient(CARD_WIDTH / 2 - 100, 0, CARD_WIDTH / 2 + 100, 0);
+  divGrad.addColorStop(0, 'rgba(56,189,248,0)');
+  divGrad.addColorStop(0.5, 'rgba(56,189,248,0.5)');
+  divGrad.addColorStop(1, 'rgba(56,189,248,0)');
+  ctx.fillStyle = divGrad;
+  ctx.fillRect(CARD_WIDTH / 2 - 100, yPos, 200, 2);
+  yPos += 26;
+
+  // ─── 8. Qualifications chip ───
   if (tutor.qualifications) {
     const qText = tutor.qualifications;
-    ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-    const qLines = wrapText(ctx, qText, maxW - 80, 1);
+    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
+    const qLines = wrapText(ctx, qText, maxW - 130, 1);
     const displayQ = qLines[0] || qText;
     const qTextWidth = ctx.measureText(displayQ).width;
-    const qLabelW = Math.min(qTextWidth + 76, maxW);
+    const qLabelW = Math.min(qTextWidth + 88, maxW);
+    const qX = (CARD_WIDTH - qLabelW) / 2;
 
-    ctx.fillStyle = 'rgba(17,24,39,0.85)';
-    roundRect(ctx, PADDING, yPos, qLabelW, 52, 26);
+    ctx.fillStyle = 'rgba(30,58,138,0.4)';
+    roundRect(ctx, qX, yPos, qLabelW, 56, 28);
     ctx.fill();
     ctx.strokeStyle = 'rgba(96,165,250,0.6)';
     ctx.lineWidth = 2;
-    roundRect(ctx, PADDING, yPos, qLabelW, 52, 26);
+    roundRect(ctx, qX, yPos, qLabelW, 56, 28);
     ctx.stroke();
 
     ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillStyle = '#60A5FA';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🎓', PADDING + 20, yPos + 27);
+    ctx.fillText('🎓', qX + 22, yPos + 29);
 
-    ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillStyle = '#E0F2FE';
-    ctx.fillText(displayQ, PADDING + 56, yPos + 27);
-    yPos += 68;
+    ctx.fillText(displayQ, qX + 58, yPos + 29);
+    yPos += 76;
   }
 
-  // ─── 10. DEGREES (up to 2, elegant compact rows) ───
+  // ─── 9. Degrees Section ───
   if (tutor.degrees && tutor.degrees.length > 0) {
+    // Section header
+    ctx.font = 'bold 13px "SF Mono", Monaco, monospace';
+    ctx.fillStyle = '#94A3B8';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ACADEMIC DEGREES', CARD_WIDTH / 2, yPos);
+    yPos += 28;
+
     const degreesShown = tutor.degrees.slice(0, 2);
     degreesShown.forEach((deg) => {
-      ctx.fillStyle = 'rgba(17,24,39,0.85)';
-      roundRect(ctx, PADDING, yPos, maxW, 68, 18);
+      const boxH = 88;
+
+      // Box background
+      ctx.fillStyle = 'rgba(17,24,39,0.9)';
+      roundRect(ctx, PADDING, yPos, maxW, boxH, 18);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(6,182,212,0.4)';
+      ctx.strokeStyle = 'rgba(6,182,212,0.35)';
       ctx.lineWidth = 1.5;
-      roundRect(ctx, PADDING, yPos, maxW, 68, 18);
+      roundRect(ctx, PADDING, yPos, maxW, boxH, 18);
       ctx.stroke();
 
       // Left accent bar
       ctx.fillStyle = '#22D3EE';
-      roundRect(ctx, PADDING, yPos + 10, 4, 48, 2);
+      roundRect(ctx, PADDING, yPos + 12, 4, boxH - 24, 2);
       ctx.fill();
 
       // Degree name
@@ -707,45 +802,44 @@ export async function generateTeacherCard(
       ctx.textBaseline = 'top';
       ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillStyle = '#FFFFFF';
-      const degNameLines = wrapText(ctx, deg.degreeName, maxW - 280, 1);
-      ctx.fillText(degNameLines[0] || deg.degreeName, PADDING + 24, yPos + 12);
+      const degNameLines = wrapText(ctx, deg.degreeName, maxW - 260, 1);
+      ctx.fillText(degNameLines[0] || deg.degreeName, PADDING + 26, yPos + 18);
 
       // Institution
       ctx.font = '600 14px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillStyle = '#94A3B8';
-      const instLines = wrapText(ctx, deg.institution, maxW - 280, 1);
-      ctx.fillText(instLines[0] || deg.institution, PADDING + 24, yPos + 40);
+      const instLines = wrapText(ctx, deg.institution, maxW - 260, 1);
+      ctx.fillText(instLines[0] || deg.institution, PADDING + 26, yPos + 50);
 
       // Year • Result (right aligned)
       const yearResult = [deg.passingYear, deg.result].filter(Boolean).join(' • ');
-      ctx.font = 'bold 15px "SF Mono", Monaco, monospace';
+      ctx.font = 'bold 14px "SF Mono", Monaco, monospace';
       ctx.fillStyle = '#34D399';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(yearResult, CARD_WIDTH - PADDING - 20, yPos + 34);
+      ctx.fillText(yearResult, CARD_WIDTH - PADDING - 22, yPos + boxH / 2);
 
-      yPos += 78;
+      yPos += boxH + 14;
     });
   }
 
-  // ─── 11. SMALL QR (bottom right corner) ───
-  const qrSize = 170;
-  const qrX = CARD_WIDTH - PADDING - qrSize;
-  const qrY = CARD_HEIGHT - 280;
+  // ─── 10. QR Code + Marketing (bottom) ───
+  const qrSize = 150;
+  const qrX = PADDING;
+  const qrY = CARD_HEIGHT - qrSize - 100;
 
+  // QR white card
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 30;
-  ctx.shadowOffsetY = 8;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 24;
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, qrX, qrY, qrSize, qrSize, 18);
+  roundRect(ctx, qrX, qrY, qrSize, qrSize, 16);
   ctx.fill();
   ctx.restore();
 
-  // QR border
-  ctx.strokeStyle = 'rgba(56,189,248,0.6)';
+  ctx.strokeStyle = 'rgba(56,189,248,0.5)';
   ctx.lineWidth = 2;
-  roundRect(ctx, qrX, qrY, qrSize, qrSize, 18);
+  roundRect(ctx, qrX, qrY, qrSize, qrSize, 16);
   ctx.stroke();
 
   try {
@@ -756,45 +850,56 @@ export async function generateTeacherCard(
       errorCorrectionLevel: 'M',
     });
     const qrImg = await loadImage(qrUrl, true);
-    const inner = 14;
+    const inner = 12;
     ctx.drawImage(qrImg, qrX + inner, qrY + inner, qrSize - inner * 2, qrSize - inner * 2);
   } catch (e) {
     console.warn('QR gen failed:', e);
   }
 
   // QR caption
-  ctx.font = 'bold 13px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#38BDF8';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('Scan to connect', qrX + qrSize / 2, qrY + qrSize + 22);
+  ctx.font = 'bold 12px "SF Mono", Monaco, monospace';
+  ctx.fillStyle = '#94A3B8';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Scan to connect', qrX, qrY + qrSize + 12);
 
-  // ─── 12. FOOTER (bottom bar) ───
-  const fY = CARD_HEIGHT - 62;
+  // Right side: porabo.online marketing
+  const taglineX = qrX + qrSize + 28;
+  const taglineY = qrY + 14;
+
+  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('porabo.online', taglineX, taglineY);
+
+  ctx.font = '600 13px "SF Mono", Monaco, monospace';
+  ctx.fillStyle = '#38BDF8';
+  ctx.fillText('No Commission', taglineX, taglineY + 36);
+  ctx.fillText('No Ads Fee', taglineX, taglineY + 58);
+  ctx.fillText('100% Verified', taglineX, taglineY + 80);
+
+  // ─── 11. Footer bar ───
+  const fY = CARD_HEIGHT - 56;
   const fGrad = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
-  fGrad.addColorStop(0, 'rgba(59,130,246,0.1)');
-  fGrad.addColorStop(0.5, 'rgba(59,130,246,0.32)');
-  fGrad.addColorStop(1, 'rgba(59,130,246,0.1)');
+  fGrad.addColorStop(0, 'rgba(59,130,246,0.05)');
+  fGrad.addColorStop(0.5, 'rgba(59,130,246,0.22)');
+  fGrad.addColorStop(1, 'rgba(59,130,246,0.05)');
   ctx.fillStyle = fGrad;
-  ctx.fillRect(0, fY, CARD_WIDTH, 62);
+  ctx.fillRect(0, fY, CARD_WIDTH, 56);
 
   const fBorder = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
   fBorder.addColorStop(0, 'rgba(56,189,248,0)');
-  fBorder.addColorStop(0.5, 'rgba(56,189,248,0.7)');
+  fBorder.addColorStop(0.5, 'rgba(56,189,248,0.6)');
   fBorder.addColorStop(1, 'rgba(56,189,248,0)');
   ctx.fillStyle = fBorder;
   ctx.fillRect(0, fY, CARD_WIDTH, 2);
 
-  ctx.textAlign = 'left';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('porabo.online', PADDING, fY + 31);
-
-  ctx.font = '600 13px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#38BDF8';
-  ctx.textAlign = 'right';
-  ctx.fillText('No Commission  •  No Ads Fee  •  100% Verified', CARD_WIDTH - PADDING, fY + 31);
+  ctx.fillText('Verified Educator Profile  •  porabo.online', CARD_WIDTH / 2, fY + 28);
 
   return canvas.toDataURL('image/png');
 }

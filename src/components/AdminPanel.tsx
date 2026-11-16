@@ -39,6 +39,7 @@ import {
 } from "../lib/types";
 import { GenderAvatar } from "./GenderAvatar";
 import { PostCountdown } from "./PostCountdown";
+import { downloadTeacherCard } from "../lib/cardGenerator";
 import { downloadTuitionCard } from "../lib/cardGenerator";
 import {
   cfD1,
@@ -152,6 +153,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [downloadingPostId, setDownloadingPostId] = useState<string | null>(
     null,
   );
+
+  const [downloadingTeacherCardId, setDownloadingTeacherCardId] = useState<
+    string | null
+  >(null);
 
   const [reviewFilter, setReviewFilter] = useState<
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
@@ -1189,13 +1194,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={() => setInspectingUser(tutor)}
-                        className="flex-1 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
+                        className="flex-1 min-w-[100px] py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
                       >
                         <Eye className="w-3.5 h-3.5 text-blue-400" /> View Full
                         Info
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (downloadingTeacherCardId) return;
+                          setDownloadingTeacherCardId(tutor.id);
+                          try {
+                            await downloadTeacherCard(tutor);
+                          } catch (err) {
+                            alert("Failed to generate bio card. Try again.");
+                          } finally {
+                            setDownloadingTeacherCardId(null);
+                          }
+                        }}
+                        disabled={downloadingTeacherCardId === tutor.id}
+                        className="py-2 px-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-md shadow-blue-600/20 disabled:opacity-50"
+                        title="Download cinematic bio card"
+                      >
+                        <Download
+                          className={`w-3.5 h-3.5 ${downloadingTeacherCardId === tutor.id ? "animate-pulse" : ""}`}
+                        />
+                        {downloadingTeacherCardId === tutor.id
+                          ? "..."
+                          : "Bio Card"}
                       </button>
                       {!isVerified && (
                         <button

@@ -2317,22 +2317,52 @@ export default function App() {
         {/* Auth Body */}
         <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-4">
           <div className="w-full max-w-lg bg-[#111827] border border-blue-900/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-blue-950/40">
-            {/* Header */}
+            {/* Header — Role-Aware */}
             <div className="text-center mb-6">
               <img
                 src="/assets/porabo_logo_transparent_90065b0b.svg"
                 alt="Porabo Logo"
                 className="w-14 h-14 mx-auto object-contain mb-2"
               />
+
+              {/* Role Badge */}
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider mb-2 border ${
+                  authRoleChoice === "TUTOR"
+                    ? "bg-blue-950/80 text-blue-300 border-blue-800/60"
+                    : "bg-emerald-950/80 text-emerald-300 border-emerald-800/60"
+                }`}
+              >
+                {authRoleChoice === "TUTOR" ? (
+                  <>
+                    <GraduationCap className="w-3 h-3" />
+                    <span>Teacher Portal</span>
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-3 h-3" />
+                    <span>Guardian / Student Portal</span>
+                  </>
+                )}
+              </div>
+
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 {authViewTab === "login"
-                  ? "Sign In to Porabo"
-                  : "Create Porabo Account"}
+                  ? authRoleChoice === "TUTOR"
+                    ? "Teacher Sign In"
+                    : "Guardian Sign In"
+                  : authRoleChoice === "TUTOR"
+                    ? "Create Teacher Account"
+                    : "Create Guardian Account"}
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 mt-1.5">
                 {authViewTab === "login"
-                  ? "Enter your registered email and password to access the tuition portal."
-                  : "Join as a Student to post tuitions or as a Teacher to teach in your neighborhood."}
+                  ? authRoleChoice === "TUTOR"
+                    ? "Sign in to your teacher account to find local tuition opportunities."
+                    : "Sign in to post tuition requirements and hire verified tutors."
+                  : authRoleChoice === "TUTOR"
+                    ? "Join as a verified tutor. Zero commission, zero ads fee — keep 100% of what you earn."
+                    : "Create a free account to find verified tutors within walking distance of your home."}
               </p>
             </div>
 
@@ -2473,59 +2503,7 @@ export default function App() {
             ) : (
               /* REGISTRATION FORM */
               <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                {/* Strict Role Selection */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                    Select Your Strict Role (Permanent)
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAuthRoleChoice("STUDENT")}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        authRoleChoice === "STUDENT"
-                          ? "bg-blue-600/20 border-blue-500 text-white"
-                          : "bg-[#0B0F19] border-blue-950/60 text-slate-400 hover:border-slate-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <Users className="w-4 h-4 text-blue-400" />
-                        {authRoleChoice === "STUDENT" && (
-                          <Check className="w-3.5 h-3.5 text-blue-400" />
-                        )}
-                      </div>
-                      <div className="font-semibold text-xs text-white">
-                        Student / Guardian
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Post tuition requirements
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setAuthRoleChoice("TUTOR")}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        authRoleChoice === "TUTOR"
-                          ? "bg-blue-600/20 border-blue-500 text-white"
-                          : "bg-[#0B0F19] border-blue-950/60 text-slate-400 hover:border-slate-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <GraduationCap className="w-4 h-4 text-cyan-400" />
-                        {authRoleChoice === "TUTOR" && (
-                          <Check className="w-3.5 h-3.5 text-cyan-400" />
-                        )}
-                      </div>
-                      <div className="font-semibold text-xs text-white">
-                        Teacher / Tutor
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Apply to local tuitions
-                      </div>
-                    </button>
-                  </div>
-                </div>
+                {/* Role locked from landing page — no toggle */}
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>

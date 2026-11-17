@@ -216,9 +216,9 @@ export const INITIAL_TUITION_POSTS: TuitionPost[] = [];
 
 export const INITIAL_APPLICATIONS: TuitionApplication[] = [];
 
-// Helper to filter out posts older than 70 days (Auto-cleanup for real posts)
+// Helper to filter out posts older than 30 days (Auto-cleanup for real posts)
 export function filterActive70DayPosts(posts: TuitionPost[]): TuitionPost[] {
-  const cutoff = Date.now() - (70 * 24 * 60 * 60 * 1000);
+  const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
   return posts.filter(post => {
     const postTime = new Date(post.createdAt).getTime();
     return postTime >= cutoff;

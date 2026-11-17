@@ -1,10 +1,5 @@
 /**
- * Cloudflare D1 API Client — Pure API Mode
- * 
- * ⚠️  NO localStorage for data. Everything goes through Cloudflare Worker API.
- * Only session token & UI preferences stay in localStorage (necessary for login state).
- * 
- * If API fails → returns empty array (no silent fallback to old local data).
+ * Cloudflare D1 API Client
  */
 
 import { User, TuitionPost, TuitionApplication } from './types';
@@ -13,35 +8,25 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || '';
 const IS_API_ENABLED = Boolean(API_BASE);
 
 if (!IS_API_ENABLED) {
-  console.error(
-    '[Porabo D1] ❌ VITE_API_BASE_URL is missing. App cannot load data.\n' +
-    'Add VITE_API_BASE_URL=https://your-worker.workers.dev to .env and restart dev server.'
-  );
+  console.error('[Porabo D1] ❌ VITE_API_BASE_URL missing.');
 } else {
-  console.info(`[Porabo D1] ✅ Pure API mode. Connected to: ${API_BASE}`);
+  console.info(`[Porabo D1] ✅ Connected to: ${API_BASE}`);
 }
 
 export const CLOUDFLARE_D1_SCHEMA = `-- See worker/schema.sql`;
 
-// Minimal KV (only used for non-critical UI state, NOT business data)
 export const cloudflareKV = {
   async get<T>(key: string): Promise<T | null> {
     try {
       const raw = localStorage.getItem(`cf_kv_${key}`);
       return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   },
   async put<T>(key: string, value: T): Promise<void> {
-    try {
-      localStorage.setItem(`cf_kv_${key}`, JSON.stringify(value));
-    } catch {}
+    try { localStorage.setItem(`cf_kv_${key}`, JSON.stringify(value)); } catch {}
   },
   async delete(key: string): Promise<void> {
-    try {
-      localStorage.removeItem(`cf_kv_${key}`);
-    } catch {}
+    try { localStorage.removeItem(`cf_kv_${key}`); } catch {}
   }
 };
 
@@ -56,6 +41,17 @@ export interface D1DiagnosticLog {
   error?: string;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const h: Record<string, string> = {};
+  try {
+    const userTok = localStorage.getItem('porabo_cf_jwt_token');
+    if (userTok) h['Authorization'] = `Bearer ${userTok}`;
+    const adminTok = sessionStorage.getItem('porabo_admin_token');
+    if (adminTok) h['X-Admin-Token'] = adminTok;
+  } catch {}
+  return h;
+}
+
 class CloudflareD1Service {
   private diagnosticLogs: D1DiagnosticLog[] = [];
   private logListeners: Array<(log: D1DiagnosticLog) => void> = [];
@@ -64,38 +60,33 @@ class CloudflareD1Service {
     this.purgeLegacyLocalData();
   }
 
-
-
-    // ==========================================================
-  // ADMIN AUTH
-  // ==========================================================
-
-      async getAdminConfig(): Promise<{ hasPassword: boolean }> {
+  // ============ ADMIN AUTH ============
+  async getAdminConfig(): Promise<{ hasPassword: boolean }> {
     try {
       return await this.apiFetch<{ hasPassword: boolean }>('/api/admin/config');
-    } catch (err) {
-      console.warn('[Porabo D1] Admin config check failed:', err);
-      return { hasPassword: false }; // ফেইল করলে নতুন সেটআপ ফর্ম দেখাবে
-    }
+    } catch { return { hasPassword: false }; }
   }
 
   async initAdminPassword(password: string): Promise<{ success: boolean; recoveryCode?: string; error?: string }> {
     try {
       return await this.apiFetch('/api/admin/config/init', {
-        method: 'POST',
-        body: JSON.stringify({ password }),
+        method: 'POST', body: JSON.stringify({ password }),
       });
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
+    } catch (err: any) { return { success: false, error: err.message }; }
   }
 
   async verifyAdminPassword(password: string): Promise<{ success: boolean; error?: string }> {
     try {
-      return await this.apiFetch('/api/admin/config/login', {
-        method: 'POST',
-        body: JSON.stringify({ password }),
-      });
+      const res = await this.apiFetch<{ success: boolean; adminToken: string }>(
+        '/api/admin/config/login',
+        { method: 'POST', body: JSON.stringify({ password }) }
+      );
+      if (res.success && res.adminToken) {
+        sessionStorage.setItem('porabo_admin_token', res.adminToken);
+        sessionStorage.setItem('porabo_admin_auth', 'true');
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid password' };
     } catch (err: any) {
       return { success: false, error: err.message };
     }
@@ -107,56 +98,41 @@ class CloudflareD1Service {
         method: 'POST',
         body: JSON.stringify({ recoveryCode, newPassword }),
       });
+    } catch (err: any) { return { success: false, error: err.message }; }
+  }
+
+  // 🆕 Force migrate nested teacher data to flat
+  async migrateUsers(): Promise<{ success: boolean; migrated?: number; total?: number; error?: string }> {
+    try {
+      return await this.apiFetch('/api/admin/migrate-users', { method: 'POST' });
     } catch (err: any) {
       return { success: false, error: err.message };
     }
   }
 
-  /**
-   * Delete ALL old localStorage data that belonged to the previous localStorage-first architecture.
-   * Runs once per browser session. Keeps only UI preferences & session tokens.
-   */
   public purgeLegacyLocalData(): void {
     try {
-      const DATA_KEYS = [
-        'porabo_d1_users',
-        'porabo_all_users',
-        'porabo_d1_posts',
-        'porabo_tuition_posts',
-        'porabo_d1_applications',
-        'porabo_applications',
+      const KEYS = [
+        'porabo_d1_users', 'porabo_all_users',
+        'porabo_d1_posts', 'porabo_tuition_posts',
+        'porabo_d1_applications', 'porabo_applications',
       ];
       let purged = 0;
-      for (const key of DATA_KEYS) {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key);
-          purged++;
-        }
+      for (const key of KEYS) {
+        if (localStorage.getItem(key)) { localStorage.removeItem(key); purged++; }
       }
-      if (purged > 0) {
-        console.info(
-          `[Porabo D1] 🧹 Purged ${purged} legacy localStorage data keys. All data now lives in Cloudflare D1.`
-        );
-      }
-    } catch (err) {
-      console.warn('[Porabo D1] Legacy purge error:', err);
-    }
+      if (purged > 0) console.info(`[Porabo D1] 🧹 Purged ${purged} legacy keys.`);
+    } catch {}
   }
 
   public subscribeToDiagnostics(listener: (log: D1DiagnosticLog) => void): () => void {
     this.logListeners.push(listener);
-    return () => {
-      this.logListeners = this.logListeners.filter(l => l !== listener);
-    };
+    return () => { this.logListeners = this.logListeners.filter(l => l !== listener); };
   }
 
-  public getDiagnosticLogs(): D1DiagnosticLog[] {
-    return [...this.diagnosticLogs];
-  }
-
-  public clearDiagnosticLogs(): void {
-    this.diagnosticLogs = [];
-  }
+  public getDiagnosticLogs(): D1DiagnosticLog[] { return [...this.diagnosticLogs]; }
+  public clearDiagnosticLogs(): void { this.diagnosticLogs = []; }
+  public cleanLegacyDemoData(): void { this.purgeLegacyLocalData(); }
 
   private log(entry: Omit<D1DiagnosticLog, 'id' | 'timestamp'>): void {
     const full: D1DiagnosticLog = {
@@ -166,34 +142,17 @@ class CloudflareD1Service {
     };
     this.diagnosticLogs.unshift(full);
     if (this.diagnosticLogs.length > 150) this.diagnosticLogs.pop();
-    this.logListeners.forEach(l => {
-      try { l(full); } catch {}
-    });
+    this.logListeners.forEach(l => { try { l(full); } catch {} });
   }
 
-  // Legacy no-op (kept for compat with App.tsx calls)
-  public cleanLegacyDemoData(): void {
-    this.purgeLegacyLocalData();
-  }
-
-  // ==========================================================
-  // HTTP HELPERS
-  // ==========================================================
-
-  private async apiFetch<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    if (!IS_API_ENABLED) {
-      throw new Error(
-        'API not configured. Set VITE_API_BASE_URL in .env'
-      );
-    }
+  private async apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+    if (!IS_API_ENABLED) throw new Error('API not configured. Set VITE_API_BASE_URL');
 
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
     });
@@ -202,46 +161,20 @@ class CloudflareD1Service {
       let errMsg = `API error ${res.status}`;
       try {
         const body = await res.json();
-        if (body && typeof body === 'object' && 'error' in body) {
-          errMsg = String(body.error);
-        }
+        if (body && typeof body === 'object' && 'error' in body) errMsg = String(body.error);
       } catch {}
       throw new Error(errMsg);
     }
-
     return res.json() as Promise<T>;
   }
 
-  // ==========================================================
-  // USERS
-  // ==========================================================
-
+  // ============ USERS ============
   async getUsers(): Promise<User[]> {
-    const start = performance.now();
-    try {
-      const users = await this.apiFetch<User[]>('/api/users');
-      this.log({
-        operation: 'GET /api/users',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: users.length,
-        details: `${users.length} users from Cloudflare D1`,
-      });
-      return users;
-    } catch (err: any) {
-      this.log({
-        operation: 'GET /api/users',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] getUsers failed:', err);
-      return [];
-    }
+    try { return await this.apiFetch<User[]>('/api/users'); }
+    catch { return []; }
   }
 
   async getUserById(id: string): Promise<User | null> {
-    // Optimize: fetch all + filter (D1 dataset is small enough)
     const users = await this.getUsers();
     return users.find(u => u.id === id) || null;
   }
@@ -253,293 +186,97 @@ class CloudflareD1Service {
   }
 
   async saveUser(user: User): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch('/api/users', {
-        method: 'POST',
-        body: JSON.stringify(user),
-      });
-      this.log({
-        operation: 'POST /api/users',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `User '${user.fullName}' (${user.role}) saved to Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'POST /api/users',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] saveUser failed:', err);
-      throw err;
-    }
+    await this.apiFetch('/api/users', {
+      method: 'POST', body: JSON.stringify(user),
+    });
   }
 
   async deleteUser(id: string): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch(`/api/users/${id}`, { method: 'DELETE' });
-      this.log({
-        operation: 'DELETE /api/users/:id',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `User ${id} deleted from Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'DELETE /api/users/:id',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] deleteUser failed:', err);
-    }
+    try { await this.apiFetch(`/api/users/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deleteUser failed:', err); }
   }
 
-  // ==========================================================
-  // POSTS
-  // ==========================================================
-
+  // ============ POSTS ============
   async getPosts(): Promise<TuitionPost[]> {
-    const start = performance.now();
-    try {
-      const posts = await this.apiFetch<TuitionPost[]>('/api/posts');
-      this.log({
-        operation: 'GET /api/posts',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: posts.length,
-        details: `${posts.length} posts from Cloudflare D1`,
-      });
-      return posts;
-    } catch (err: any) {
-      this.log({
-        operation: 'GET /api/posts',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] getPosts failed:', err);
-      return [];
-    }
+    try { return await this.apiFetch<TuitionPost[]>('/api/posts'); }
+    catch { return []; }
   }
 
   async savePost(post: TuitionPost): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch('/api/posts', {
-        method: 'POST',
-        body: JSON.stringify(post),
-      });
-      this.log({
-        operation: 'POST /api/posts',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `Post '${post.title}' saved to Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'POST /api/posts',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] savePost failed:', err);
-      throw err;
-    }
+    await this.apiFetch('/api/posts', {
+      method: 'POST', body: JSON.stringify(post),
+    });
   }
 
   async deletePost(id: string): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch(`/api/posts/${id}`, { method: 'DELETE' });
-      this.log({
-        operation: 'DELETE /api/posts/:id',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `Post ${id} deleted from Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'DELETE /api/posts/:id',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] deletePost failed:', err);
-    }
+    try { await this.apiFetch(`/api/posts/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deletePost failed:', err); }
   }
 
-  // ==========================================================
-  // APPLICATIONS
-  // ==========================================================
-
+  // ============ APPLICATIONS ============
   async getApplications(): Promise<TuitionApplication[]> {
-    const start = performance.now();
-    try {
-      const apps = await this.apiFetch<TuitionApplication[]>('/api/applications');
-      this.log({
-        operation: 'GET /api/applications',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: apps.length,
-        details: `${apps.length} applications from Cloudflare D1`,
-      });
-      return apps;
-    } catch (err: any) {
-      this.log({
-        operation: 'GET /api/applications',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] getApplications failed:', err);
-      return [];
-    }
+    try { return await this.apiFetch<TuitionApplication[]>('/api/applications'); }
+    catch { return []; }
   }
 
   async saveApplication(app: TuitionApplication): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch('/api/applications', {
-        method: 'POST',
-        body: JSON.stringify(app),
-      });
-      this.log({
-        operation: 'POST /api/applications',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `Application ${app.id} (${app.status}) saved to Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'POST /api/applications',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] saveApplication failed:', err);
-      throw err;
-    }
+    await this.apiFetch('/api/applications', {
+      method: 'POST', body: JSON.stringify(app),
+    });
   }
 
   async deleteApplication(id: string): Promise<void> {
-    const start = performance.now();
-    try {
-      await this.apiFetch(`/api/applications/${id}`, { method: 'DELETE' });
-      this.log({
-        operation: 'DELETE /api/applications/:id',
-        status: 'SUCCESS',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        recordsAffected: 1,
-        details: `Application ${id} deleted from Cloudflare D1`,
-      });
-    } catch (err: any) {
-      this.log({
-        operation: 'DELETE /api/applications/:id',
-        status: 'ERROR',
-        executionTimeMs: Math.round((performance.now() - start) * 100) / 100,
-        error: err?.message || String(err),
-      });
-      console.error('[Porabo D1] deleteApplication failed:', err);
-    }
+    try { await this.apiFetch(`/api/applications/${id}`, { method: 'DELETE' }); }
+    catch (err) { console.error('[Porabo D1] deleteApplication failed:', err); }
   }
 
-  // ==========================================================
-  // EXPORT
-  // ==========================================================
-
-  async exportFullD1Dump(): Promise<string> {
-    const users = await this.getUsers();
-    const posts = await this.getPosts();
-    const apps = await this.getApplications();
-
-    let sql = `-- Porabo Full Database Export (Cloudflare D1)\n-- Generated: ${new Date().toISOString()}\n\n`;
-    sql += `-- Users (${users.length})\n`;
-    users.forEach(u => {
-      sql += `INSERT INTO users (id, data, role, email, createdAt) VALUES ('${u.id}', '${JSON.stringify(u).replace(/'/g, "''")}', '${u.role}', '${u.email.toLowerCase()}', '${new Date().toISOString()}');\n`;
-    });
-    sql += `\n-- Posts (${posts.length})\n`;
-    posts.forEach(p => {
-      sql += `INSERT INTO tuition_posts (id, data, studentId, district, createdAt) VALUES ('${p.id}', '${JSON.stringify(p).replace(/'/g, "''")}', '${p.studentId}', '${p.district}', '${p.createdAt}');\n`;
-    });
-    sql += `\n-- Applications (${apps.length})\n`;
-    apps.forEach(a => {
-      sql += `INSERT INTO tuition_applications (id, data, postId, tutorId, createdAt) VALUES ('${a.id}', '${JSON.stringify(a).replace(/'/g, "''")}', '${a.postId}', '${a.tutorId}', '${a.createdAt}');\n`;
-    });
-    return sql;
-  }
-
-
-
-
-
-    // ==========================================================
-  // QUIZZES & EXAMS
-  // ==========================================================
-    async getQuizzes(): Promise<any[]> {
+  // ============ QUIZZES & EXAMS ============
+  async getQuizzes(): Promise<any[]> {
     try {
       const quizzes = await this.apiFetch<any[]>('/api/quizzes');
       return quizzes.map((q: any) => ({
         ...q,
-        options: typeof q.options === 'string'
-          ? JSON.parse(q.options)
-          : Array.isArray(q.options)
-          ? q.options
-          : [],
+        options: typeof q.options === 'string' ? JSON.parse(q.options)
+          : Array.isArray(q.options) ? q.options : [],
       }));
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   }
 
   async saveQuiz(quiz: any): Promise<boolean> {
     try {
-      await this.apiFetch('/api/quizzes', {
-        method: 'POST',
-        body: JSON.stringify(quiz),
-      });
+      await this.apiFetch('/api/quizzes', { method: 'POST', body: JSON.stringify(quiz) });
       return true;
     } catch { return false; }
   }
 
   async createExamSet(exam: any): Promise<{ success: boolean; examId?: string }> {
     try {
-      return await this.apiFetch('/api/exams', {
-        method: 'POST',
-        body: JSON.stringify(exam),
-      });
+      return await this.apiFetch('/api/exams', { method: 'POST', body: JSON.stringify(exam) });
     } catch { return { success: false }; }
   }
 
   async getExamSet(id: string): Promise<any> {
-    try {
-      return await this.apiFetch(`/api/exams/${id}`);
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
+    try { return await this.apiFetch(`/api/exams/${id}`); }
+    catch (err: any) { throw new Error(err.message); }
   }
 
-  async submitExamResult(result: any): Promise<boolean> {
+  async submitExamResult(payload: {
+    examSetId: string;
+    studentId?: string;
+    studentName?: string;
+    answers: number[];
+  }): Promise<{ score: number; total: number } | null> {
     try {
-      await this.apiFetch(`/api/exams/${result.examSetId}/submit`, {
-        method: 'POST',
-        body: JSON.stringify(result),
-      });
-      return true;
-    } catch { return false; }
+      return await this.apiFetch<{ score: number; total: number }>(
+        `/api/exams/${payload.examSetId}/submit`,
+        { method: 'POST', body: JSON.stringify(payload) }
+      );
+    } catch { return null; }
   }
 
-
-
-
+  async exportFullD1Dump(): Promise<string> {
+    return '-- Use wrangler d1 export';
+  }
 }
 
 export const cfD1 = new CloudflareD1Service();

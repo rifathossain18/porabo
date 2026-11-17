@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Navigation,
   Compass,
+  Download,
   GraduationCap,
   Sparkles,
   Users,
@@ -153,6 +154,11 @@ import { QRCodeModal } from "./components/QRCodeModal";
 import { ActivityLog } from "./components/ActivityLog";
 import { Toast } from "./components/Toast";
 import { MobileMenuDrawer } from "./components/MobileMenuDrawer";
+import { compressImage } from "./lib/imageUtils";
+import { TuitionPostForm } from "./components/TuitionPostForm";
+import { LandingPage } from "./components/LandingPage";
+import { downloadTuitionCard, downloadTeacherCard } from "./lib/cardGenerator";
+import { PostCountdown } from "./components/PostCountdown";
 
 export default function App() {
   // Fast Admin Route Checker (Immediate response to /admin, #/admin, #admin, ?admin)
@@ -256,6 +262,10 @@ export default function App() {
   const [regTeacherStudentIdReg, setRegTeacherStudentIdReg] =
     useState<string>("");
 
+  const [regTeacherProfilePic, setRegTeacherProfilePic] = useState<
+    string | null
+  >(null);
+
   // Teacher verification credential stepper (1: Campus & Dept, 2: National ID, 3: Student ID Roll/Reg, 4: Experience & Subjects)
   const [regTeacherDocStep, setRegTeacherDocStep] = useState<1 | 2 | 3 | 4>(1);
 
@@ -305,6 +315,19 @@ export default function App() {
   // Auth Loading & Error state
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // 🆕 Premium landing page state (shown before auth form)
+  const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
+
+  // 🆕 Card download state
+  const [downloadingPostId, setDownloadingPostId] = useState<string | null>(
+    null,
+  );
+
+  // 🆕 Teacher bio card download state
+  const [downloadingTeacherCardId, setDownloadingTeacherCardId] = useState<
+    string | null
+  >(null);
 
   // Location Gate disabled per user requirement - matching is strictly profile district-based
   const [isLocationVerified, setIsLocationVerified] = useState<boolean>(true);
@@ -1018,6 +1041,19 @@ export default function App() {
     });
   }, [applications, studentMyPosts, allQuizzes]); // allQuizzes যুক্ত করা হয়েছে
 
+  // 🆕 My Accepted Tutors — survives post deletion, enables permanent review access
+  const myAcceptedApplications = useMemo(() => {
+    if (!currentUser || currentUser.role !== "STUDENT") return [];
+    return applications.filter((a) => {
+      if (a.status !== "ACCEPTED") return false;
+      // Primary: use studentId (added by new accept logic)
+      if (a.studentId) return a.studentId === currentUser.id;
+      // Fallback for legacy accepted apps: check post ownership (only if post exists)
+      const post = tuitionPosts.find((p) => p.id === a.postId);
+      return post ? post.studentId === currentUser.id : false;
+    });
+  }, [applications, tuitionPosts, currentUser]);
+
   // Tutor's own submitted applications with dynamic status tracking
   const tutorMyApplications = useMemo(() => {
     if (!currentUser || currentUser.role !== "TUTOR") return [];
@@ -1173,6 +1209,12 @@ export default function App() {
         );
         return;
       }
+      if (!regTeacherProfilePic) {
+        setAuthError(
+          "Please upload a profile picture. This is required for teacher verification.",
+        );
+        return;
+      }
     }
 
     setAuthLoading(true);
@@ -1231,6 +1273,7 @@ export default function App() {
                   },
                 ],
                 reviews: [],
+                profilePicture: regTeacherProfilePic || undefined,
                 verificationSubmittedAt: new Date().toISOString(),
               }
             : undefined,
@@ -1347,6 +1390,7 @@ export default function App() {
     setCurrentUser(null);
     setIsLocationVerified(false);
     setViewingTeacherProfileId(null);
+    setShowAuthForm(false);
     showToast("You have been signed out.");
   };
 
@@ -1609,109 +1653,127 @@ export default function App() {
     }
   };
 
-  // Handle Student confirming tutor acceptance
-  const handleConfirmAcceptTutor = () => {
-    if (!tutorToAccept) return;
+  // Handle Student accepting a tutor — DIRECT (bypasses confirmation modal)
+  const acceptTutorDirectly = async (appToAccept: TuitionApplication) => {
+    console.log("[accept] 🔵 acceptTutorDirectly CALLED with:", {
+      tutor: appToAccept.tutorName,
+      tutorId: appToAccept.tutorId,
+      postId: appToAccept.postId,
+    });
 
-    const targetPost = tuitionPosts.find((p) => p.id === tutorToAccept.postId);
+    if (!currentUser) {
+      showToast("❌ You must be logged in to accept tutors.");
+      return;
+    }
 
-    setApplications((prev) =>
-      prev.map((app) => {
-        if (app.postId === tutorToAccept.postId) {
-          if (app.id === tutorToAccept.id) {
-            const acceptedApp: TuitionApplication = {
-              ...app,
-              status: "ACCEPTED",
-              acceptedAt: new Date().toISOString(),
-              statusReason: "Accepted & Contact Unlocked! 🎉",
-              studentName: currentUser?.fullName || targetPost?.studentName,
-              studentPhone:
-                currentUser?.phone ||
-                targetPost?.studentPhone ||
-                "+880 1712-345678",
-              studentWhatsapp:
-                currentUser?.whatsapp ||
-                currentUser?.phone ||
-                targetPost?.studentWhatsapp ||
-                "+880 1712-345678",
-              studentExactAddress:
-                targetPost?.exactAddress ||
-                `${targetPost?.areaName}, ${targetPost?.district}`,
-              studentAreaName: targetPost?.areaName,
-              studentDistrict: targetPost?.district,
-            };
-            cfD1
-              .saveApplication(acceptedApp)
-              .catch((err) =>
-                console.warn("Cloudflare D1 saveApplication error:", err),
-              );
-            return acceptedApp;
-          } else {
-            const rejectedApp: TuitionApplication = {
-              ...app,
-              status: "REJECTED",
-              statusReason: "Student selected another tutor for this tuition.",
-            };
-            cfD1
-              .saveApplication(rejectedApp)
-              .catch((err) =>
-                console.warn("Cloudflare D1 saveApplication error:", err),
-              );
-            return rejectedApp;
-          }
+    const targetPost = tuitionPosts.find((p) => p.id === appToAccept.postId);
+    if (!targetPost) {
+      showToast("❌ This tuition post no longer exists.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Accept ${appToAccept.tutorName}?\n\nThis will unlock their contact details and mark your tuition as matched.`,
+      )
+    ) {
+      console.log("[accept] Cancelled by user");
+      return;
+    }
+
+    showToast("⏳ Accepting tutor, please wait...");
+
+    try {
+      const acceptedApp: TuitionApplication = {
+        ...appToAccept,
+        status: "ACCEPTED",
+        acceptedAt: new Date().toISOString(),
+        statusReason: "Accepted & Contact Unlocked! 🎉",
+        studentId: currentUser.id,
+        studentName: currentUser.fullName,
+        studentPhone:
+          currentUser.phone || targetPost.studentPhone || "+880 1712-345678",
+        studentWhatsapp:
+          currentUser.whatsapp || currentUser.phone || "+880 1712-345678",
+        studentExactAddress:
+          targetPost.exactAddress ||
+          `${targetPost.areaName}, ${targetPost.district}`,
+        studentAreaName: targetPost.areaName,
+        studentDistrict: targetPost.district,
+      };
+
+      console.log("[accept] 📤 Saving accepted application to D1...");
+      await cfD1.saveApplication(acceptedApp);
+      console.log("[accept] ✅ Application saved");
+
+      const otherApps = applications.filter(
+        (a) => a.postId === appToAccept.postId && a.id !== appToAccept.id,
+      );
+      console.log(
+        `[accept] Rejecting ${otherApps.length} other applicant(s)...`,
+      );
+      for (const otherApp of otherApps) {
+        const rejectedApp: TuitionApplication = {
+          ...otherApp,
+          status: "REJECTED",
+          statusReason: "Student selected another tutor for this tuition.",
+        };
+        try {
+          await cfD1.saveApplication(rejectedApp);
+        } catch (e) {
+          console.warn("[accept] Reject other failed (non-fatal):", e);
         }
-        return app;
-      }),
-    );
+      }
 
-    const updatedPost = {
-      ...(targetPost || {}),
-      id: tutorToAccept.postId,
-      status: "MATCHED" as const,
-      isFoundTutor: true,
-      acceptedTutorId: tutorToAccept.tutorId,
-      acceptedAt: new Date().toISOString(),
-    };
+      const updatedPost: TuitionPost = {
+        ...targetPost,
+        status: "MATCHED",
+        isFoundTutor: true,
+        acceptedTutorId: appToAccept.tutorId,
+        acceptedAt: new Date().toISOString(),
+      };
+      console.log("[accept] 📤 Marking post as MATCHED...");
+      await cfD1.savePost(updatedPost);
+      console.log("[accept] ✅ Post updated");
 
-    setTuitionPosts((prev) =>
-      prev.map((p) =>
-        p.id === tutorToAccept.postId ? (updatedPost as TuitionPost) : p,
-      ),
-    );
+      setApplications((prev) =>
+        prev.map((a) => {
+          if (a.postId !== appToAccept.postId) return a;
+          if (a.id === appToAccept.id) return acceptedApp;
+          return {
+            ...a,
+            status: "REJECTED",
+            statusReason: "Student selected another tutor for this tuition.",
+          };
+        }),
+      );
 
-    cfD1
-      .savePost(updatedPost as TuitionPost)
-      .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
+      setTuitionPosts((prev) =>
+        prev.map((p) => (p.id === appToAccept.postId ? updatedPost : p)),
+      );
 
-    // Send real-time notification to the accepted tutor
-    sendNotification({
-      userId: tutorToAccept.tutorId,
-      title: "Application Accepted! 🎉",
-      message: `Congratulations! ${currentUser?.fullName} accepted your application for "${targetPost?.title || "tuition"}". Phone: ${currentUser?.phone} / Address: ${targetPost?.exactAddress || targetPost?.areaName}.`,
-      type: "APPLICATION_ACCEPTED",
-      postId: tutorToAccept.postId,
-      linkText: "View in My Applications",
-    });
-
-    // Notify other applicant tutors that post was filled
-    const otherApplicants = applications.filter(
-      (a) => a.postId === tutorToAccept.postId && a.id !== tutorToAccept.id,
-    );
-    otherApplicants.forEach((other) => {
       sendNotification({
-        userId: other.tutorId,
-        title: "Application Status Updated",
-        message: `The student selected another tutor for "${targetPost?.title || "this tuition post"}".`,
-        type: "APPLICATION_REJECTED",
-        postId: tutorToAccept.postId,
-        linkText: "Browse available tuitions",
+        userId: appToAccept.tutorId,
+        title: "Application Accepted! 🎉",
+        message: `Congratulations! ${currentUser.fullName} accepted your application for "${targetPost.title}". Phone: ${currentUser.phone}. Address: ${targetPost.exactAddress || targetPost.areaName}`,
+        type: "APPLICATION_ACCEPTED",
+        postId: appToAccept.postId,
+        linkText: "View in My Applications",
       });
-    });
 
-    const acceptedName = tutorToAccept.tutorName;
-    setRatingTutorId(tutorToAccept.tutorId);
-    setTutorToAccept(null);
-    showToast(`Tutor accepted. Contact details and address are now unlocked.`);
+      setRatingTutorId(appToAccept.tutorId);
+      showToast(
+        `✅ ${appToAccept.tutorName} accepted! Contact details unlocked.`,
+      );
+      console.log("[accept] 🎉 SUCCESS");
+    } catch (err: any) {
+      console.error("[accept] ❌ FAILED:", err);
+      alert(
+        `❌ Failed to accept tutor.\n\nError: ${err?.message || "Unknown error"}\n\n` +
+          `Try:\n1. Refresh page (Ctrl+Shift+R)\n2. Log out and log in again\n3. Then click Accept Tutor again`,
+      );
+      showToast(`❌ Accept failed: ${err?.message || "Unknown error"}`);
+    }
   };
 
   // Handle Student marking post as Tutor Found
@@ -1725,29 +1787,33 @@ export default function App() {
   };
 
   // Handle Student creating new post (Sent for Admin Moderation)
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPostTitle || !currentUser) return;
+  // Handle Student creating new post (Sent for Admin Moderation)
+  const handleCreatePostSubmit = (
+    postData: Omit<
+      TuitionPost,
+      | "id"
+      | "createdAt"
+      | "studentId"
+      | "studentName"
+      | "status"
+      | "approvalStatus"
+      | "isSystemPost"
+      | "isFoundTutor"
+      | "latitude"
+      | "longitude"
+    >,
+  ) => {
+    if (!currentUser) return;
 
     const newPost: TuitionPost = {
+      ...postData,
       id: `post_${Date.now()}`,
       studentId: currentUser.id,
       studentName: currentUser.fullName,
-      title: newPostTitle,
-      subject: newPostSubject,
-      gradeLevel: newPostGrade,
-      curriculum: newPostCurriculum,
-      daysPerWeek: newPostDays,
-      hoursPerDay: 1.5,
-      salaryBudget: newPostBudget,
-      genderPreference: "ANY",
-      district: newPostDistrict,
-      areaName: newPostArea,
-      exactAddress: newPostAddress,
       latitude: baseLat + (Math.random() * 0.01 - 0.005),
       longitude: baseLng + (Math.random() * 0.01 - 0.005),
       status: "OPEN",
-      approvalStatus: "PENDING", // Awaiting Admin Approval
+      approvalStatus: "PENDING",
       isSystemPost: false,
       isFoundTutor: false,
       createdAt: new Date().toISOString(),
@@ -1756,13 +1822,44 @@ export default function App() {
 
     setTuitionPosts((prev) => [newPost, ...prev]);
     setIsCreatePostOpen(false);
-    setNewPostTitle("");
     showToast(
       "Tuition request submitted. It is under review and will go live once approved.",
     );
     cfD1
       .savePost(newPost)
       .catch((err) => console.warn("Cloudflare D1 savePost error:", err));
+  };
+
+  // 🆕 Download beautiful premium PNG card
+  const handleDownloadCard = async (post: TuitionPost) => {
+    if (downloadingPostId) return;
+    setDownloadingPostId(post.id);
+    try {
+      await downloadTuitionCard(post);
+      showToast(
+        `✅ Premium card downloaded for "${post.title.slice(0, 30)}..."`,
+      );
+    } catch (err: any) {
+      console.error("Card download failed:", err);
+      showToast(`❌ Download failed: ${err?.message || "Try again"}`);
+    } finally {
+      setDownloadingPostId(null);
+    }
+  };
+
+  // 🆕 Download premium teacher bio card (profile picture, institution, degrees, QR)
+  const handleDownloadTeacherCard = async (tutor: User) => {
+    if (downloadingTeacherCardId) return;
+    setDownloadingTeacherCardId(tutor.id);
+    try {
+      await downloadTeacherCard(tutor);
+      showToast(`✅ Bio card downloaded for ${tutor.fullName}`);
+    } catch (err: any) {
+      console.error("Teacher card download failed:", err);
+      showToast(`❌ Download failed: ${err?.message || "Try again"}`);
+    } finally {
+      setDownloadingTeacherCardId(null);
+    }
   };
 
   // Helper to open teacher profile page
@@ -2154,6 +2251,24 @@ export default function App() {
   }
 
   // =========================================================================
+  // VIEW: PREMIUM LANDING PAGE (shown first for non-logged-in users)
+  // =========================================================================
+  if (!currentUser && !showAuthForm) {
+    return (
+      <>
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+        <LandingPage
+          onProceedToAuth={(role, mode) => {
+            setAuthRoleChoice(role);
+            setAuthViewTab(mode);
+            setShowAuthForm(true);
+          }}
+        />
+      </>
+    );
+  }
+
+  // =========================================================================
   // VIEW: AUTHENTICATION GATE (EMAIL & PASSWORD)
   // =========================================================================
   if (!currentUser) {
@@ -2183,8 +2298,18 @@ export default function App() {
             <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
               <span className="flex items-center gap-1.5 text-blue-400">
                 <ShieldCheck className="w-4 h-4" />
-                <span>Verified Credentials Only</span>
+                <span className="hidden sm:inline">
+                  Verified Credentials Only
+                </span>
               </span>
+              <button
+                type="button"
+                onClick={() => setShowAuthForm(false)}
+                className="text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-800/60 transition-colors"
+                title="Back to landing"
+              >
+                ← Back
+              </button>
             </div>
           </div>
         </header>
@@ -2590,6 +2715,87 @@ export default function App() {
                             />
                           </div>
                         </div>
+                        {/* Profile Picture Upload — Mandatory for Teachers */}
+                        <div className="p-3 rounded-xl bg-[#0B0F19] border border-cyan-800/50 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-medium text-cyan-300 flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5" />
+                              <span>Profile Picture (Required)</span>
+                            </label>
+                            {regTeacherProfilePic && (
+                              <button
+                                type="button"
+                                onClick={() => setRegTeacherProfilePic(null)}
+                                className="text-[10px] text-rose-400 hover:text-rose-300"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-cyan-700/50 bg-[#111827] shrink-0">
+                              {regTeacherProfilePic ? (
+                                <img
+                                  src={regTeacherProfilePic}
+                                  alt="Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Camera className="w-6 h-6 text-slate-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                id="teacher-profile-pic-input"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (!file.type.startsWith("image/")) {
+                                    setAuthError(
+                                      "Please select a valid image file.",
+                                    );
+                                    return;
+                                  }
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setAuthError("Image must be under 5MB.");
+                                    return;
+                                  }
+                                  try {
+                                    const compressed = await compressImage(
+                                      file,
+                                      200,
+                                      0.6,
+                                    );
+                                    setRegTeacherProfilePic(compressed);
+                                    setAuthError(null);
+                                  } catch {
+                                    setAuthError(
+                                      "Failed to process image. Try another file.",
+                                    );
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor="teacher-profile-pic-input"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                {regTeacherProfilePic
+                                  ? "Change Photo"
+                                  : "Upload Photo"}
+                              </label>
+                              <p className="text-[10px] text-slate-500 mt-1">
+                                Auto-resized to 200×200. Max 5MB.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="flex justify-end pt-1">
                           <button
                             type="button"
@@ -3026,6 +3232,22 @@ export default function App() {
                 <span className="hidden sm:inline">Share</span>
               </button>
 
+              {/* 🆕 Download Premium Bio Card */}
+              <button
+                type="button"
+                onClick={() => handleDownloadTeacherCard(tutor)}
+                disabled={downloadingTeacherCardId === tutor.id}
+                className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white border border-cyan-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
+                title="Download premium bio card with QR code"
+              >
+                <Download
+                  className={`w-3.5 h-3.5 ${downloadingTeacherCardId === tutor.id ? "animate-pulse" : ""}`}
+                />
+                <span className="hidden sm:inline">
+                  {downloadingTeacherCardId === tutor.id ? "..." : "Bio Card"}
+                </span>
+              </button>
+
               {isSelfViewing && (
                 <button
                   type="button"
@@ -3223,6 +3445,7 @@ export default function App() {
                     role="TUTOR"
                     size="xl"
                     className="border-4 border-[#111827] shadow-2xl"
+                    profilePicture={tutor.profilePicture}
                   />
                   <div className="mb-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -3725,12 +3948,12 @@ export default function App() {
                       </p>
                     </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
                       {(Array.isArray(quiz.options)
                         ? quiz.options
                         : (() => {
                             try {
-                              return JSON.parse(quiz.options || '[]');
+                              return JSON.parse(quiz.options || "[]");
                             } catch {
                               return [];
                             }
@@ -4285,6 +4508,9 @@ export default function App() {
                   {studentReceivedApplications.map((app) => {
                     const post = tuitionPosts.find((p) => p.id === app.postId);
                     const isAccepted = app.status === "ACCEPTED";
+                    const tutorUser = allUsers.find(
+                      (u) => u.id === app.tutorId,
+                    );
 
                     return (
                       <div
@@ -4298,9 +4524,10 @@ export default function App() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-start gap-3">
                             <GenderAvatar
-                              gender="MALE"
+                              gender={tutorUser?.gender || "MALE"}
                               role="TUTOR"
                               size="md"
+                              profilePicture={tutorUser?.profilePicture}
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -4357,7 +4584,7 @@ export default function App() {
                             {!isAccepted && app.status !== "REJECTED" && (
                               <button
                                 type="button"
-                                onClick={() => setTutorToAccept(app)}
+                                onClick={() => acceptTutorDirectly(app)}
                                 className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20 transition-all flex items-center gap-1"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -4495,6 +4722,147 @@ export default function App() {
               )}
             </div>
 
+            {/* 🆕 My Hired Tutors — Permanent Review Access (survives post deletion) */}
+            {myAcceptedApplications.length > 0 && (
+              <div className="bg-[#111827] border border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-white">
+                        My Hired Tutors ({myAcceptedApplications.length})
+                      </h2>
+                      <p className="text-xs text-emerald-400">
+                        ✅ Review unlocked after 30 days — never expires
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {myAcceptedApplications.map((app) => {
+                    const tutorUser = allUsers.find(
+                      (u) => u.id === app.tutorId,
+                    );
+                    const post = tuitionPosts.find((p) => p.id === app.postId);
+                    const acceptedAtIso =
+                      app.acceptedAt || app.statusUpdatedAt || app.createdAt;
+                    const daysSince = Math.floor(
+                      (Date.now() - new Date(acceptedAtIso).getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    );
+                    const myReview = (tutorUser?.reviews || []).find(
+                      (r) => r.applicationId === app.id,
+                    );
+                    const canReview = daysSince >= 30 && !myReview;
+
+                    return (
+                      <div
+                        key={app.id}
+                        className="p-4 rounded-2xl bg-[#0B0F19] border border-emerald-500/40 space-y-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <GenderAvatar
+                            gender={tutorUser?.gender || "MALE"}
+                            role="TUTOR"
+                            size="md"
+                            profilePicture={tutorUser?.profilePicture}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-sm text-white truncate">
+                              {app.tutorName}
+                            </div>
+                            <div className="text-[11px] text-blue-400 truncate">
+                              {tutorUser?.institution ||
+                                app.tutorInstitution ||
+                                "—"}
+                            </div>
+                            <div className="text-[10px] text-emerald-400 font-mono mt-0.5 truncate">
+                              📞 {app.tutorPhone || tutorUser?.phone}
+                            </div>
+                            <div className="text-[10px] text-emerald-300 font-mono truncate">
+                              💬{" "}
+                              {app.tutorWhatsapp ||
+                                tutorUser?.whatsapp ||
+                                tutorUser?.phone}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs space-y-0.5">
+                          <div className="text-slate-400">
+                            <span className="font-mono text-[10px]">
+                              Matched:
+                            </span>{" "}
+                            {new Date(acceptedAtIso).toLocaleDateString()}
+                          </div>
+                          {post ? (
+                            <div className="text-slate-300 truncate">
+                              <span className="font-mono text-[10px]">
+                                Post:
+                              </span>{" "}
+                              {post.title}
+                            </div>
+                          ) : (
+                            <div className="text-slate-500 italic text-[10px]">
+                              📦 Post archived (30-day auto-cleanup)
+                            </div>
+                          )}
+                          <div className="text-emerald-400 font-mono text-[10px]">
+                            ৳ {app.proposedSalary.toLocaleString()}/mo
+                          </div>
+                        </div>
+
+                        {myReview ? (
+                          <span
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 justify-center ${
+                              myReview.status === "APPROVED"
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                : myReview.status === "REJECTED"
+                                  ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }`}
+                          >
+                            <Star className="w-3.5 h-3.5" />
+                            <span>
+                              {myReview.status === "APPROVED"
+                                ? "✅ Review Approved"
+                                : myReview.status === "REJECTED"
+                                  ? "Review Rejected"
+                                  : "⏳ Review Pending Approval"}
+                            </span>
+                          </span>
+                        ) : canReview ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRatingApplication(app);
+                              setRatingTutorId(app.tutorId);
+                              setIsRatingModalOpen(true);
+                            }}
+                            className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-semibold border border-amber-500/40 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                            <span>⭐ Rate This Tutor</span>
+                          </button>
+                        ) : (
+                          <span className="px-3 py-2 rounded-xl bg-slate-800/80 text-slate-400 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>
+                              Review unlocks in {30 - daysSince} day
+                              {30 - daysSince !== 1 ? "s" : ""}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Student's My Posts List with Status Filter & Full Tracking */}
             <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -4551,68 +4919,315 @@ export default function App() {
                     const isMatched =
                       post.status === "MATCHED" || post.isFoundTutor;
                     const isPendingApproval = post.approvalStatus === "PENDING";
+                    const postApps = applications.filter(
+                      (a) => a.postId === post.id,
+                    );
+                    const acceptedApp = postApps.find(
+                      (a) => a.status === "ACCEPTED",
+                    );
+                    const pendingApps = postApps.filter(
+                      (a) => a.status === "PENDING",
+                    );
+                    const rejectedApps = postApps.filter(
+                      (a) => a.status === "REJECTED",
+                    );
+                    const acceptedTutor = acceptedApp
+                      ? allUsers.find((u) => u.id === acceptedApp.tutorId)
+                      : null;
+
+                    const dayLabels: Record<string, string> = {
+                      SAT: "Sat",
+                      SUN: "Sun",
+                      MON: "Mon",
+                      TUE: "Tue",
+                      WED: "Wed",
+                      THU: "Thu",
+                      FRI: "Fri",
+                    };
 
                     return (
                       <div
                         key={post.id}
                         className="p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/70 space-y-3"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="font-bold text-sm sm:text-base text-white">
-                              {post.title}
-                            </span>
+                        {/* Header with countdown */}
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm sm:text-base text-white">
+                                {post.title}
+                              </span>
+                              <PostCountdown createdAt={post.createdAt} />
+                            </div>
                             <div className="text-xs text-blue-400 mt-0.5">
-                              {post.subject} &bull; {post.gradeLevel}
+                              {post.subject} • {post.gradeLevel}
                             </div>
                           </div>
-
-                          {/* Dynamic Verification & Match Badge */}
                           <div className="shrink-0">
                             {isPendingApproval ? (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>Under Admin Review</span>
+                                <Clock className="w-3 h-3" /> Under Review
                               </span>
                             ) : isMatched ? (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" />
-                                <span>Matched / Tutor Found</span>
+                                <CheckCircle className="w-3 h-3" /> Matched
                               </span>
                             ) : (
                               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                                <Check className="w-3 h-3" />
-                                <span>Approved &amp; Live</span>
+                                <Check className="w-3 h-3" /> Live
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/60">
-                          <span>{post.curriculum}</span>
-                          <span>&bull;</span>
-                          <span>{post.daysPerWeek} days/wk</span>
-                          <span>&bull;</span>
-                          <span className="text-emerald-400 font-semibold">
-                            ৳ {post.salaryBudget}/mo
-                          </span>
+                        {/* Details grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Budget
+                            </div>
+                            <div className="text-[11px] font-bold text-emerald-400">
+                              ৳ {post.salaryBudget.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Curriculum
+                            </div>
+                            <div className="text-[11px] font-semibold text-white truncate">
+                              {post.curriculum}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Mode
+                            </div>
+                            <div className="text-[11px] font-semibold text-white">
+                              {post.tuitionMode === "ONLINE"
+                                ? "🌐 Online"
+                                : post.tuitionMode === "OFFLINE"
+                                  ? "🏠 Offline"
+                                  : post.tuitionMode === "BOTH"
+                                    ? "🔄 Both"
+                                    : "—"}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Days/Wk
+                            </div>
+                            <div className="text-[11px] font-semibold text-white">
+                              {post.daysPerWeek}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
-                          <span className="text-slate-500">
-                            {post.applicationsCount || 0} applicant(s)
-                          </span>
+                        {/* Address */}
+                        <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                          <div className="text-[9px] text-slate-500 font-mono uppercase">
+                            Your Address
+                          </div>
+                          <div className="text-white mt-0.5">
+                            {post.exactAddress ||
+                              `${post.areaName}, ${post.district}`}
+                          </div>
+                        </div>
 
-                          {!isMatched && (
+                        {/* Weekly schedule */}
+                        {post.weeklySchedule &&
+                          post.weeklySchedule.length > 0 && (
+                            <div className="p-2 rounded-lg bg-[#111827] border border-cyan-900/50">
+                              <div className="text-[9px] text-cyan-400 font-mono uppercase mb-1">
+                                Weekly Schedule
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {post.weeklySchedule.map((slot, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 text-[10px] font-mono"
+                                  >
+                                    {dayLabels[slot.day] || slot.day}{" "}
+                                    {slot.startTime}–{slot.endTime}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {post.specialRequirements && (
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                            <div className="text-[9px] text-slate-500 font-mono uppercase">
+                              Special Requirements
+                            </div>
+                            <p className="text-slate-300 italic mt-0.5">
+                              {post.specialRequirements}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Accepted tutor */}
+                        {acceptedApp && acceptedTutor && (
+                          <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/50">
+                            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono uppercase mb-1">
+                              <CheckCircle className="w-3.5 h-3.5" /> Accepted
+                              Tutor — Contact Unlocked
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <GenderAvatar
+                                gender={acceptedTutor.gender || "MALE"}
+                                role="TUTOR"
+                                size="sm"
+                                profilePicture={acceptedTutor.profilePicture}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-bold text-white truncate">
+                                  {acceptedApp.tutorName}
+                                </div>
+                                <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                  📞{" "}
+                                  {acceptedApp.tutorPhone ||
+                                    acceptedTutor.phone}
+                                </div>
+                                <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                  💬 WhatsApp:{" "}
+                                  {acceptedApp.tutorWhatsapp ||
+                                    acceptedTutor.whatsapp ||
+                                    acceptedTutor.phone}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-[10px] text-emerald-400/80 mt-1">
+                              Matched on{" "}
+                              {new Date(
+                                acceptedApp.acceptedAt || acceptedApp.createdAt,
+                              ).toLocaleString()}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Applicants list */}
+                        {postApps.length > 0 ? (
+                          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1">
+                                <Users className="w-3 h-3 text-blue-400" />{" "}
+                                Applicants ({postApps.length})
+                              </div>
+                              <div className="text-[9px] font-mono text-slate-500">
+                                {pendingApps.length} pending •{" "}
+                                {acceptedApp ? 1 : 0} accepted •{" "}
+                                {rejectedApps.length} rejected
+                              </div>
+                            </div>
+                            <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                              {postApps
+                                .slice()
+                                .sort((a, b) => {
+                                  const order: any = {
+                                    ACCEPTED: 0,
+                                    PENDING: 1,
+                                    REJECTED: 2,
+                                  };
+                                  return (
+                                    (order[a.status] ?? 3) -
+                                    (order[b.status] ?? 3)
+                                  );
+                                })
+                                .map((app) => {
+                                  const appTutor = allUsers.find(
+                                    (u) => u.id === app.tutorId,
+                                  );
+                                  const statusColor =
+                                    app.status === "ACCEPTED"
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
+                                      : app.status === "REJECTED"
+                                        ? "bg-rose-950 text-rose-400 border-rose-800/60"
+                                        : "bg-amber-950 text-amber-400 border-amber-800/60";
+                                  return (
+                                    <div
+                                      key={app.id}
+                                      className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800 text-[11px] flex items-start gap-2"
+                                    >
+                                      <GenderAvatar
+                                        gender={appTutor?.gender || "MALE"}
+                                        role="TUTOR"
+                                        size="xs"
+                                        profilePicture={
+                                          appTutor?.profilePicture
+                                        }
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-semibold text-white truncate">
+                                            {app.tutorName}
+                                          </span>
+                                          <span
+                                            className={`text-[9px] px-1.5 py-0.5 rounded border font-mono ${statusColor}`}
+                                          >
+                                            {app.status}
+                                          </span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 truncate">
+                                          {appTutor?.institution ||
+                                            app.tutorInstitution ||
+                                            "—"}{" "}
+                                          • {appTutor?.areaName || "—"}
+                                        </div>
+                                        <div className="text-[10px] text-emerald-400 font-mono">
+                                          ৳{" "}
+                                          {app.proposedSalary.toLocaleString()}
+                                          /mo
+                                        </div>
+                                        {app.message && (
+                                          <div className="text-[10px] text-slate-400 italic mt-0.5 line-clamp-2">
+                                            "{app.message}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center text-[11px] text-slate-500 italic">
+                            No applicants yet. Verified tutors will appear here
+                            once they apply.
+                          </div>
+                        )}
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs gap-2 flex-wrap">
+                          <span className="text-slate-500">
+                            {postApps.length} applicant(s)
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {/* 🆕 Download Card Button */}
                             <button
                               type="button"
-                              onClick={() => handleMarkTutorFound(post.id)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                              onClick={() => handleDownloadCard(post)}
+                              disabled={downloadingPostId === post.id}
+                              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors flex items-center gap-1 disabled:opacity-50 shadow-md shadow-blue-600/20"
+                              title="Download beautiful PNG card"
                             >
-                              <CheckSquare className="w-3 h-3 text-emerald-400" />
-                              <span>Mark Tutor Found</span>
+                              <Download
+                                className={`w-3 h-3 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
+                              />
+                              <span>
+                                {downloadingPostId === post.id ? "..." : "Card"}
+                              </span>
                             </button>
-                          )}
+                            {!isMatched && (
+                              <button
+                                type="button"
+                                onClick={() => handleMarkTutorFound(post.id)}
+                                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                              >
+                                <CheckSquare className="w-3 h-3 text-emerald-400" />
+                                <span>Mark Tutor Found</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -5477,26 +6092,39 @@ export default function App() {
                         (a) => a.postId === post.id,
                       );
 
+                      const dayLabels: Record<string, string> = {
+                        SAT: "Sat",
+                        SUN: "Sun",
+                        MON: "Mon",
+                        TUE: "Tue",
+                        WED: "Wed",
+                        THU: "Thu",
+                        FRI: "Fri",
+                      };
+
                       return (
                         <div
                           key={post.id}
                           className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 shadow-xl hover:border-blue-700/60 transition-all flex flex-col justify-between space-y-4 relative group"
                         >
                           <div>
-                            {/* Card Header with Badges & Action Buttons */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="px-2.5 py-1 rounded-full bg-blue-950 text-blue-400 text-[11px] font-mono font-semibold border border-blue-800/60 flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-blue-400" />
-                                <span>
-                                  {post.distanceKm !== undefined
-                                    ? formatDistanceAnnotation(post.distanceKm)
-                                        .badgeText
-                                    : "Nearby"}
+                            {/* Card Header with countdown */}
+                            <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="px-2.5 py-1 rounded-full bg-blue-950 text-blue-400 text-[11px] font-mono font-semibold border border-blue-800/60 flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-blue-400" />
+                                  <span>
+                                    {post.distanceKm !== undefined
+                                      ? formatDistanceAnnotation(
+                                          post.distanceKm,
+                                        ).badgeText
+                                      : "Nearby"}
+                                  </span>
                                 </span>
-                              </span>
+                                <PostCountdown createdAt={post.createdAt} />
+                              </div>
 
                               <div className="flex items-center gap-1">
-                                {/* Share via QR Code */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -5511,51 +6139,54 @@ export default function App() {
                                       type: "post",
                                     });
                                   }}
-                                  title="Share via QR Code for offline neighborhood matching"
+                                  title="Share via QR Code"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-cyan-300 transition-colors"
                                 >
                                   <QrCode className="w-3.5 h-3.5" />
                                 </button>
-
-                                {/* Web Share API */}
                                 <button
                                   type="button"
                                   onClick={(e) => handleSharePost(post, e)}
-                                  title="Share tuition post link"
+                                  title="Share"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-white transition-colors"
                                 >
                                   <Share2 className="w-3.5 h-3.5" />
                                 </button>
 
-                                {/* Hide Post */}
+                                {/* 🆕 Download Premium Card */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadCard(post);
+                                  }}
+                                  disabled={downloadingPostId === post.id}
+                                  title="Download beautiful PNG card"
+                                  className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-blue-950/80 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                >
+                                  <Download
+                                    className={`w-3.5 h-3.5 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
+                                  />
+                                </button>
+
                                 <button
                                   type="button"
                                   onClick={(e) => handleHidePost(post.id, e)}
-                                  title="Hide this post from your feed"
+                                  title="Hide"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-slate-800 flex items-center justify-center border border-blue-950/70 text-slate-400 hover:text-rose-400 transition-colors"
                                 >
                                   <EyeOff className="w-3.5 h-3.5" />
                                 </button>
-
-                                {/* Bookmark */}
                                 <button
                                   type="button"
                                   onClick={(e) =>
                                     handleToggleBookmark(post.id, e)
                                   }
-                                  title={
-                                    post.isBookmarked
-                                      ? "Remove Bookmark"
-                                      : "Bookmark this post"
-                                  }
+                                  title="Bookmark"
                                   className="w-7 h-7 rounded-full bg-[#0B0F19] hover:bg-slate-800 flex items-center justify-center border border-blue-950/70 transition-colors"
                                 >
                                   <Heart
-                                    className={`w-3.5 h-3.5 ${
-                                      post.isBookmarked
-                                        ? "text-rose-500 fill-rose-500"
-                                        : "text-slate-400 hover:text-white"
-                                    }`}
+                                    className={`w-3.5 h-3.5 ${post.isBookmarked ? "text-rose-500 fill-rose-500" : "text-slate-400 hover:text-white"}`}
                                   />
                                 </button>
                               </div>
@@ -5565,7 +6196,7 @@ export default function App() {
                               {post.title}
                             </h3>
                             <p className="text-xs text-blue-400 font-medium mt-1">
-                              {post.subject} &bull; {post.gradeLevel}
+                              {post.subject} • {post.gradeLevel}
                             </p>
 
                             <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -5573,21 +6204,63 @@ export default function App() {
                                 {post.curriculum}
                               </span>
                               <span className="px-2 py-0.5 rounded bg-[#0B0F19] text-slate-300 text-[10px] border border-slate-800">
-                                {post.daysPerWeek} days/week
+                                {post.daysPerWeek} days/wk
                               </span>
+                              {post.tuitionMode && (
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${post.tuitionMode === "ONLINE" ? "bg-cyan-950 text-cyan-400 border-cyan-800/60" : post.tuitionMode === "OFFLINE" ? "bg-emerald-950 text-emerald-400 border-emerald-800/60" : "bg-purple-950 text-purple-400 border-purple-800/60"}`}
+                                >
+                                  {post.tuitionMode === "ONLINE"
+                                    ? "🌐 Online"
+                                    : post.tuitionMode === "OFFLINE"
+                                      ? "🏠 Offline"
+                                      : "🔄 Both"}
+                                </span>
+                              )}
                             </div>
 
-                            <div className="mt-3 text-xs text-slate-400 space-y-1">
+                            {/* Location (area only — exact address hidden) */}
+                            <div className="mt-3 text-xs text-slate-400 space-y-1.5">
                               <div className="flex items-center gap-1 text-slate-300">
                                 <Compass className="w-3.5 h-3.5 text-slate-500" />
                                 <span>
                                   {post.areaName}, {post.district}
                                 </span>
+                                <span className="text-[9px] text-slate-600 ml-1 italic">
+                                  (exact address unlocks after acceptance)
+                                </span>
                               </div>
+
+                              {/* Weekly schedule preview */}
+                              {post.weeklySchedule &&
+                                post.weeklySchedule.length > 0 && (
+                                  <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
+                                    <div className="text-[9px] text-cyan-400 font-mono uppercase mb-1">
+                                      Schedule
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {post.weeklySchedule.map((slot, i) => (
+                                        <span
+                                          key={i}
+                                          className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 text-[9px] font-mono"
+                                        >
+                                          {dayLabels[slot.day] || slot.day}{" "}
+                                          {slot.startTime}–{slot.endTime}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                               {post.specialRequirements && (
-                                <p className="text-[11px] text-slate-400 italic line-clamp-2 mt-1">
-                                  "{post.specialRequirements}"
-                                </p>
+                                <div className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800">
+                                  <div className="text-[9px] text-slate-500 font-mono uppercase mb-0.5">
+                                    Special Requirements
+                                  </div>
+                                  <p className="text-[10px] text-slate-300 italic line-clamp-2">
+                                    {post.specialRequirements}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -5604,29 +6277,26 @@ export default function App() {
 
                             {alreadyApplied ? (
                               <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30 flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Applied</span>
+                                <Check className="w-3.5 h-3.5" /> Applied
                               </span>
                             ) : currentUser.verificationStatus !==
                               "VERIFIED" ? (
                               <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/30">
-                                Verification Pending
+                                Pending Verification
                               </span>
                             ) : (
                               <div className="flex items-center gap-1.5">
-                                {/* Quick Apply Button (Bypasses modal for verified tutors) */}
                                 <button
                                   type="button"
                                   onClick={(e) =>
                                     handleQuickApplyToPost(post, e)
                                   }
                                   className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all flex items-center gap-1"
-                                  title="Quick Apply using verified default profile &amp; salary"
+                                  title="Quick Apply"
                                 >
                                   <Zap className="w-3.5 h-3.5" />
-                                  <span>Quick Apply</span>
+                                  <span>Quick</span>
                                 </button>
-
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -5671,6 +6341,111 @@ export default function App() {
               {selectedPostForApply.title} &bull;{" "}
               {selectedPostForApply.areaName}
             </p>
+
+            {/* 🆕 Full Post Details for Tutor */}
+            <div className="mb-4 p-3 rounded-xl bg-[#0B0F19] border border-blue-950/60 space-y-2 max-h-48 overflow-y-auto">
+              <div className="text-[10px] text-cyan-400 font-mono uppercase mb-1 flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Post Details (Before You Apply)
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Subject
+                  </span>
+                  <span className="text-white font-semibold">
+                    {selectedPostForApply.subject}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Grade
+                  </span>
+                  <span className="text-white font-semibold">
+                    {selectedPostForApply.gradeLevel}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Curriculum
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.curriculum}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Budget
+                  </span>
+                  <span className="text-emerald-400 font-bold">
+                    ৳ {selectedPostForApply.salaryBudget.toLocaleString()}/mo
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Mode
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.tuitionMode || "Not specified"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                    Days/Week
+                  </span>
+                  <span className="text-white">
+                    {selectedPostForApply.daysPerWeek}
+                  </span>
+                </div>
+              </div>
+
+              {selectedPostForApply.weeklySchedule &&
+                selectedPostForApply.weeklySchedule.length > 0 && (
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
+                      Weekly Schedule
+                    </span>
+                    <div className="space-y-0.5">
+                      {selectedPostForApply.weeklySchedule.map((slot, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between text-[11px]"
+                        >
+                          <span className="text-slate-300">{slot.day}</span>
+                          <span className="text-cyan-400 font-mono">
+                            {slot.startTime} – {slot.endTime}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {selectedPostForApply.specialRequirements && (
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
+                    Special Requirements
+                  </span>
+                  <p className="text-slate-300 italic text-[11px]">
+                    {selectedPostForApply.specialRequirements}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-800">
+                <span className="text-slate-500 block text-[9px] uppercase font-mono">
+                  Location
+                </span>
+                <span className="text-white">
+                  {selectedPostForApply.areaName},{" "}
+                  {selectedPostForApply.district}
+                </span>
+                <span className="text-[9px] text-slate-500 block mt-0.5 italic">
+                  Exact address unlocks after acceptance
+                </span>
+              </div>
+            </div>
 
             <form onSubmit={handleApplyToPost} className="space-y-4">
               <div>
@@ -5737,200 +6512,12 @@ export default function App() {
       )}
 
       {/* MODAL: CREATE NEW TUITION POST */}
+      {/* MODAL: CREATE NEW TUITION POST */}
       {isCreatePostOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-[#111827] border border-blue-900/40 rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => setIsCreatePostOpen(false)}
-              className="absolute right-5 top-5 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white mb-1">
-              Post Tuition Requirement
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Enter your curriculum details and budget. Posts are reviewed by
-              admin for safety.
-            </p>
-
-            <form onSubmit={handleCreatePost} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={newPostTitle}
-                  onChange={(e) => setNewPostTitle(e.target.value)}
-                  placeholder="e.g. Class 10 Higher Math & Physics Mentor"
-                  required
-                  className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Subject
-                  </label>
-                  <select
-                    value={newPostSubject}
-                    onChange={(e) => setNewPostSubject(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    {SUBJECT_OPTIONS.filter((s) => s !== "All Subjects").map(
-                      (s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Grade Level
-                  </label>
-                  <select
-                    value={newPostGrade}
-                    onChange={(e) => setNewPostGrade(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    {GRADE_OPTIONS.filter((g) => g !== "All Grades").map(
-                      (g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Curriculum
-                  </label>
-                  <select
-                    value={newPostCurriculum}
-                    onChange={(e) => setNewPostCurriculum(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="English Version">English Version</option>
-                    <option value="Bangla Medium">Bangla Medium</option>
-                    <option value="Cambridge International">
-                      Cambridge International
-                    </option>
-                    <option value="Edexcel">Edexcel</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Monthly Budget (৳)
-                  </label>
-                  <input
-                    type="number"
-                    value={newPostBudget}
-                    onChange={(e) => setNewPostBudget(Number(e.target.value))}
-                    required
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <DistrictSelect
-                    value={newPostDistrict}
-                    onChange={setNewPostDistrict}
-                    label="District (Search 64 Districts)"
-                    placeholder="Search Bangladesh districts..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Neighborhood Area
-                  </label>
-                  <input
-                    type="text"
-                    value={newPostArea}
-                    onChange={(e) => setNewPostArea(e.target.value)}
-                    placeholder="e.g. Dhanmondi 27"
-                    required
-                    className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Exact Address (Protected - Unlocks only when tutor accepted)
-                </label>
-                <input
-                  type="text"
-                  value={newPostAddress}
-                  onChange={(e) => setNewPostAddress(e.target.value)}
-                  placeholder="e.g. House 42, Road 8/A, Apt 3-B"
-                  required
-                  className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 mt-2"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Submit Tuition Request</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: CONFIRM ACCEPT TUTOR */}
-      {tutorToAccept && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#111827] border border-blue-500/40 rounded-3xl p-6 shadow-2xl relative">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-
-            <h3 className="font-bold text-lg text-white mb-2">
-              Accept {tutorToAccept.tutorName}?
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              By accepting this tutor, your tuition request will be matched.
-              Both parties will unlock mutual direct phone and WhatsApp contact
-              numbers.
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTutorToAccept(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAcceptTutor}
-                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Confirm &amp; Unlock</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <TuitionPostForm
+          onClose={() => setIsCreatePostOpen(false)}
+          onSubmit={handleCreatePostSubmit}
+        />
       )}
 
       {/* MODAL: 1-MONTH RATING MODAL */}

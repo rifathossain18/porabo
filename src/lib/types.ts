@@ -3,6 +3,14 @@ export type PostStatus = 'OPEN' | 'MATCHED' | 'CLOSED' | 'CANCELLED';
 export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 export type GenderPreference = 'ANY' | 'MALE_ONLY' | 'FEMALE_ONLY';
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type TuitionMode = 'ONLINE' | 'OFFLINE' | 'BOTH';
+export type WeekDay = 'SAT' | 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI';
+
+export interface WeeklyScheduleSlot {
+  day: WeekDay;
+  startTime: string;
+  endTime: string;
+}
 
 export interface EducationalDegree {
   degreeName: string;
@@ -68,6 +76,9 @@ export interface User {
   latitude: number;
   longitude: number;
 
+  // 🆕 Profile Picture (base64 data URL)
+  profilePicture?: string;
+
   verificationStatus?: VerificationStatus;
   verificationRejectionReason?: string;
   selfiePhotoUrl?: string;
@@ -128,6 +139,8 @@ export interface TuitionPost {
   distanceKm?: number;
   applicationsCount?: number;
   isBookmarked?: boolean;
+  tuitionMode?: TuitionMode;
+  weeklySchedule?: WeeklyScheduleSlot[];
 }
 
 export interface TuitionApplication {
@@ -152,6 +165,8 @@ export interface TuitionApplication {
   createdAt: string;
   tutorPhone?: string;
   tutorWhatsapp?: string;
+  // 🆕 Student info captured on accept (survives post deletion)
+  studentId?: string;
   studentName?: string;
   studentPhone?: string;
   studentWhatsapp?: string;

@@ -169,6 +169,51 @@ function isImageDataUrl(value: unknown): value is string {
     /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 }
 
+interface LegacyVerificationDocuments {
+  identityDocumentType: 'NID' | 'BIRTH_CERTIFICATE';
+  identityFront?: string;
+  identityBack?: string;
+  studentIdFront?: string;
+  studentIdBack?: string;
+  selfie?: string;
+}
+
+function getLegacyVerificationDocuments(userData: any): LegacyVerificationDocuments | null {
+  const legacy = userData?.verificationDocuments ||
+    userData?.teacherDetails?.verificationDocuments;
+  const image = (value: unknown) => isImageDataUrl(value) ? value : undefined;
+  const identityDocumentType: LegacyVerificationDocuments['identityDocumentType'] =
+    legacy?.identityDocumentType === 'BIRTH_CERTIFICATE'
+      ? 'BIRTH_CERTIFICATE'
+      : 'NID';
+  const documents = {
+    identityDocumentType,
+    identityFront: image(legacy?.identityFront) ||
+      image(userData?.identityFront) ||
+      image(userData?.nidFrontDocumentUrl) ||
+      image(userData?.nidDocumentUrl),
+    identityBack: image(legacy?.identityBack) ||
+      image(userData?.identityBack) ||
+      image(userData?.nidBackDocumentUrl),
+    studentIdFront: image(legacy?.studentIdFront) ||
+      image(userData?.studentIdFront) ||
+      image(userData?.studentIdCardUrl),
+    studentIdBack: image(legacy?.studentIdBack) ||
+      image(userData?.studentIdBack),
+    selfie: image(legacy?.selfie) ||
+      image(userData?.selfie) ||
+      image(userData?.selfiePhotoUrl),
+  };
+  const hasImages = [
+    documents.identityFront,
+    documents.identityBack,
+    documents.studentIdFront,
+    documents.studentIdBack,
+    documents.selfie,
+  ].some(Boolean);
+  return hasImages ? documents : null;
+}
+
 // ══════════════════════════════════════════════════════════
 // AUTO-MIGRATIONS
 // ══════════════════════════════════════════════════════════
@@ -535,8 +580,19 @@ export default {
                   studentIdFront, studentIdBack, selfie, createdAt
            FROM verification_documents WHERE userId = ?`
         ).bind(userId).first();
-        if (!documents) return errorResponse('Verification documents not found', 404);
-        return jsonResponse(documents);
+        if (documents) return jsonResponse(documents);
+
+        const userRow: any = await env.DB.prepare(
+          'SELECT data FROM users WHERE id = ?'
+        ).bind(userId).first();
+        if (!userRow) return errorResponse('User not found', 404);
+        const legacyDocuments = getLegacyVerificationDocuments(
+          JSON.parse(userRow.data),
+        );
+        if (!legacyDocuments) {
+          return jsonResponse(null);
+        }
+        return jsonResponse(legacyDocuments);
       }
 
       if (path === '/api/users' && method === 'POST') {

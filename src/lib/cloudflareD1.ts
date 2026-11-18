@@ -189,15 +189,21 @@ class CloudflareD1Service {
     userId: string,
   ): Promise<VerificationDocumentSet | null> {
     try {
-      return await this.apiFetch<VerificationDocumentSet>(
+      return await this.apiFetch<VerificationDocumentSet | null>(
         `/api/admin/verification-documents/${encodeURIComponent(userId)}`,
       );
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === 'Verification documents not found'
-      ) {
-        return null;
+      if (error instanceof Error) {
+        if (error.message === 'Verification documents not found') return null;
+        if (
+          error.message === 'API error 404' ||
+          error.message === 'Not Found' ||
+          error.message === 'Not found'
+        ) {
+          throw new Error(
+            'The admin verification endpoint is unavailable. Deploy the updated Worker API.',
+          );
+        }
       }
       throw error;
     }

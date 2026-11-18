@@ -106,38 +106,6 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 font-mono">
                 {user.role}
               </span>
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-xs font-bold text-white uppercase">
-                    Private Verification Images
-                  </h3>
-                </div>
-                {documentsLoading ? (
-                  <p className="text-xs text-slate-400">Loading protected images...</p>
-                ) : documentsError ? (
-                  <p role="alert" className="rounded-xl border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300">
-                    {documentsError}
-                  </p>
-                ) : verificationDocuments ? (
-                  <>
-                    <p className="mb-3 text-[11px] text-slate-400">
-                      Government document: {verificationDocuments.identityDocumentType === "NID" ? "National ID (NID)" : "Birth certificate"}
-                    </p>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <VerificationImage label="Profile picture" src={user.profilePicture} />
-                      <VerificationImage label="Live selfie" src={verificationDocuments.selfie} />
-                      <VerificationImage label="Identity document — front" src={verificationDocuments.identityFront} />
-                      <VerificationImage label="Identity document — back" src={verificationDocuments.identityBack} />
-                      <VerificationImage label="School / institution ID — front" src={verificationDocuments.studentIdFront} />
-                      <VerificationImage label="School / institution ID — back" src={verificationDocuments.studentIdBack} />
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-slate-400">No verification images are on file.</p>
-                )}
-              </div>
-
               {isTutor && (
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${user.verificationStatus === "VERIFIED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : user.verificationStatus === "REJECTED" ? "bg-rose-950 text-rose-400 border border-rose-800/60" : "bg-amber-950 text-amber-400 border border-amber-800/60"}`}
@@ -203,6 +171,57 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               span={2}
               mono
             />
+          </div>
+        </div>
+
+        <div className="border-b border-slate-800 pb-4">
+          <div className="mb-2.5 flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <h3 className="text-xs font-bold uppercase text-white">
+              Photos & verification documents
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <VerificationImage label="Profile picture" src={user.profilePicture} />
+            {documentsLoading ? (
+              <p className="self-center text-xs text-slate-400">
+                Loading protected verification images...
+              </p>
+            ) : documentsError ? (
+              <p
+                role="alert"
+                className="self-center rounded-xl border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300"
+              >
+                {documentsError}
+              </p>
+            ) : verificationDocuments ? (
+              <>
+                <VerificationImage
+                  label="Live selfie"
+                  src={verificationDocuments.selfie}
+                />
+                <VerificationImage
+                  label={`${verificationDocuments.identityDocumentType === "NID" ? "NID" : "Birth certificate"} — front`}
+                  src={verificationDocuments.identityFront}
+                />
+                <VerificationImage
+                  label={`${verificationDocuments.identityDocumentType === "NID" ? "NID" : "Birth certificate"} — back`}
+                  src={verificationDocuments.identityBack}
+                />
+                <VerificationImage
+                  label="School / institution ID — front"
+                  src={verificationDocuments.studentIdFront}
+                />
+                <VerificationImage
+                  label="School / institution ID — back"
+                  src={verificationDocuments.studentIdBack}
+                />
+              </>
+            ) : (
+              <p className="self-center text-xs text-slate-400">
+                No verification documents are on file for this profile.
+              </p>
+            )}
           </div>
         </div>
 
@@ -483,7 +502,7 @@ function VerificationImage({ label, src }: { label: string; src?: string }) {
           <img
             src={src}
             alt={label}
-            loading="lazy"
+            loading="eager"
             decoding="async"
             className="h-44 w-full rounded-lg bg-slate-950 object-contain"
           />

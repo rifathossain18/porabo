@@ -100,7 +100,7 @@ export function DashboardModals() {
               {/* MODAL: APPLY TO TUITION POST */}
               {selectedPostForApply && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                  <div className="w-full max-w-lg bg-[#111827] border border-blue-900/40 rounded-3xl p-6 shadow-2xl relative">
+                  <div className="w-full max-w-lg bg-[#111827] border border-emerald-900/40 rounded-3xl p-6 shadow-2xl relative">
                     <button
                       type="button"
                       onClick={() => setSelectedPostForApply(null)}
@@ -112,14 +112,14 @@ export function DashboardModals() {
                     <h3 className="font-bold text-lg text-white mb-1">
                       Apply to Tuition Post
                     </h3>
-                    <p className="text-xs text-blue-400 mb-4">
+                    <p className="text-xs text-emerald-400 mb-4">
                       {selectedPostForApply.title} &bull;{" "}
                       {selectedPostForApply.areaName}
                     </p>
         
                     {/* 🆕 Full Post Details for Tutor */}
-                    <div className="mb-4 p-3 rounded-xl bg-[#0B0F19] border border-blue-950/60 space-y-2 max-h-48 overflow-y-auto">
-                      <div className="text-[10px] text-cyan-400 font-mono uppercase mb-1 flex items-center gap-1">
+                    <div className="mb-4 p-3 rounded-xl bg-[#0B0F19] border border-emerald-950/60 space-y-2 max-h-48 overflow-y-auto">
+                      <div className="text-[10px] text-emerald-400 font-mono uppercase mb-1 flex items-center gap-1">
                         <Info className="w-3 h-3" />
                         Post Details (Before You Apply)
                       </div>
@@ -188,7 +188,7 @@ export function DashboardModals() {
                                   className="flex items-center justify-between text-[11px]"
                                 >
                                   <span className="text-slate-300">{slot.day}</span>
-                                  <span className="text-cyan-400 font-mono">
+                                  <span className="text-emerald-400 font-mono">
                                     {slot.startTime} – {slot.endTime}
                                   </span>
                                 </div>
@@ -234,7 +234,7 @@ export function DashboardModals() {
                             setApplyProposedSalary(Number(e.target.value))
                           }
                           required
-                          className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          className="w-full bg-[#0B0F19] border border-emerald-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
         
@@ -248,7 +248,7 @@ export function DashboardModals() {
                           onChange={(e) => setApplySchedule(e.target.value)}
                           placeholder="e.g. Mon, Wed, Fri (4:30 PM - 6:00 PM)"
                           required
-                          className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          className="w-full bg-[#0B0F19] border border-emerald-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
         
@@ -261,7 +261,7 @@ export function DashboardModals() {
                           value={applyMessage}
                           onChange={(e) => setApplyMessage(e.target.value)}
                           required
-                          className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                          className="w-full bg-[#0B0F19] border border-emerald-950/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
         
@@ -275,7 +275,7 @@ export function DashboardModals() {
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5"
                         >
                           <Send className="w-4 h-4" />
                           <span>Send Application</span>
@@ -298,7 +298,7 @@ export function DashboardModals() {
               {/* MODAL: 1-MONTH RATING MODAL */}
               {isRatingModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-                  <div className="w-full max-w-lg bg-[#111827] border border-blue-900/50 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+                  <div className="w-full max-w-lg bg-[#111827] border border-emerald-900/50 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
                     <button
                       type="button"
                       onClick={() => {
@@ -326,7 +326,7 @@ export function DashboardModals() {
         
                     {/* Application context */}
                     {ratingApplication && (
-                      <div className="mb-4 p-3 bg-[#0B0F19] border border-blue-950 rounded-xl text-xs space-y-1">
+                      <div className="mb-4 p-3 bg-[#0B0F19] border border-emerald-950 rounded-xl text-xs space-y-1">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Tutor:</span>
                           <span className="text-white font-semibold">
@@ -373,7 +373,7 @@ export function DashboardModals() {
                           onChange={(e) => setRatingReviewerRole(e.target.value)}
                           placeholder="e.g. Mrs. Nasreen (Guardian, Class 10)"
                           required
-                          className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                          className="w-full bg-[#0B0F19] border border-emerald-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
         
@@ -383,7 +383,7 @@ export function DashboardModals() {
                           <span className="font-semibold text-slate-200">
                             1. Punctuality (Time consistency)
                           </span>
-                          <span className="font-bold text-blue-400">
+                          <span className="font-bold text-emerald-400">
                             {ratingPunctuality} / 5 Stars
                           </span>
                         </div>
@@ -395,7 +395,7 @@ export function DashboardModals() {
                               onClick={() => setRatingPunctuality(star)}
                               className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                 ratingPunctuality >= star
-                                  ? "bg-blue-600 border-blue-500 text-white"
+                                  ? "bg-emerald-600 border-emerald-500 text-white"
                                   : "bg-[#0B0F19] border-slate-800 text-slate-500"
                               }`}
                             >
@@ -410,7 +410,7 @@ export function DashboardModals() {
                           <span className="font-semibold text-slate-200">
                             2. Subject Mastery (Syllabus depth)
                           </span>
-                          <span className="font-bold text-cyan-400">
+                          <span className="font-bold text-emerald-400">
                             {ratingSubjectMastery} / 5 Stars
                           </span>
                         </div>
@@ -422,7 +422,7 @@ export function DashboardModals() {
                               onClick={() => setRatingSubjectMastery(star)}
                               className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                 ratingSubjectMastery >= star
-                                  ? "bg-cyan-500 border-cyan-400 text-black"
+                                  ? "bg-emerald-500 border-emerald-400 text-black"
                                   : "bg-[#0B0F19] border-slate-800 text-slate-500"
                               }`}
                             >
@@ -468,7 +468,7 @@ export function DashboardModals() {
                           value={ratingComment}
                           onChange={(e) => setRatingComment(e.target.value)}
                           required
-                          className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                          className="w-full bg-[#0B0F19] border border-emerald-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
         
@@ -550,12 +550,12 @@ export function DashboardModals() {
         
                     <form onSubmit={handleResubmitVerification} className="space-y-4">
                       {/* 1. National ID Number */}
-                      <div className="p-3.5 bg-[#0B0F19] rounded-2xl border border-blue-950/60 space-y-2">
+                      <div className="p-3.5 bg-[#0B0F19] rounded-2xl border border-emerald-950/60 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-slate-200">
                             1. National ID / Birth Certificate Number
                           </span>
-                          <span className="text-[10px] text-blue-400 font-mono">
+                          <span className="text-[10px] text-emerald-400 font-mono">
                             Official Gov Record
                           </span>
                         </div>
@@ -564,12 +564,12 @@ export function DashboardModals() {
                           value={resubmitNidNumber}
                           onChange={(e) => setResubmitNidNumber(e.target.value)}
                           placeholder={currentUser.nidNumber || "e.g. 19984729104829"}
-                          className="w-full bg-[#111827] border border-blue-950 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                          className="w-full bg-[#111827] border border-emerald-950 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
                         />
                       </div>
         
                       {/* 2. Institution Roll & Reg Numbers */}
-                      <div className="p-3.5 bg-[#0B0F19] rounded-2xl border border-blue-950/60 space-y-2">
+                      <div className="p-3.5 bg-[#0B0F19] rounded-2xl border border-emerald-950/60 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-slate-200">
                             2. Institution Student ID Credentials
@@ -590,7 +590,7 @@ export function DashboardModals() {
                               placeholder={
                                 currentUser.studentIdCardRoll || "e.g. 2021-MAT-042"
                               }
-                              className="w-full bg-[#111827] border border-blue-950 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                              className="w-full bg-[#111827] border border-emerald-950 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
                             />
                           </div>
                           <div>
@@ -604,7 +604,7 @@ export function DashboardModals() {
                               placeholder={
                                 currentUser.studentIdCardReg || "e.g. DU-849201"
                               }
-                              className="w-full bg-[#111827] border border-blue-950 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                              className="w-full bg-[#111827] border border-emerald-950 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
                             />
                           </div>
                         </div>
@@ -620,7 +620,7 @@ export function DashboardModals() {
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5"
+                          className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5"
                         >
                           <Check className="w-4 h-4" />
                           <span>Submit Corrected Dossier</span>
@@ -634,7 +634,7 @@ export function DashboardModals() {
               {/* MODAL: UNIFIED PROFILE & LOCATION MODAL (STUDENT & TUTOR) WITH ACTIVITY LOG */}
               {isProfileModalOpen && currentUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
-                  <div className="w-full max-w-2xl bg-[#111827] border border-blue-900/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+                  <div className="w-full max-w-2xl bg-[#111827] border border-emerald-900/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto">
                     {/* Close Button */}
                     <button
                       type="button"
@@ -646,7 +646,7 @@ export function DashboardModals() {
         
                     {/* Modal Header */}
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                         <UserIcon className="w-5 h-5" />
                       </div>
                       <div>
@@ -663,13 +663,13 @@ export function DashboardModals() {
                     </div>
         
                     {/* Profile Navigation Tabs: Information vs Activity Log */}
-                    <div className="grid grid-cols-2 p-1 bg-[#0B0F19] rounded-2xl border border-blue-950/70 mb-5">
+                    <div className="grid grid-cols-2 p-1 bg-[#0B0F19] rounded-2xl border border-emerald-950/70 mb-5">
                       <button
                         type="button"
                         onClick={() => setProfileModalTab("info")}
                         className={`py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${
                           profileModalTab === "info"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
@@ -681,7 +681,7 @@ export function DashboardModals() {
                         onClick={() => setProfileModalTab("activity")}
                         className={`py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${
                           profileModalTab === "activity"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                            ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
                             : "text-slate-400 hover:text-white"
                         }`}
                       >
@@ -705,7 +705,7 @@ export function DashboardModals() {
                               onChange={(e) => setProfileName(e.target.value)}
                               required
                               placeholder="e.g. Farhana Yasmin"
-                              className="w-full bg-[#0B0F19] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500"
+                              className="w-full bg-[#0B0F19] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
                             />
                           </div>
         
@@ -719,7 +719,7 @@ export function DashboardModals() {
                               onChange={(e) => setProfilePhone(e.target.value)}
                               required
                               placeholder="+880 1712-XXXXXX"
-                              className="w-full bg-[#0B0F19] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                              className="w-full bg-[#0B0F19] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
                             />
                           </div>
                         </div>
@@ -733,7 +733,7 @@ export function DashboardModals() {
                             value={profileWhatsapp}
                             onChange={(e) => setProfileWhatsapp(e.target.value)}
                             placeholder="e.g. +880 1712-XXXXXX"
-                            className="w-full bg-[#0B0F19] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                            className="w-full bg-[#0B0F19] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
                           />
                           <span className="text-[10px] text-slate-500 mt-0.5 block">
                             Used for direct WhatsApp chat upon confirmed tuition match.
@@ -741,8 +741,8 @@ export function DashboardModals() {
                         </div>
         
                         {/* Location Settings: District Combobox & Area */}
-                        <div className="p-4 bg-[#0B0F19] rounded-2xl border border-blue-950/80 space-y-3">
-                          <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">
+                        <div className="p-4 bg-[#0B0F19] rounded-2xl border border-emerald-950/80 space-y-3">
+                          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
                             <MapPin className="w-4 h-4" />
                             <span>Location &amp; District Matching</span>
                           </div>
@@ -767,7 +767,7 @@ export function DashboardModals() {
                                 onChange={(e) => setProfileArea(e.target.value)}
                                 placeholder="e.g. Dhanmondi, Mirpur 10, Agrabad"
                                 required
-                                className="w-full bg-[#111827] border border-blue-950/70 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                                className="w-full bg-[#111827] border border-emerald-950/70 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                               />
                             </div>
                           </div>
@@ -781,15 +781,15 @@ export function DashboardModals() {
                               value={profileAddress}
                               onChange={(e) => setProfileAddress(e.target.value)}
                               placeholder="e.g. House 42, Road 8/A, Block D"
-                              className="w-full bg-[#111827] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                              className="w-full bg-[#111827] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                             />
                           </div>
                         </div>
         
                         {/* Tutor Specific Professional Information */}
                         {currentUser.role === "TUTOR" && (
-                          <div className="p-4 bg-[#0B0F19] rounded-2xl border border-blue-950/80 space-y-3">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-blue-400">
+                          <div className="p-4 bg-[#0B0F19] rounded-2xl border border-emerald-950/80 space-y-3">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
                               <GraduationCap className="w-4 h-4" />
                               <span>Professional Educator Profile</span>
                             </div>
@@ -804,7 +804,7 @@ export function DashboardModals() {
                                 onChange={(e) =>
                                   setProfileExpectedFee(Number(e.target.value))
                                 }
-                                className="w-full bg-[#111827] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                                className="w-full bg-[#111827] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                               />
                             </div>
         
@@ -817,7 +817,7 @@ export function DashboardModals() {
                                 value={profileBio}
                                 onChange={(e) => setProfileBio(e.target.value)}
                                 placeholder="Describe your background and teaching focus..."
-                                className="w-full bg-[#111827] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                                className="w-full bg-[#111827] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                               />
                             </div>
         
@@ -830,7 +830,7 @@ export function DashboardModals() {
                                 value={profilePhilosophy}
                                 onChange={(e) => setProfilePhilosophy(e.target.value)}
                                 placeholder="Your pedagogy, conceptual explanation method, evaluation style..."
-                                className="w-full bg-[#111827] border border-blue-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                                className="w-full bg-[#111827] border border-emerald-950/70 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                               />
                             </div>
         
@@ -842,7 +842,7 @@ export function DashboardModals() {
                                 {profileSubjects.map((s, idx) => (
                                   <span
                                     key={idx}
-                                    className="px-2.5 py-1 rounded-lg bg-blue-950 border border-blue-800 text-blue-300 text-xs flex items-center gap-1.5"
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-1.5"
                                   >
                                     <span>{s}</span>
                                     <button
@@ -866,7 +866,7 @@ export function DashboardModals() {
                                   value={profileNewSubject}
                                   onChange={(e) => setProfileNewSubject(e.target.value)}
                                   placeholder="Add subject (e.g. Higher Math, Physics)"
-                                  className="flex-1 bg-[#111827] border border-blue-950/70 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                                  className="flex-1 bg-[#111827] border border-emerald-950/70 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                                 />
                                 <button
                                   type="button"
@@ -884,7 +884,7 @@ export function DashboardModals() {
                                       setProfileNewSubject("");
                                     }
                                   }}
-                                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold"
                                 >
                                   Add
                                 </button>
@@ -904,7 +904,7 @@ export function DashboardModals() {
                           </button>
                           <button
                             type="submit"
-                            className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-1.5"
+                            className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5"
                           >
                             <Check className="w-4 h-4" />
                             <span>Save Changes</span>

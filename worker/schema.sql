@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
+CREATE TABLE IF NOT EXISTS verification_documents (
+  userId TEXT PRIMARY KEY,
+  identityDocumentType TEXT NOT NULL CHECK(identityDocumentType IN ('NID', 'BIRTH_CERTIFICATE')),
+  identityFront TEXT NOT NULL,
+  identityBack TEXT,
+  studentIdFront TEXT NOT NULL,
+  studentIdBack TEXT,
+  selfie TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS tuition_posts (
   id TEXT PRIMARY KEY,
   studentId TEXT NOT NULL,

@@ -8,6 +8,7 @@ import {
   cfUpdatePassword,
 } from "../lib/cloudflareAuth";
 import type {
+  RegistrationVerificationDocuments,
   User,
   UserGender,
   UserRole,
@@ -39,6 +40,20 @@ interface AuthActionsOptions {
   regTeacherStudentIdRoll: string;
   regTeacherStudentIdReg: string;
   regTeacherProfilePic: string | null;
+  regStudentProfilePic: string | null;
+  regIdentityDocumentType: RegistrationVerificationDocuments["identityDocumentType"];
+  regIdentityFront: string | null;
+  regIdentityBack: string | null;
+  regStudentIdFront: string | null;
+  regStudentIdBack: string | null;
+  regSelfiePhoto: string | null;
+  setRegTeacherProfilePic: Dispatch<SetStateAction<string | null>>;
+  setRegStudentProfilePic: Dispatch<SetStateAction<string | null>>;
+  setRegIdentityFront: Dispatch<SetStateAction<string | null>>;
+  setRegIdentityBack: Dispatch<SetStateAction<string | null>>;
+  setRegStudentIdFront: Dispatch<SetStateAction<string | null>>;
+  setRegStudentIdBack: Dispatch<SetStateAction<string | null>>;
+  setRegSelfiePhoto: Dispatch<SetStateAction<string | null>>;
   forgotPasswordEmail: string;
   newPasswordAfterReset: string;
   setAuthLoading: Dispatch<SetStateAction<boolean>>;
@@ -77,6 +92,20 @@ export function useAuthActions({
   regTeacherStudentIdRoll,
   regTeacherStudentIdReg,
   regTeacherProfilePic,
+  regStudentProfilePic,
+  regIdentityDocumentType,
+  regIdentityFront,
+  regIdentityBack,
+  regStudentIdFront,
+  regStudentIdBack,
+  regSelfiePhoto,
+  setRegTeacherProfilePic,
+  setRegStudentProfilePic,
+  setRegIdentityFront,
+  setRegIdentityBack,
+  setRegStudentIdFront,
+  setRegStudentIdBack,
+  setRegSelfiePhoto,
   forgotPasswordEmail,
   newPasswordAfterReset,
   setAuthLoading,
@@ -173,10 +202,31 @@ export function useAuthActions({
         setAuthError("Please enter your Institution Student ID Card Registration Number.");
         return;
       }
-      if (!regTeacherProfilePic) {
-        setAuthError("Please upload a profile picture. This is required for teacher verification.");
-        return;
-      }
+    }
+
+    const profilePicture =
+      authRoleChoice === "TUTOR" ? regTeacherProfilePic : regStudentProfilePic;
+    if (!profilePicture) {
+      setAuthError("Please upload a profile picture.");
+      return;
+    }
+    if (!regIdentityFront || !regStudentIdFront || !regSelfiePhoto) {
+      setAuthError(
+        "Please add the front of your NID or birth certificate, your school or institution ID, and a selfie.",
+      );
+      return;
+    }
+    const registrationImageSize = [
+      profilePicture,
+      regIdentityFront,
+      regIdentityBack,
+      regStudentIdFront,
+      regStudentIdBack,
+      regSelfiePhoto,
+    ].reduce((total, image) => total + (image?.length || 0), 0);
+    if (registrationImageSize > 1_500_000) {
+      setAuthError("Your compressed images are too large. Replace one or more images and try again.");
+      return;
     }
 
     setAuthLoading(true);
@@ -193,6 +243,15 @@ export function useAuthActions({
         exactAddress: `${registerArea}, ${registerDistrict}`,
         latitude: ANCHOR_LOCATION.latitude + (Math.random() * 0.008 - 0.004),
         longitude: ANCHOR_LOCATION.longitude + (Math.random() * 0.008 - 0.004),
+        profilePicture,
+        verificationDocuments: {
+          identityDocumentType: regIdentityDocumentType,
+          identityFront: regIdentityFront,
+          identityBack: regIdentityBack || undefined,
+          studentIdFront: regStudentIdFront,
+          studentIdBack: regStudentIdBack || undefined,
+          selfie: regSelfiePhoto,
+        },
         teacherDetails:
           authRoleChoice === "TUTOR"
             ? {
@@ -233,7 +292,6 @@ export function useAuthActions({
                   },
                 ],
                 reviews: [],
-                profilePicture: regTeacherProfilePic || undefined,
                 verificationSubmittedAt: new Date().toISOString(),
               }
             : undefined,
@@ -243,6 +301,13 @@ export function useAuthActions({
         setAllUsers((previous) => [result.user!, ...previous]);
         setCurrentUser(result.user);
         setIsLocationVerified(true);
+        setRegTeacherProfilePic(null);
+        setRegStudentProfilePic(null);
+        setRegIdentityFront(null);
+        setRegIdentityBack(null);
+        setRegStudentIdFront(null);
+        setRegStudentIdBack(null);
+        setRegSelfiePhoto(null);
         setAuthLoading(false);
         showToast(
           `Account created successfully. Signed in as ${authRoleChoice === "STUDENT" ? "Student" : "Teacher"}.`,

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Briefcase, Check, GraduationCap, MapPin, MessageSquare, ShieldCheck, User as UserIcon, X } from "lucide-react";
-import { User } from "../../lib/types";
+import { User, VerificationDocumentSet } from "../../lib/types";
 import { GenderAvatar } from "../GenderAvatar";
+import { cfD1 } from "../../lib/cloudflareD1";
 
 // ============ HELPER: InfoField ============
 export const InfoField: React.FC<{
@@ -49,6 +50,36 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
     (r) => r.status === "PENDING",
   );
   const isTutor = user.role === "TUTOR";
+  const [verificationDocuments, setVerificationDocuments] =
+    useState<VerificationDocumentSet | null>(null);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setDocumentsLoading(true);
+    setDocumentsError(null);
+    setVerificationDocuments(null);
+    cfD1.getVerificationDocuments(user.id)
+      .then((documents) => {
+        if (active) setVerificationDocuments(documents);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setDocumentsError(
+            error instanceof Error
+              ? error.message
+              : "Could not load verification documents.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setDocumentsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -75,6 +106,38 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 font-mono">
                 {user.role}
               </span>
+              <div className="border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-xs font-bold text-white uppercase">
+                    Private Verification Images
+                  </h3>
+                </div>
+                {documentsLoading ? (
+                  <p className="text-xs text-slate-400">Loading protected images...</p>
+                ) : documentsError ? (
+                  <p role="alert" className="rounded-xl border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300">
+                    {documentsError}
+                  </p>
+                ) : verificationDocuments ? (
+                  <>
+                    <p className="mb-3 text-[11px] text-slate-400">
+                      Government document: {verificationDocuments.identityDocumentType === "NID" ? "National ID (NID)" : "Birth certificate"}
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <VerificationImage label="Profile picture" src={user.profilePicture} />
+                      <VerificationImage label="Live selfie" src={verificationDocuments.selfie} />
+                      <VerificationImage label="Identity document — front" src={verificationDocuments.identityFront} />
+                      <VerificationImage label="Identity document — back" src={verificationDocuments.identityBack} />
+                      <VerificationImage label="School / institution ID — front" src={verificationDocuments.studentIdFront} />
+                      <VerificationImage label="School / institution ID — back" src={verificationDocuments.studentIdBack} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400">No verification images are on file.</p>
+                )}
+              </div>
+
               {isTutor && (
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${user.verificationStatus === "VERIFIED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : user.verificationStatus === "REJECTED" ? "bg-rose-950 text-rose-400 border border-rose-800/60" : "bg-amber-950 text-amber-400 border border-amber-800/60"}`}
@@ -410,3 +473,26 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
     </div>
   );
 };
+
+function VerificationImage({ label, src }: { label: string; src?: string }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-[#111827] p-2.5">
+      <p className="mb-2 text-[10px] font-mono uppercase text-slate-400">{label}</p>
+      {src ? (
+        <a href={src} target="_blank" rel="noreferrer">
+          <img
+            src={src}
+            alt={label}
+            loading="lazy"
+            decoding="async"
+            className="h-44 w-full rounded-lg bg-slate-950 object-contain"
+          />
+        </a>
+      ) : (
+        <div className="flex h-44 items-center justify-center rounded-lg bg-slate-950 text-xs text-slate-500">
+          Not provided
+        </div>
+      )}
+    </div>
+  );
+}

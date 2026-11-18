@@ -6,6 +6,7 @@ import {
   User,
   UserRole,
   UserGender,
+  IdentityDocumentType,
   VerificationStatus,
   EducationalDegree,
   CategoricalRating,
@@ -108,6 +109,16 @@ export function useAppController() {
   const [regTeacherProfilePic, setRegTeacherProfilePic] = useState<
     string | null
   >(null);
+  const [regStudentProfilePic, setRegStudentProfilePic] = useState<
+    string | null
+  >(null);
+  const [regIdentityDocumentType, setRegIdentityDocumentType] =
+    useState<IdentityDocumentType>("NID");
+  const [regIdentityFront, setRegIdentityFront] = useState<string | null>(null);
+  const [regIdentityBack, setRegIdentityBack] = useState<string | null>(null);
+  const [regStudentIdFront, setRegStudentIdFront] = useState<string | null>(null);
+  const [regStudentIdBack, setRegStudentIdBack] = useState<string | null>(null);
+  const [regSelfiePhoto, setRegSelfiePhoto] = useState<string | null>(null);
 
   // Teacher verification credential stepper (1: Campus & Dept, 2: National ID, 3: Student ID Roll/Reg, 4: Experience & Subjects)
   const [regTeacherDocStep, setRegTeacherDocStep] = useState<1 | 2 | 3 | 4>(1);
@@ -411,6 +422,20 @@ export function useAppController() {
     regTeacherStudentIdRoll,
     regTeacherStudentIdReg,
     regTeacherProfilePic,
+    regStudentProfilePic,
+    regIdentityDocumentType,
+    regIdentityFront,
+    regIdentityBack,
+    regStudentIdFront,
+    regStudentIdBack,
+    regSelfiePhoto,
+    setRegTeacherProfilePic,
+    setRegStudentProfilePic,
+    setRegIdentityFront,
+    setRegIdentityBack,
+    setRegStudentIdFront,
+    setRegStudentIdBack,
+    setRegSelfiePhoto,
     forgotPasswordEmail,
     newPasswordAfterReset,
     setAuthLoading,
@@ -648,6 +673,20 @@ export function useAppController() {
     setRegTeacherStudentIdReg,
     regTeacherProfilePic,
     setRegTeacherProfilePic,
+    regStudentProfilePic,
+    setRegStudentProfilePic,
+    regIdentityDocumentType,
+    setRegIdentityDocumentType,
+    regIdentityFront,
+    setRegIdentityFront,
+    regIdentityBack,
+    setRegIdentityBack,
+    regStudentIdFront,
+    setRegStudentIdFront,
+    regStudentIdBack,
+    setRegStudentIdBack,
+    regSelfiePhoto,
+    setRegSelfiePhoto,
     regTeacherDocStep,
     setRegTeacherDocStep,
     isNotificationPanelOpen,

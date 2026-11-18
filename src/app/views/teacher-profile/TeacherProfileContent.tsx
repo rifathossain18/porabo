@@ -339,7 +339,6 @@ export function TeacherProfileContent() {
               <div className="px-6 pb-6 pt-0 relative">
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-10 sm:-mt-12 gap-4 mb-4">
                   <div className="flex items-end gap-4">
-                    {/* Stylized Gender Vector Avatar (No Human Photos) */}
                     <GenderAvatar
                       gender={tutor.gender || "MALE"}
                       role="TUTOR"
@@ -743,6 +742,8 @@ export function TeacherProfileContent() {
                               gender="FEMALE"
                               role="STUDENT"
                               size="sm"
+                              name={rev.studentName}
+                              profilePicture={rev.studentPhotoUrl}
                             />
                             <div>
                               <div className="font-semibold text-xs sm:text-sm text-white">

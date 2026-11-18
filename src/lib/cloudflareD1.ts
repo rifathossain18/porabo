@@ -2,7 +2,7 @@
  * Cloudflare D1 API Client
  */
 
-import { User, TuitionPost, TuitionApplication } from './types';
+import { User, TuitionPost, TuitionApplication, VerificationDocumentSet } from './types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || '';
 const IS_API_ENABLED = Boolean(API_BASE);
@@ -183,6 +183,24 @@ class CloudflareD1Service {
     const target = email.trim().toLowerCase();
     const users = await this.getUsers();
     return users.find(u => u.email.trim().toLowerCase() === target) || null;
+  }
+
+  async getVerificationDocuments(
+    userId: string,
+  ): Promise<VerificationDocumentSet | null> {
+    try {
+      return await this.apiFetch<VerificationDocumentSet>(
+        `/api/admin/verification-documents/${encodeURIComponent(userId)}`,
+      );
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'Verification documents not found'
+      ) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async saveUser(user: User): Promise<void> {

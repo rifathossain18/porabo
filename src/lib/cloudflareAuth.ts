@@ -1,6 +1,6 @@
 
 
-import { User, UserRole, UserGender } from './types';
+import { User, UserRole, UserGender, RegistrationVerificationDocuments } from './types';
 import { cfD1 } from './cloudflareD1';
 
 const TOKEN_KEY = 'porabo_cf_jwt_token';
@@ -24,6 +24,8 @@ export async function cfRegister(params: {
   role: UserRole; gender: UserGender;
   district: string; areaName: string; exactAddress: string;
   latitude: number; longitude: number;
+  profilePicture: string;
+  verificationDocuments: RegistrationVerificationDocuments;
   teacherDetails?: Partial<User>;
 }): Promise<{ success: boolean; user?: User; token?: string; error?: string }> {
   try {

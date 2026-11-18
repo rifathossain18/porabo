@@ -5,6 +5,28 @@ export type GenderPreference = 'ANY' | 'MALE_ONLY' | 'FEMALE_ONLY';
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type TuitionMode = 'ONLINE' | 'OFFLINE' | 'BOTH';
 export type WeekDay = 'SAT' | 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI';
+export type IdentityDocumentType = 'NID' | 'BIRTH_CERTIFICATE';
+
+export interface GeoCoordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface VerificationDocumentSet {
+  identityDocumentType: IdentityDocumentType;
+  identityFront?: string;
+  identityBack?: string;
+  studentIdFront?: string;
+  studentIdBack?: string;
+  selfie?: string;
+}
+
+export interface RegistrationVerificationDocuments
+  extends VerificationDocumentSet {
+  identityFront: string;
+  studentIdFront: string;
+  selfie: string;
+}
 
 export interface WeeklyScheduleSlot {
   day: WeekDay;

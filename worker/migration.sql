@@ -57,5 +57,17 @@ CREATE TABLE IF NOT EXISTS admin_login_attempts (
   lastAttemptAt TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS verification_documents (
+  userId TEXT PRIMARY KEY,
+  identityDocumentType TEXT NOT NULL CHECK(identityDocumentType IN ('NID', 'BIRTH_CERTIFICATE')),
+  identityFront TEXT NOT NULL,
+  identityBack TEXT,
+  studentIdFront TEXT NOT NULL,
+  studentIdBack TEXT,
+  selfie TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- ========== EXAM RESULTS ==========
 ALTER TABLE exam_results ADD COLUMN answers TEXT;

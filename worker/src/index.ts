@@ -144,11 +144,29 @@ function flattenUser(raw: any): any {
   const u = { ...raw };
   delete u.password;
   delete u.password_hash;
-  if (u.teacherDetails && typeof u.teacherDetails === 'object') {
-    const { teacherDetails, ...flat } = u;
-    return { ...flat, ...teacherDetails };
-  }
-  return u;
+  const flattened = u.teacherDetails && typeof u.teacherDetails === 'object'
+    ? (() => {
+        const { teacherDetails, ...flat } = u;
+        return { ...flat, ...teacherDetails };
+      })()
+    : u;
+  delete flattened.selfiePhotoUrl;
+  delete flattened.nidDocumentUrl;
+  delete flattened.nidFrontDocumentUrl;
+  delete flattened.nidBackDocumentUrl;
+  delete flattened.studentIdCardUrl;
+  delete flattened.identityFront;
+  delete flattened.identityBack;
+  delete flattened.studentIdFront;
+  delete flattened.studentIdBack;
+  delete flattened.selfie;
+  delete flattened.verificationDocuments;
+  return flattened;
+}
+
+function isImageDataUrl(value: unknown): value is string {
+  return typeof value === 'string' &&
+    /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -324,11 +342,38 @@ export default {
         if (!email.includes('@')) return errorResponse('Valid email required');
         if (password.length < 6) return errorResponse('Password must be at least 6 chars');
         if (!body.fullName || !body.role) return errorResponse('Missing fields');
+        const verificationDocuments = body.verificationDocuments;
+        if (!isImageDataUrl(body.profilePicture)) {
+          return errorResponse('A valid profile picture is required');
+        }
+        if (
+          !verificationDocuments ||
+          !['NID', 'BIRTH_CERTIFICATE'].includes(verificationDocuments.identityDocumentType) ||
+          !isImageDataUrl(verificationDocuments.identityFront) ||
+          !isImageDataUrl(verificationDocuments.studentIdFront) ||
+          !isImageDataUrl(verificationDocuments.selfie) ||
+          (verificationDocuments.identityBack != null &&
+            !isImageDataUrl(verificationDocuments.identityBack)) ||
+          (verificationDocuments.studentIdBack != null &&
+            !isImageDataUrl(verificationDocuments.studentIdBack))
+        ) {
+          return errorResponse('Valid identity, school/institution ID, and selfie images are required');
+        }
+        const uploadedImageSize =
+          body.profilePicture.length +
+          verificationDocuments.identityFront.length +
+          (verificationDocuments.identityBack?.length || 0) +
+          verificationDocuments.studentIdFront.length +
+          (verificationDocuments.studentIdBack?.length || 0) +
+          verificationDocuments.selfie.length;
+        if (uploadedImageSize > 1_500_000) {
+          return errorResponse('Registration images exceed the allowed upload size');
+        }
 
         const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
         if (existing) return errorResponse('Email already registered', 409);
 
-        const { password: _pw, teacherDetails, ...userData } = body;
+        const { password: _pw, teacherDetails, verificationDocuments: _documents, ...userData } = body;
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const user: any = {
           ...userData,
@@ -340,9 +385,25 @@ export default {
         const hash = await hashPassword(password);
         const now = new Date().toISOString();
 
-        await env.DB.prepare(
-          `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).bind(userId, email, hash, JSON.stringify(user), body.role, now, now).run();
+        await env.DB.batch([
+          env.DB.prepare(
+            `INSERT INTO users (id, email, password_hash, data, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)`
+          ).bind(userId, email, hash, JSON.stringify(user), body.role, now, now),
+          env.DB.prepare(
+            `INSERT INTO verification_documents
+              (userId, identityDocumentType, identityFront, identityBack, studentIdFront, studentIdBack, selfie, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            userId,
+            verificationDocuments.identityDocumentType,
+            verificationDocuments.identityFront,
+            verificationDocuments.identityBack || null,
+            verificationDocuments.studentIdFront,
+            verificationDocuments.studentIdBack || null,
+            verificationDocuments.selfie,
+            now,
+          ),
+        ]);
 
         const token = await signJwt({ sub: userId, email, role: body.role }, env.JWT_SECRET);
         return jsonResponse({ success: true, user, token });
@@ -462,6 +523,20 @@ export default {
           .map((r: any) => { try { return flattenUser(JSON.parse(r.data)); } catch { return null; } })
           .filter(Boolean);
         return jsonResponse(users);
+      }
+
+      const verificationDocumentsMatch = path.match(/^\/api\/admin\/verification-documents\/([^/]+)$/);
+      if (verificationDocumentsMatch && method === 'GET') {
+        const ctx = await getAuth(request, env);
+        if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
+        const userId = decodeURIComponent(verificationDocumentsMatch[1]);
+        const documents = await env.DB.prepare(
+          `SELECT identityDocumentType, identityFront, identityBack,
+                  studentIdFront, studentIdBack, selfie, createdAt
+           FROM verification_documents WHERE userId = ?`
+        ).bind(userId).first();
+        if (!documents) return errorResponse('Verification documents not found', 404);
+        return jsonResponse(documents);
       }
 
       if (path === '/api/users' && method === 'POST') {

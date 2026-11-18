@@ -75,6 +75,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 gender={currentUser.gender || 'MALE'}
                 role={currentUser.role}
                 size="sm"
+                profilePicture={currentUser.profilePicture}
               />
               <div>
                 <div className="font-bold text-sm text-white line-clamp-1">

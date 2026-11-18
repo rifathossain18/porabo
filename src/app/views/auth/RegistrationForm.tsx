@@ -3,6 +3,7 @@ import { DistrictSelect } from "../../../components/DistrictSelect";
 import { useAppContext } from "../../AppContext";
 import type { UserGender } from "../../../lib/types";
 import type { RegistrationFormProps } from "./AuthTypes";
+import { RegistrationMediaFields } from "./RegistrationMediaFields";
 import { TeacherCredentialRegistration } from "./TeacherCredentialRegistration";
 
 export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
@@ -35,13 +36,13 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
-          <input type="text" value={registerName} onChange={(event) => setRegisterName(event.target.value)} placeholder="e.g. Farhana Khanom" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500" />
+          <input type="text" value={registerName} onChange={(event) => setRegisterName(event.target.value)} placeholder="e.g. Farhana Khanom" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Gender</label>
-          <select value={registerGender} onChange={(event) => setRegisterGender(event.target.value as UserGender)} className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500">
-            <option value="MALE">Male (Vector Scholar Avatar)</option>
-            <option value="FEMALE">Female (Vector Scholar Avatar)</option>
+          <select value={registerGender} onChange={(event) => setRegisterGender(event.target.value as UserGender)} className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500">
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
           </select>
         </div>
       </div>
@@ -49,11 +50,11 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Email</label>
-          <input type="email" value={registerEmail} onChange={(event) => setRegisterEmail(event.target.value)} placeholder="your.email@example.com" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500" />
+          <input type="email" value={registerEmail} onChange={(event) => setRegisterEmail(event.target.value)} placeholder="your.email@example.com" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Phone (+880)</label>
-          <input type="tel" value={registerPhone} onChange={(event) => setRegisterPhone(event.target.value)} placeholder="+880 1712-XXXXXX" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500" />
+          <input type="tel" value={registerPhone} onChange={(event) => setRegisterPhone(event.target.value)} placeholder="+880 1712-XXXXXX" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
       </div>
 
@@ -64,9 +65,11 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Neighborhood Area</label>
-          <input type="text" value={registerArea} onChange={(event) => setRegisterArea(event.target.value)} placeholder="e.g. Dhanmondi 27" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500" />
+          <input type="text" value={registerArea} onChange={(event) => setRegisterArea(event.target.value)} placeholder="e.g. Dhanmondi 27" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
       </div>
+
+      <RegistrationMediaFields />
 
       {authRoleChoice === "TUTOR" && (
         <TeacherCredentialRegistration
@@ -77,15 +80,15 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Password</label>
-          <input type={showRegisterPassword ? "text" : "password"} value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Min 6 chars" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+          <input type={showRegisterPassword ? "text" : "password"} value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} placeholder="Min 6 chars" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-slate-300 mb-1">Confirm Password</label>
-          <input type={showRegisterPassword ? "text" : "password"} value={registerConfirmPassword} onChange={(event) => setRegisterConfirmPassword(event.target.value)} placeholder="Re-enter" required className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+          <input type={showRegisterPassword ? "text" : "password"} value={registerConfirmPassword} onChange={(event) => setRegisterConfirmPassword(event.target.value)} placeholder="Re-enter" required className="w-full bg-[#0B0F19] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
         </div>
       </div>
 
-      <button type="submit" disabled={authLoading} className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 disabled:opacity-50 mt-1">
+      <button type="submit" disabled={authLoading} className="w-full py-3 px-4 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-700/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-1">
         {authLoading ? (
           <>
             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -104,7 +107,7 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
       <div className="text-center pt-1">
         <p className="text-xs text-slate-400">
           Already registered?{" "}
-          <button type="button" onClick={onSwitchToLogin} className="text-blue-400 hover:underline font-medium">
+          <button type="button" onClick={onSwitchToLogin} className="text-emerald-400 hover:underline font-medium">
             Sign In here
           </button>
         </p>

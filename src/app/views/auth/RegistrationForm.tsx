@@ -15,6 +15,10 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
     setRegisterEmail,
     registerPhone,
     setRegisterPhone,
+    registerGuardianName,
+    setRegisterGuardianName,
+    registerGuardianPhone,
+    setRegisterGuardianPhone,
     registerGender,
     setRegisterGender,
     registerDistrict,
@@ -57,6 +61,38 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Phone (+880)</label>
           <input type="tel" value={registerPhone} onChange={(event) => setRegisterPhone(event.target.value)} placeholder="+880 1712-XXXXXX" required className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">
+            Guardian's Name
+          </label>
+          <input
+            type="text"
+            value={registerGuardianName}
+            onChange={(event) => setRegisterGuardianName(event.target.value)}
+            placeholder="Full name"
+            maxLength={120}
+            autoComplete="name"
+            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">
+            Guardian's Mobile Number
+          </label>
+          <input
+            type="tel"
+            value={registerGuardianPhone}
+            onChange={(event) => setRegisterGuardianPhone(event.target.value)}
+            placeholder="+880 17XX-XXXXXX"
+            autoComplete="tel"
+            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm"
+          />
         </div>
       </div>
 

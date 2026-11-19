@@ -28,6 +28,8 @@ interface AuthActionsOptions {
   registerName: string;
   registerEmail: string;
   registerPhone: string;
+  registerGuardianName: string;
+  registerGuardianPhone: string;
   registerGender: UserGender;
   registerDistrict: string;
   registerArea: string;
@@ -81,6 +83,8 @@ export function useAuthActions({
   registerName,
   registerEmail,
   registerPhone,
+  registerGuardianName,
+  registerGuardianPhone,
   registerGender,
   registerDistrict,
   registerArea,
@@ -174,6 +178,17 @@ export function useAuthActions({
       setAuthError("Please enter a valid phone number (e.g. +880 17...).");
       return;
     }
+    const guardianName = registerGuardianName.trim();
+    const guardianPhone = registerGuardianPhone.trim();
+    const guardianPhoneDigits = guardianPhone.replace(/\D/g, "");
+    if (!guardianName || guardianName.length > 120) {
+      setAuthError("Please enter the guardian's name (up to 120 characters).");
+      return;
+    }
+    if (guardianPhoneDigits.length < 9 || guardianPhoneDigits.length > 15) {
+      setAuthError("Please enter a valid guardian mobile number.");
+      return;
+    }
     if (!registerPassword || registerPassword.length < 6) {
       setAuthError("Password must be at least 6 characters long.");
       return;
@@ -242,6 +257,8 @@ export function useAuthActions({
         password: registerPassword,
         fullName: registerName,
         phone: registerPhone,
+        guardianName,
+        guardianPhone,
         role: authRoleChoice,
         gender: registerGender,
         institution:

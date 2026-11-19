@@ -387,6 +387,15 @@ export default {
         if (!email.includes('@')) return errorResponse('Valid email required');
         if (password.length < 6) return errorResponse('Password must be at least 6 chars');
         if (!body.fullName || !body.role) return errorResponse('Missing fields');
+        const guardianName = String(body.guardianName || '').trim();
+        const guardianPhone = String(body.guardianPhone || '').trim();
+        const guardianPhoneDigits = guardianPhone.replace(/\D/g, '');
+        if (!guardianName || guardianName.length > 120) {
+          return errorResponse("Guardian name is required (maximum 120 characters)");
+        }
+        if (guardianPhoneDigits.length < 9 || guardianPhoneDigits.length > 15) {
+          return errorResponse('A valid guardian mobile number is required');
+        }
         const studentInstitution = String(body.institution || '').trim();
         if (
           body.role === 'STUDENT' &&
@@ -435,6 +444,8 @@ export default {
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const user: any = {
           ...userData,
+          guardianName,
+          guardianPhone,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
           ...(body.role === 'STUDENT' ? { institution: studentInstitution } : {}),
           id: userId, email, role: body.role,
@@ -584,11 +595,11 @@ export default {
             try {
               const user = flattenUser(JSON.parse(r.data));
               if (
-                !ctx.isAdmin &&
-                user.role === 'STUDENT' &&
-                ctx.user?.userId !== user.id
+                !ctx.isAdmin && ctx.user?.userId !== user.id
               ) {
-                delete user.institution;
+                delete user.guardianName;
+                delete user.guardianPhone;
+                if (user.role === 'STUDENT') delete user.institution;
               }
               return user;
             } catch {

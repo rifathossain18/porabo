@@ -85,6 +85,8 @@ export interface User {
   id: string;
   email: string;
   phone: string;
+  guardianName?: string;
+  guardianPhone?: string;
   password?: string;
   whatsapp?: string;
   role: UserRole;

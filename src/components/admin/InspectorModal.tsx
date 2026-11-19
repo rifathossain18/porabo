@@ -138,6 +138,12 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <InfoField label="Email" value={user.email} span={2} mono />
             <InfoField label="Phone" value={user.phone} mono />
+            <InfoField label="Guardian Name" value={user.guardianName} />
+            <InfoField
+              label="Guardian Mobile"
+              value={user.guardianPhone}
+              mono
+            />
             <InfoField
               label="WhatsApp"
               value={user.whatsapp || user.phone}

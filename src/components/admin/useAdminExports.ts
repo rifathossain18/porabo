@@ -58,6 +58,8 @@ export function useAdminExports({
       "Name",
       "Email",
       "Phone",
+      "Guardian Name",
+      "Guardian Mobile",
       "Gender",
       "District",
       "Institution",
@@ -73,6 +75,8 @@ export function useAdminExports({
       tutor.fullName,
       tutor.email,
       tutor.phone,
+      tutor.guardianName,
+      tutor.guardianPhone,
       tutor.gender,
       tutor.district,
       tutor.institution,
@@ -87,12 +91,23 @@ export function useAdminExports({
   };
 
   const handleExportStudents = () => {
-    const headers = ["ID", "Name", "Email", "Phone", "District", "Address"];
+    const headers = [
+      "ID",
+      "Name",
+      "Email",
+      "Phone",
+      "Guardian Name",
+      "Guardian Mobile",
+      "District",
+      "Address",
+    ];
     const rows = students.map((student) => [
       student.id,
       student.fullName,
       student.email,
       student.phone,
+      student.guardianName,
+      student.guardianPhone,
       student.district,
       student.exactAddress,
     ]);

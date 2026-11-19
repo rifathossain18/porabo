@@ -89,6 +89,12 @@ export function AdminTeachersSection({
                   </p>
                 </div>
               </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                <Phone className="h-3 w-3 shrink-0 text-emerald-700" />
+                <span>
+                  Guardian: {tutor.guardianName || "—"} · {tutor.guardianPhone || "—"}
+                </span>
+              </div>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setInspectingUser(tutor)}
@@ -201,6 +207,12 @@ export function AdminStudentsSection({
             </div>
             <div className="text-xs text-slate-600 flex items-center gap-1 font-mono">
               <Phone className="w-3 h-3 text-emerald-700" /> {student.phone}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-slate-600">
+              <Phone className="h-3 w-3 shrink-0 text-blue-700" />
+              <span>
+                Guardian: {student.guardianName || "—"} · {student.guardianPhone || "—"}
+              </span>
             </div>
             <div className="text-[11px] text-slate-500 flex items-center gap-1">
               <MapPin className="w-3 h-3" /> {student.areaName}, {student.district}

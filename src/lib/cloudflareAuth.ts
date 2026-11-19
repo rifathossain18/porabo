@@ -21,6 +21,7 @@ async function authFetch<T>(path: string, body: unknown) {
 
 export async function cfRegister(params: {
   email: string; password: string; fullName: string; phone: string;
+  guardianName: string; guardianPhone: string;
   role: UserRole; gender: UserGender;
   district: string; areaName: string; exactAddress: string;
   latitude: number; longitude: number;

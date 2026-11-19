@@ -81,6 +81,8 @@ export function useAppController() {
   const [registerName, setRegisterName] = useState<string>("");
   const [registerEmail, setRegisterEmail] = useState<string>("");
   const [registerPhone, setRegisterPhone] = useState<string>("");
+  const [registerGuardianName, setRegisterGuardianName] = useState<string>("");
+  const [registerGuardianPhone, setRegisterGuardianPhone] = useState<string>("");
   const [registerGender, setRegisterGender] = useState<UserGender>("MALE");
   const [registerDistrict, setRegisterDistrict] = useState<string>("Dhaka");
   const [registerArea, setRegisterArea] = useState<string>("Dhanmondi");
@@ -411,6 +413,8 @@ export function useAppController() {
     registerName,
     registerEmail,
     registerPhone,
+    registerGuardianName,
+    registerGuardianPhone,
     registerGender,
     registerDistrict,
     registerArea,
@@ -649,6 +653,10 @@ export function useAppController() {
     setRegisterEmail,
     registerPhone,
     setRegisterPhone,
+    registerGuardianName,
+    setRegisterGuardianName,
+    registerGuardianPhone,
+    setRegisterGuardianPhone,
     registerGender,
     setRegisterGender,
     registerDistrict,

@@ -179,6 +179,12 @@ class CloudflareD1Service {
     return users.find(u => u.id === id) || null;
   }
 
+  async getAdminUser(id: string): Promise<User> {
+    return this.apiFetch<User>(
+      `/api/admin/users/${encodeURIComponent(id)}`,
+    );
+  }
+
   async getUserByEmail(email: string): Promise<User | null> {
     const target = email.trim().toLowerCase();
     const users = await this.getUsers();

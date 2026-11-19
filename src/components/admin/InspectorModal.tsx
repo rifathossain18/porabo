@@ -39,11 +39,16 @@ interface InspectorModalProps {
   onReject: () => void;
 }
 export const InspectorModal: React.FC<InspectorModalProps> = ({
-  user,
+  user: initialUser,
   onClose,
   onApprove,
   onReject,
 }) => {
+  const [freshUser, setFreshUser] = useState<User | null>(null);
+  const [userDetailsLoading, setUserDetailsLoading] = useState(true);
+  const [userDetailsError, setUserDetailsError] = useState<string | null>(null);
+  const user =
+    freshUser?.id === initialUser.id ? freshUser : initialUser;
   const approvedReviews = (user.reviews || []).filter(
     (r) => (r.status || "APPROVED") === "APPROVED",
   );
@@ -56,6 +61,32 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
     useState<VerificationDocumentSet | null>(null);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setFreshUser(null);
+    setUserDetailsLoading(true);
+    setUserDetailsError(null);
+    cfD1.getAdminUser(initialUser.id)
+      .then((freshUserRecord) => {
+        if (active) setFreshUser(freshUserRecord);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setUserDetailsError(
+            error instanceof Error
+              ? error.message
+              : "Could not load the latest user information.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setUserDetailsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [initialUser.id]);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +112,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
     return () => {
       active = false;
     };
-  }, [user.id]);
+  }, [initialUser.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -138,10 +169,13 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <InfoField label="Email" value={user.email} span={2} mono />
             <InfoField label="Phone" value={user.phone} mono />
-            <InfoField label="Guardian Name" value={user.guardianName} />
+            <InfoField
+              label="Guardian Name"
+              value={userDetailsLoading ? "Loading..." : user.guardianName}
+            />
             <InfoField
               label="Guardian Mobile"
-              value={user.guardianPhone}
+              value={userDetailsLoading ? "Loading..." : user.guardianPhone}
               mono
             />
             <InfoField
@@ -160,6 +194,14 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             )}
             <InfoField label="User ID" value={user.id} span={2} mono />
           </div>
+          {userDetailsError && (
+            <p
+              role="alert"
+              className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
+            >
+              Could not refresh the user's private details: {userDetailsError}
+            </p>
+          )}
         </div>
 
         {/* Location */}

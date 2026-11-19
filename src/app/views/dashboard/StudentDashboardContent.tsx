@@ -121,14 +121,14 @@ export function StudentDashboardContent() {
                     <div className="overflow-hidden rounded-[28px] border border-blue-100 bg-white shadow-[0_12px_36px_-20px_rgba(15,23,42,0.28)]">
                       <div className="flex flex-col gap-4 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-blue-100 shadow-inner">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white shadow-inner">
                             <Users className="h-5 w-5" />
                           </div>
                           <div>
                             <h2 className="text-base font-bold tracking-tight text-white sm:text-lg">
                               Applicant inbox
                             </h2>
-                            <p className="mt-0.5 text-xs text-blue-100/75">
+                            <p className="mt-0.5 text-xs text-white/90">
                               {inboxSummary.posts} posts with applications to review
                             </p>
                           </div>
@@ -138,7 +138,7 @@ export function StudentDashboardContent() {
                             <p className="text-lg font-bold leading-5 text-white">
                               {inboxSummary.total}
                             </p>
-                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/90">
                               Applications
                             </p>
                           </div>
@@ -146,7 +146,7 @@ export function StudentDashboardContent() {
                             <p className="text-lg font-bold leading-5 text-white">
                               {inboxSummary.pending}
                             </p>
-                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/90">
                               Pending
                             </p>
                           </div>

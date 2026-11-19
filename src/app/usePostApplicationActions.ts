@@ -1,6 +1,7 @@
 import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
 import { cfD1 } from "../lib/cloudflareD1";
 import { calculateDistanceKm } from "../lib/geo";
+import { getTutorRatingSummary } from "../lib/ratings";
 import type {
   NotificationItem,
   TuitionApplication,
@@ -68,8 +69,8 @@ export function usePostApplicationActions({
       tutorId: currentUser.id,
       tutorName: currentUser.fullName,
       tutorQualifications: currentUser.qualifications || "B.Sc Graduate",
-      tutorInstitution: currentUser.institution || "University of Dhaka",
-      tutorRating: currentUser.rating || 5,
+      tutorInstitution: currentUser.institution?.trim() || undefined,
+      tutorRating: getTutorRatingSummary(currentUser).average,
       tutorExperienceYears: currentUser.yearsOfExperience || 3,
       tutorSubjects: currentUser.subjectsTaught || ["Higher Math", "Physics"],
       tutorDistanceKm: distance,
@@ -124,8 +125,8 @@ export function usePostApplicationActions({
       tutorQualifications:
         currentUser.qualifications ||
         `${currentUser.institution || "University"} Graduate`,
-      tutorInstitution: currentUser.institution || "University of Dhaka",
-      tutorRating: currentUser.rating || 5,
+      tutorInstitution: currentUser.institution?.trim() || undefined,
+      tutorRating: getTutorRatingSummary(currentUser).average,
       tutorExperienceYears: currentUser.yearsOfExperience || 2,
       tutorSubjects: currentUser.subjectsTaught || [post.subject],
       tutorDistanceKm: distance,

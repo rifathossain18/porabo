@@ -21,6 +21,8 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
     setRegisterDistrict,
     registerArea,
     setRegisterArea,
+    registerStudentInstitution,
+    setRegisterStudentInstitution,
     registerPassword,
     setRegisterPassword,
     registerConfirmPassword,
@@ -68,6 +70,25 @@ export function RegistrationForm({ onSwitchToLogin }: RegistrationFormProps) {
           <input type="text" value={registerArea} onChange={(event) => setRegisterArea(event.target.value)} placeholder="e.g. Dhanmondi 27" required className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500" />
         </div>
       </div>
+
+      {authRoleChoice === "STUDENT" && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            School, College, or University
+          </label>
+          <input
+            type="text"
+            value={registerStudentInstitution}
+            onChange={(event) =>
+              setRegisterStudentInstitution(event.target.value)
+            }
+            placeholder="Enter your current institution"
+            maxLength={200}
+            required
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-blue-500 focus:outline-none sm:text-sm"
+          />
+        </div>
+      )}
 
       <RegistrationMediaFields />
 

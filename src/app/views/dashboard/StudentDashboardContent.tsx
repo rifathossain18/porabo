@@ -1,8 +1,9 @@
-import { MapPin, CheckCircle2, Unlock, Phone, Download, Users, PlusCircle, Check, BookOpen, Star, Clock, Filter, CheckCircle, Info, Eye, User as UserIcon, CheckSquare, Sun } from "lucide-react";
+import { MapPin, CheckCircle2, Unlock, Phone, Download, Users, PlusCircle, Check, BookOpen, Star, Clock, Filter, CheckCircle, GraduationCap, Info, Eye, User as UserIcon, CheckSquare, Sun } from "lucide-react";
 import { Area } from "recharts";
 import { GenderAvatar } from "../../../components/GenderAvatar";
 import { EmptyInboxIllustration } from "../../../components/EmptyStateIllustrations";
 import { PostCountdown } from "../../../components/PostCountdown";
+import { getTutorRatingSummary } from "../../../lib/ratings";
 import { useAppContext } from "../../AppContext";
 
 export function StudentDashboardContent() {
@@ -20,6 +21,9 @@ export function StudentDashboardContent() {
     setIsRatingModalOpen,
     setRatingTutorId,
     setRatingApplication,
+    setRatingPunctuality,
+    setRatingSubjectMastery,
+    setRatingTeachingStyle,
     studentMyPosts,
     filteredStudentPosts,
     studentReceivedApplications,
@@ -114,6 +118,7 @@ export function StudentDashboardContent() {
                             const tutorUser = allUsers.find(
                               (u) => u.id === app.tutorId,
                             );
+                            const tutorRating = getTutorRatingSummary(tutorUser);
         
                             return (
                               <div
@@ -152,9 +157,25 @@ export function StudentDashboardContent() {
                                           <span>{app.tutorName}</span>
                                           <Info className="w-3.5 h-3.5 text-emerald-700" />
                                         </span>
-                                        <span className="text-xs text-amber-700 flex items-center gap-0.5">
-                                          <Star className="w-3 h-3 fill-amber-400" />
-                                          <span>{app.tutorRating || 5.0}</span>
+                                        <span
+                                          className={`flex items-center gap-0.5 text-xs ${
+                                            tutorRating.average > 0
+                                              ? "text-amber-700"
+                                              : "text-slate-500"
+                                          }`}
+                                          title={`${tutorRating.reviewCount} approved reviews`}
+                                        >
+                                          <Star
+                                            className={`h-3 w-3 ${
+                                              tutorRating.average > 0
+                                                ? "fill-amber-400"
+                                                : ""
+                                            }`}
+                                          />
+                                          <span>
+                                            {tutorRating.average.toFixed(1)} (
+                                            {tutorRating.reviewCount})
+                                          </span>
                                         </span>
                                         <span className="text-xs text-slate-500">
                                           &bull; {app.tutorDistanceKm || 0.8} km away
@@ -163,6 +184,14 @@ export function StudentDashboardContent() {
                                       <p className="text-xs text-emerald-700 mt-0.5">
                                         {app.tutorQualifications}
                                       </p>
+                                      {tutorUser?.institution?.trim() && (
+                                        <span className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                                          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                                          <span className="truncate">
+                                            {tutorUser.institution}
+                                          </span>
+                                        </span>
+                                      )}
                                       <p className="text-xs text-slate-500 mt-0.5">
                                         Applying for:{" "}
                                         <span className="text-slate-600 font-medium">
@@ -251,6 +280,9 @@ export function StudentDashboardContent() {
                                               onClick={() => {
                                                 setRatingApplication(app);
                                                 setRatingTutorId(app.tutorId);
+                                                setRatingPunctuality(0);
+                                                setRatingSubjectMastery(0);
+                                                setRatingTeachingStyle(0);
                                                 setIsRatingModalOpen(true);
                                               }}
                                               className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 text-xs font-semibold border border-amber-500/40 flex items-center gap-1 transition-colors"
@@ -443,6 +475,9 @@ export function StudentDashboardContent() {
                                     onClick={() => {
                                       setRatingApplication(app);
                                       setRatingTutorId(app.tutorId);
+                                      setRatingPunctuality(0);
+                                      setRatingSubjectMastery(0);
+                                      setRatingTeachingStyle(0);
                                       setIsRatingModalOpen(true);
                                     }}
                                     className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 text-xs font-semibold border border-amber-500/40 rounded-xl flex items-center justify-center gap-1.5 transition-colors"

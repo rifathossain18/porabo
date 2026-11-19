@@ -31,6 +31,7 @@ interface AuthActionsOptions {
   registerGender: UserGender;
   registerDistrict: string;
   registerArea: string;
+  registerStudentInstitution: string;
   registerPassword: string;
   registerConfirmPassword: string;
   regTeacherInstitution: string;
@@ -83,6 +84,7 @@ export function useAuthActions({
   registerGender,
   registerDistrict,
   registerArea,
+  registerStudentInstitution,
   registerPassword,
   registerConfirmPassword,
   regTeacherInstitution,
@@ -203,6 +205,10 @@ export function useAuthActions({
         return;
       }
     }
+    if (authRoleChoice === "STUDENT" && !registerStudentInstitution.trim()) {
+      setAuthError("Please enter your current school, college, or university.");
+      return;
+    }
 
     const profilePicture =
       authRoleChoice === "TUTOR" ? regTeacherProfilePic : regStudentProfilePic;
@@ -238,6 +244,10 @@ export function useAuthActions({
         phone: registerPhone,
         role: authRoleChoice,
         gender: registerGender,
+        institution:
+          authRoleChoice === "STUDENT"
+            ? registerStudentInstitution.trim()
+            : undefined,
         district: registerDistrict,
         areaName: registerArea,
         exactAddress: `${registerArea}, ${registerDistrict}`,

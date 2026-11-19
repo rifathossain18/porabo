@@ -15,6 +15,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { User, TuitionApplication } from "../lib/types";
+import { getTutorRatingSummary } from "../lib/ratings";
 import { GenderAvatar } from "./GenderAvatar";
 
 interface TutorDetailModalProps {
@@ -64,16 +65,11 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
   const approvedReviews = (tutor.reviews || []).filter(
     (r) => (r.status || "APPROVED") === "APPROVED",
   );
-  const hasReviews = approvedReviews.length > 0;
-  const punctualityScore = hasReviews
-    ? (tutor.ratingsBreakdown?.punctuality ?? (tutor.rating || 0.0))
-    : 0.0;
-  const masteryScore = hasReviews
-    ? (tutor.ratingsBreakdown?.subjectMastery ?? (tutor.rating || 0.0))
-    : 0.0;
-  const styleScore = hasReviews
-    ? (tutor.ratingsBreakdown?.teachingStyle ?? (tutor.rating || 0.0))
-    : 0.0;
+  const ratingSummary = getTutorRatingSummary(tutor);
+  const hasReviews = ratingSummary.reviewCount > 0;
+  const punctualityScore = ratingSummary.breakdown.punctuality;
+  const masteryScore = ratingSummary.breakdown.subjectMastery;
+  const styleScore = ratingSummary.breakdown.teachingStyle;
 
   if (!isOpen) return null;
 
@@ -350,7 +346,11 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({
                       {rev.studentName}
                     </div>
                     <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20 text-xs font-bold text-amber-700">
-                      <Star className="w-3 h-3 fill-amber-400" />
+                      <Star
+                        className={`h-3 w-3 ${
+                          rev.overall > 0 ? "fill-amber-400" : ""
+                        }`}
+                      />
                       <span>{rev.overall.toFixed(1)}</span>
                     </div>
                   </div>

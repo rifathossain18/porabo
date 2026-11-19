@@ -205,6 +205,12 @@ export function AdminStudentsSection({
             <div className="text-[11px] text-slate-500 flex items-center gap-1">
               <MapPin className="w-3 h-3" /> {student.areaName}, {student.district}
             </div>
+            {student.institution && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-[11px] font-medium text-blue-700">
+                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{student.institution}</span>
+              </div>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => setInspectingUser(student)}

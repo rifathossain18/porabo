@@ -24,6 +24,7 @@ import {
 import { GenderAvatar } from "../../../components/GenderAvatar";
 import { QRCodeModal } from "../../../components/QRCodeModal";
 import { Toast } from "../../../components/Toast";
+import { getTutorRatingSummary } from "../../../lib/ratings";
 import { useAppContext } from "../../AppContext";
 import { TeacherProfileEditModal } from "./TeacherProfileEditModal";
 import { TeacherProfileRatings } from "./TeacherProfileRatings";
@@ -66,6 +67,10 @@ export function TeacherProfileContent() {
   
     if (viewingTeacherProfileId && viewingTeacherProfile) {
       const tutor = viewingTeacherProfile;
+      const tutorRating = getTutorRatingSummary(tutor);
+      const approvedReviews = (tutor.reviews || []).filter(
+        (review) => (review.status || "APPROVED") === "APPROVED",
+      );
       const tutorQuizzes = allQuizzes.filter((q) => q.teacherId === tutor.id);
       const isStudentViewing = currentUser.role === "STUDENT";
       const isSelfViewing = currentUser.id === tutor.id;
@@ -307,11 +312,13 @@ export function TeacherProfileContent() {
                         Authentic Rating
                       </span>
                       <span className="text-sm font-bold text-amber-700 flex items-center justify-center gap-1">
-                        <Star className="w-3.5 h-3.5 fill-amber-400" />
+                        <Star
+                          className={`h-3.5 w-3.5 ${
+                            tutorRating.average > 0 ? "fill-amber-400" : ""
+                          }`}
+                        />
                         <span>
-                          {tutor.totalReviews && tutor.totalReviews > 0
-                            ? (tutor.rating || 0.0).toFixed(1)
-                            : "0.0"}
+                          {tutorRating.average.toFixed(1)}
                         </span>
                       </span>
                     </div>
@@ -320,7 +327,7 @@ export function TeacherProfileContent() {
                         Verified Reviews
                       </span>
                       <span className="text-sm font-bold text-blue-700 font-mono">
-                        {tutor.totalReviews || 0} Real
+                        {tutorRating.reviewCount} Real
                       </span>
                     </div>
                     <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
@@ -474,13 +481,8 @@ export function TeacherProfileContent() {
   
                 {/* Quick Metrics Bar - Real Data Disciplined */}
                 {(() => {
-                  const hasTutorReviews = Boolean(
-                    tutor.totalReviews && tutor.totalReviews > 0,
-                  );
-                  const tutorRatingVal = hasTutorReviews
-                    ? tutor.rating || 0.0
-                    : 0.0;
-                  const reviewsCountVal = tutor.totalReviews || 0;
+                  const hasTutorReviews = tutorRating.reviewCount > 0;
+                  const reviewsCountVal = tutorRating.reviewCount;
   
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-200 mt-4">
@@ -489,9 +491,15 @@ export function TeacherProfileContent() {
                           Overall Rating
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Star className="w-4 h-4 text-amber-700 fill-amber-400" />
+                          <Star
+                            className={`h-4 w-4 ${
+                              tutorRating.average > 0
+                                ? "fill-amber-400 text-amber-700"
+                                : "text-slate-400"
+                            }`}
+                          />
                           <span className="text-base font-bold text-white">
-                            {hasTutorReviews ? tutorRatingVal.toFixed(1) : "0.0"}
+                            {tutorRating.average.toFixed(1)}
                           </span>
                           <span className="text-xs text-slate-500">
                             (
@@ -712,15 +720,13 @@ export function TeacherProfileContent() {
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-700" />
                   <h2 className="text-base font-bold text-white">
-                    Verified Reviews ({tutor.reviews?.length || 2})
+                    Verified Reviews ({tutorRating.reviewCount})
                   </h2>
                 </div>
               </div>
   
               <div className="space-y-3">
-                {(tutor.reviews || []).filter(
-                  (r) => (r.status || "APPROVED") === "APPROVED",
-                ).length === 0 ? (
+                {approvedReviews.length === 0 ? (
                   <div className="p-6 text-center bg-white rounded-2xl border border-slate-200">
                     <MessageSquare className="w-8 h-8 mx-auto text-slate-600 mb-2" />
                     <p className="text-xs text-slate-500">
@@ -729,9 +735,7 @@ export function TeacherProfileContent() {
                     </p>
                   </div>
                 ) : (
-                  (tutor.reviews || [])
-                    .filter((r) => (r.status || "APPROVED") === "APPROVED")
-                    .map((rev) => (
+                  approvedReviews.map((rev) => (
                       <div
                         key={rev.id}
                         className="p-4 rounded-2xl bg-white border border-blue-200 space-y-2"
@@ -755,7 +759,11 @@ export function TeacherProfileContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20 text-xs font-bold text-amber-700">
-                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                            <Star
+                              className={`h-3.5 w-3.5 ${
+                                rev.overall > 0 ? "fill-amber-400" : ""
+                              }`}
+                            />
                             <span>{rev.overall}</span>
                           </div>
                         </div>

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import { cfD1 } from "../lib/cloudflareD1";
+import { getTutorRatingSummary } from "../lib/ratings";
 import { cfLogout } from "../lib/cloudflareAuth";
 import type {
   TuitionApplication,
@@ -108,55 +109,21 @@ export function useAdminActions({
               }
             : review,
         );
-        const approved = updatedReviews.filter(
-          (review) => (review.status || "APPROVED") === "APPROVED",
-        );
-        const total = approved.length;
-
-        let newRating = 0;
-        let newBreakdown = {
-          punctuality: 0,
-          subjectMastery: 0,
-          teachingStyle: 0,
-          overall: 0,
-          totalReviews: 0,
-        };
-
-        if (total > 0) {
-          const avgPunc =
-            Math.round(
-              (approved.reduce((sum, review) => sum + review.punctuality, 0) /
-                total) *
-                10,
-            ) / 10;
-          const avgMast =
-            Math.round(
-              (approved.reduce((sum, review) => sum + review.subjectMastery, 0) /
-                total) *
-                10,
-            ) / 10;
-          const avgStyl =
-            Math.round(
-              (approved.reduce((sum, review) => sum + review.teachingStyle, 0) /
-                total) *
-                10,
-            ) / 10;
-          newRating = Math.round(((avgPunc + avgMast + avgStyl) / 3) * 10) / 10;
-          newBreakdown = {
-            punctuality: avgPunc,
-            subjectMastery: avgMast,
-            teachingStyle: avgStyl,
-            overall: newRating,
-            totalReviews: total,
-          };
-        }
+        const ratingSummary = getTutorRatingSummary({
+          ...user,
+          reviews: updatedReviews,
+        });
 
         const updatedUser = {
           ...user,
           reviews: updatedReviews,
-          rating: newRating,
-          totalReviews: total,
-          ratingsBreakdown: newBreakdown,
+          rating: ratingSummary.average,
+          totalReviews: ratingSummary.reviewCount,
+          ratingsBreakdown: {
+            ...ratingSummary.breakdown,
+            overall: ratingSummary.average,
+            totalReviews: ratingSummary.reviewCount,
+          },
         };
 
         cfD1

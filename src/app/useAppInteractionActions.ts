@@ -69,6 +69,14 @@ export function useAppInteractionActions({
       showToast("No active tuition selected for review.");
       return;
     }
+    if (
+      ratingPunctuality === 0 ||
+      ratingSubjectMastery === 0 ||
+      ratingTeachingStyle === 0
+    ) {
+      showToast("Please rate all three categories before submitting.");
+      return;
+    }
 
     const acceptedAtIso =
       ratingApplication.acceptedAt ||

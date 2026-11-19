@@ -387,6 +387,13 @@ export default {
         if (!email.includes('@')) return errorResponse('Valid email required');
         if (password.length < 6) return errorResponse('Password must be at least 6 chars');
         if (!body.fullName || !body.role) return errorResponse('Missing fields');
+        const studentInstitution = String(body.institution || '').trim();
+        if (
+          body.role === 'STUDENT' &&
+          (!studentInstitution || studentInstitution.length > 200)
+        ) {
+          return errorResponse('Student institution is required (maximum 200 characters)');
+        }
         const verificationDocuments = body.verificationDocuments;
         if (!isImageDataUrl(body.profilePicture)) {
           return errorResponse('A valid profile picture is required');
@@ -418,11 +425,18 @@ export default {
         const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
         if (existing) return errorResponse('Email already registered', 409);
 
-        const { password: _pw, teacherDetails, verificationDocuments: _documents, ...userData } = body;
+        const {
+          password: _pw,
+          teacherDetails,
+          verificationDocuments: _documents,
+          institution: _institution,
+          ...userData
+        } = body;
         const userId = `usr_cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const user: any = {
           ...userData,
           ...(teacherDetails && typeof teacherDetails === 'object' ? teacherDetails : {}),
+          ...(body.role === 'STUDENT' ? { institution: studentInstitution } : {}),
           id: userId, email, role: body.role,
         };
         delete user.teacherDetails;
@@ -563,9 +577,24 @@ export default {
 
       // ========== USERS ==========
       if (path === '/api/users' && method === 'GET') {
+        const ctx = await getAuth(request, env);
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();
         const users = (result.results || [])
-          .map((r: any) => { try { return flattenUser(JSON.parse(r.data)); } catch { return null; } })
+          .map((r: any) => {
+            try {
+              const user = flattenUser(JSON.parse(r.data));
+              if (
+                !ctx.isAdmin &&
+                user.role === 'STUDENT' &&
+                ctx.user?.userId !== user.id
+              ) {
+                delete user.institution;
+              }
+              return user;
+            } catch {
+              return null;
+            }
+          })
           .filter(Boolean);
         return jsonResponse(users);
       }

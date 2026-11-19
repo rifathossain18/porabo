@@ -3,6 +3,7 @@ import { Briefcase, Check, GraduationCap, MapPin, MessageSquare, ShieldCheck, Us
 import { User, VerificationDocumentSet } from "../../lib/types";
 import { GenderAvatar } from "../GenderAvatar";
 import { cfD1 } from "../../lib/cloudflareD1";
+import { getTutorRatingSummary } from "../../lib/ratings";
 
 // ============ HELPER: InfoField ============
 export const InfoField: React.FC<{
@@ -49,6 +50,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
   const pendingReviews = (user.reviews || []).filter(
     (r) => r.status === "PENDING",
   );
+  const ratingSummary = getTutorRatingSummary(user);
   const isTutor = user.role === "TUTOR";
   const [verificationDocuments, setVerificationDocuments] =
     useState<VerificationDocumentSet | null>(null);
@@ -143,6 +145,13 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             />
             <InfoField label="Gender" value={user.gender} />
             <InfoField label="Role" value={user.role} />
+            {!isTutor && (
+              <InfoField
+                label="School / College / University"
+                value={user.institution}
+                span={2}
+              />
+            )}
             <InfoField label="User ID" value={user.id} span={2} mono />
           </div>
         </div>
@@ -312,15 +321,11 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                 />
                 <InfoField
                   label="Rating"
-                  value={
-                    user.totalReviews
-                      ? `${(user.rating || 0).toFixed(1)} / 5`
-                      : "0.0 / 5"
-                  }
+                  value={`${ratingSummary.average.toFixed(1)} / 5`}
                 />
                 <InfoField
                   label="Total Reviews"
-                  value={approvedReviews.length}
+                  value={ratingSummary.reviewCount}
                 />
               </div>
               <div className="mt-3">

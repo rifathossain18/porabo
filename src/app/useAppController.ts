@@ -84,6 +84,8 @@ export function useAppController() {
   const [registerGender, setRegisterGender] = useState<UserGender>("MALE");
   const [registerDistrict, setRegisterDistrict] = useState<string>("Dhaka");
   const [registerArea, setRegisterArea] = useState<string>("Dhanmondi");
+  const [registerStudentInstitution, setRegisterStudentInstitution] =
+    useState<string>("");
   const [registerPassword, setRegisterPassword] = useState<string>("");
   const [registerConfirmPassword, setRegisterConfirmPassword] =
     useState<string>("");
@@ -91,9 +93,8 @@ export function useAppController() {
     useState<boolean>(false);
 
   // Teacher specific registration verification fields
-  const [regTeacherInstitution, setRegTeacherInstitution] = useState<string>(
-    "University of Dhaka",
-  );
+  const [regTeacherInstitution, setRegTeacherInstitution] =
+    useState<string>("");
   const [regTeacherDepartment, setRegTeacherDepartment] = useState<string>(
     "Department of Mathematics",
   );
@@ -338,9 +339,9 @@ export function useAppController() {
   const [ratingTutorId, setRatingTutorId] = useState<string>("");
   const [ratingApplication, setRatingApplication] =
     useState<TuitionApplication | null>(null);
-  const [ratingPunctuality, setRatingPunctuality] = useState<number>(5);
-  const [ratingSubjectMastery, setRatingSubjectMastery] = useState<number>(5);
-  const [ratingTeachingStyle, setRatingTeachingStyle] = useState<number>(5);
+  const [ratingPunctuality, setRatingPunctuality] = useState<number>(0);
+  const [ratingSubjectMastery, setRatingSubjectMastery] = useState<number>(0);
+  const [ratingTeachingStyle, setRatingTeachingStyle] = useState<number>(0);
   const [ratingComment, setRatingComment] = useState<string>(
     "Outstanding mentor! Highly punctual, excellent conceptual clarity, and weekly practice exams.",
   );
@@ -413,6 +414,7 @@ export function useAppController() {
     registerGender,
     registerDistrict,
     registerArea,
+    registerStudentInstitution,
     registerPassword,
     registerConfirmPassword,
     regTeacherInstitution,
@@ -653,6 +655,8 @@ export function useAppController() {
     setRegisterDistrict,
     registerArea,
     setRegisterArea,
+    registerStudentInstitution,
+    setRegisterStudentInstitution,
     registerPassword,
     setRegisterPassword,
     registerConfirmPassword,

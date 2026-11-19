@@ -26,6 +26,7 @@ export async function cfRegister(params: {
   latitude: number; longitude: number;
   profilePicture: string;
   verificationDocuments: RegistrationVerificationDocuments;
+  institution?: string;
   teacherDetails?: Partial<User>;
 }): Promise<{ success: boolean; user?: User; token?: string; error?: string }> {
   try {

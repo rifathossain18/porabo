@@ -1,5 +1,6 @@
 import { Award, Info } from "lucide-react";
 import { CATEGORY_TOOLTIPS } from "../../../components/TutorDetailModal";
+import { getTutorRatingSummary } from "../../../lib/ratings";
 import type { User } from "../../../lib/types";
 import { useAppContext } from "../../AppContext";
 
@@ -13,19 +14,11 @@ export function TeacherProfileRatings({ tutor }: TeacherProfileRatingsProps) {
   return (
     <>
       {(() => {
-              const hasTutorReviews = Boolean(
-                tutor.totalReviews && tutor.totalReviews > 0,
-              );
-              const punc = hasTutorReviews
-                ? (tutor.ratingsBreakdown?.punctuality ?? (tutor.rating || 0.0))
-                : 0.0;
-              const mast = hasTutorReviews
-                ? (tutor.ratingsBreakdown?.subjectMastery ??
-                  (tutor.rating || 0.0))
-                : 0.0;
-              const styl = hasTutorReviews
-                ? (tutor.ratingsBreakdown?.teachingStyle ?? (tutor.rating || 0.0))
-                : 0.0;
+              const ratingSummary = getTutorRatingSummary(tutor);
+              const hasTutorReviews = ratingSummary.reviewCount > 0;
+              const punc = ratingSummary.breakdown.punctuality;
+              const mast = ratingSummary.breakdown.subjectMastery;
+              const styl = ratingSummary.breakdown.teachingStyle;
   
               return (
                 <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">

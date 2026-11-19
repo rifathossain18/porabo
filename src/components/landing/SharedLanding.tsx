@@ -211,10 +211,10 @@ export const MatchCard: React.FC = () => (
       </div>
       <div className="text-right">
         <div className="flex items-center justify-end gap-1 text-xs font-bold text-white">
-          <Star className="w-3 h-3 text-amber-700 fill-amber-400" />
-          4.9
+          <Star className="h-3 w-3 text-slate-400" />
+          0.0
         </div>
-        <div className="text-[10px] font-mono text-emerald-700">0.9 km</div>
+        <div className="text-[10px] font-mono text-slate-500">0 reviews</div>
       </div>
     </div>
     <div className="mt-3 flex flex-wrap gap-1.5">

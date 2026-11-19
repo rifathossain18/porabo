@@ -3,6 +3,7 @@ import type {
   TuitionPost,
   User,
 } from "../../lib/types";
+import { getTutorRatingSummary } from "../../lib/ratings";
 import type { FlatReview } from "./adminTypes";
 
 interface AdminExportOptions {
@@ -80,7 +81,7 @@ export function useAdminExports({
       tutor.studentIdCardRoll,
       tutor.studentIdCardReg,
       tutor.verificationStatus,
-      tutor.rating,
+      getTutorRatingSummary(tutor).average,
     ]);
     exportToExcelCSV(`porabo_teachers_${dateSuffix()}`, headers, rows);
   };

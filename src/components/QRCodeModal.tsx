@@ -26,7 +26,7 @@ interface QRCodeModalProps {
 const CARD_WIDTH = 720;
 const CARD_HEIGHT = 1000;
 const PADDING = 60;
-const LOGO_SRC = '/assets/porabo_logo_transparent_90065b0b.svg';
+const LOGO_SRC = '/assets/porabo_logo.webp';
 
 // Helper: load an image into an HTMLImageElement
 const loadImage = (src: string, crossOrigin?: boolean): Promise<HTMLImageElement> => {

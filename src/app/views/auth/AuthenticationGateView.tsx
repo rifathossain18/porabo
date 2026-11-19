@@ -29,7 +29,16 @@ export function AuthenticationGateView() {
       <header className="border-b border-blue-200 bg-white backdrop-blur-md px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <img src="/assets/porabo_logo_transparent_90065b0b.svg" alt="Porabo Logo" className="w-9 h-9 object-contain shrink-0" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-700 bg-blue-600 p-1">
+            <img
+              src="/assets/porabo_logo.webp"
+              alt="Porabo Logo"
+              width={36}
+              height={36}
+              decoding="async"
+              className="h-9 w-9 object-contain drop-shadow-[0_0_1px_rgba(255,255,255,0.9)]"
+            />
+          </div>
             <div>
               <span className="font-extrabold text-xl text-white tracking-tight">Porabo</span>
               <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
@@ -52,7 +61,16 @@ export function AuthenticationGateView() {
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-4">
         <div className="w-full max-w-lg bg-white border border-blue-200 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-blue-950/40">
           <div className="text-center mb-6">
-            <img src="/assets/porabo_logo_transparent_90065b0b.svg" alt="Porabo Logo" className="w-14 h-14 mx-auto object-contain mb-2" />
+            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-700 bg-blue-600 p-1.5 shadow-sm">
+              <img
+                src="/assets/porabo_logo.webp"
+                alt="Porabo Logo"
+                width={48}
+                height={48}
+                decoding="async"
+                className="h-12 w-12 object-contain drop-shadow-[0_0_1px_rgba(255,255,255,0.9)]"
+              />
+            </div>
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider mb-2 border ${isTutor ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
               {isTutor ? (
                 <>

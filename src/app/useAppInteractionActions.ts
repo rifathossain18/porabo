@@ -1,5 +1,4 @@
 import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
-import { downloadTeacherCard, downloadTuitionCard } from "../lib/cardGenerator";
 import type {
   StudentReview,
   TuitionApplication,
@@ -190,6 +189,7 @@ export function useAppInteractionActions({
     if (downloadingPostId) return;
     setDownloadingPostId(post.id);
     try {
+      const { downloadTuitionCard } = await import("../lib/cardGenerator");
       await downloadTuitionCard(post);
       showToast(`✅ Premium card downloaded for "${post.title.slice(0, 30)}..."`);
     } catch (error) {
@@ -205,6 +205,7 @@ export function useAppInteractionActions({
     if (downloadingTeacherCardId) return;
     setDownloadingTeacherCardId(tutor.id);
     try {
+      const { downloadTeacherCard } = await import("../lib/cardGenerator");
       await downloadTeacherCard(tutor);
       showToast(`✅ Bio card downloaded for ${tutor.fullName}`);
     } catch (error) {

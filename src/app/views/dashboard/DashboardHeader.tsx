@@ -29,11 +29,16 @@ export function DashboardHeader() {
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
                   {/* Logo & Brand */}
                   <div className="flex items-center gap-2.5 shrink-0">
-                    <img
-                      src="/assets/porabo_logo_transparent_90065b0b.svg"
-                      alt="Porabo Logo"
-                      className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
-                    />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-700 bg-blue-600 p-1 sm:h-11 sm:w-11">
+                      <img
+                        src="/assets/porabo_logo.webp"
+                        alt="Porabo Logo"
+                        width={36}
+                        height={36}
+                        decoding="async"
+                        className="h-8 w-8 object-contain drop-shadow-[0_0_1px_rgba(255,255,255,0.9)] sm:h-9 sm:w-9"
+                      />
+                    </div>
                     <div>
                       <span className="font-extrabold text-base sm:text-lg text-white tracking-tight">
                         Porabo

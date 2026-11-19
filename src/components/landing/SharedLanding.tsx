@@ -24,14 +24,22 @@ export const Logo: React.FC<{ sub: string; subClass: string; small?: boolean }> 
   small,
 }) => (
   <div className="flex items-center gap-3">
-    <img
-      src="/assets/porabo_logo_transparent_90065b0b.svg"
-      alt="Porabo"
-      width={40}
-      height={40}
-      decoding="async"
-      className={`${small ? 'w-9 h-9' : 'w-10 h-10'} object-contain`}
-    />
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-xl border border-blue-700 bg-blue-600 shadow-sm ${
+        small ? 'h-10 w-10 p-1' : 'h-12 w-12 p-1'
+      }`}
+    >
+      <img
+        src="/assets/porabo_logo.webp"
+        alt="Porabo"
+        width={40}
+        height={40}
+        decoding="async"
+        className={`object-contain drop-shadow-[0_0_1px_rgba(255,255,255,0.9)] ${
+          small ? 'h-8 w-8' : 'h-10 w-10'
+        }`}
+      />
+    </div>
     <div>
       <div
         className={`font-extrabold tracking-tight text-white ${

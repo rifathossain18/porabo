@@ -4,7 +4,7 @@ import { TuitionPost, User } from './types';
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1440;
 const PADDING = 68;
-const LOGO_SRC = '/assets/porabo_logo_transparent_90065b0b.svg';
+const LOGO_SRC = '/assets/porabo_logo.webp';
 
 const loadImage = (src: string, crossOrigin?: boolean): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {

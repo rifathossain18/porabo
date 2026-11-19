@@ -8,192 +8,95 @@ interface TeacherProfileRatingsProps {
   tutor: User;
 }
 
+const RATING_CATEGORIES = [
+  { key: "punctuality", label: "Punctuality" },
+  { key: "subjectMastery", label: "Subject mastery" },
+  { key: "teachingStyle", label: "Teaching style" },
+] as const;
+
 export function TeacherProfileRatings({ tutor }: TeacherProfileRatingsProps) {
   const { profileActiveTooltip, setProfileActiveTooltip } = useAppContext();
+  const ratingSummary = getTutorRatingSummary(tutor);
+  const hasTutorReviews = ratingSummary.reviewCount > 0;
 
   return (
-    <>
-      {(() => {
-              const ratingSummary = getTutorRatingSummary(tutor);
-              const hasTutorReviews = ratingSummary.reviewCount > 0;
-              const punc = ratingSummary.breakdown.punctuality;
-              const mast = ratingSummary.breakdown.subjectMastery;
-              const styl = ratingSummary.breakdown.teachingStyle;
-  
-              return (
-                <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-blue-700" />
-                      <h2 className="text-base font-bold text-white">
-                        Categorical Ratings
-                      </h2>
-                    </div>
-                    <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-                      <Info className="w-3.5 h-3.5 text-blue-700" />
-                      <span>
-                        {hasTutorReviews
-                          ? "Hover bars for details"
-                          : "New Tutor (0 Reviews)"}
-                      </span>
-                    </span>
-                  </div>
-  
-                  <div className="space-y-4">
-                    {/* 1. Punctuality with Tooltip */}
-                    <div
-                      className="relative group cursor-pointer"
-                      onMouseEnter={() => setProfileActiveTooltip("punctuality")}
-                      onMouseLeave={() => setProfileActiveTooltip(null)}
-                      onClick={() =>
-                        setProfileActiveTooltip(
-                          profileActiveTooltip === "punctuality"
-                            ? null
-                            : "punctuality",
-                        )
-                      }
-                    >
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-600 flex items-center gap-1.5">
-                          <span>1. Punctuality</span>
-                          <Info className="w-3 h-3 text-slate-500 group-hover:text-blue-700 transition-colors" />
-                        </span>
-                        <span className="font-bold text-blue-700">
-                          {hasTutorReviews
-                            ? `${punc.toFixed(1)} / 5.0`
-                            : "0.0 / 5.0"}
-                        </span>
-                      </div>
-                      <div className="w-full h-2.5 bg-white rounded-full overflow-hidden border border-blue-200">
-                        <div
-                          className="h-full bg-blue-500 rounded-full transition-all group-hover:brightness-125"
-                          style={{
-                            width: `${hasTutorReviews ? (punc / 5) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                      {profileActiveTooltip === "punctuality" && (
-                        <div className="mt-2 p-2.5 bg-blue-50 border border-blue-500/50 rounded-xl text-xs text-slate-700 shadow-xl animate-in fade-in duration-150">
-                          <div className="font-bold text-white text-[11px] mb-0.5">
-                            {CATEGORY_TOOLTIPS.punctuality.title}
-                          </div>
-                          <p className="text-slate-600 text-[10px] leading-relaxed">
-                            {CATEGORY_TOOLTIPS.punctuality.description}
-                          </p>
-                          <div className="text-[9px] font-mono text-blue-700 mt-1 pt-0.5 border-t border-blue-200">
-                            {hasTutorReviews
-                              ? CATEGORY_TOOLTIPS.punctuality.metric
-                              : "Awaiting initial student ratings."}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-  
-                    {/* 2. Subject Mastery with Tooltip */}
-                    <div
-                      className="relative group cursor-pointer"
-                      onMouseEnter={() =>
-                        setProfileActiveTooltip("subjectMastery")
-                      }
-                      onMouseLeave={() => setProfileActiveTooltip(null)}
-                      onClick={() =>
-                        setProfileActiveTooltip(
-                          profileActiveTooltip === "subjectMastery"
-                            ? null
-                            : "subjectMastery",
-                        )
-                      }
-                    >
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-600 flex items-center gap-1.5">
-                          <span>2. Subject Mastery</span>
-                          <Info className="w-3 h-3 text-slate-500 group-hover:text-blue-700 transition-colors" />
-                        </span>
-                        <span className="font-bold text-blue-700">
-                          {hasTutorReviews
-                            ? `${mast.toFixed(1)} / 5.0`
-                            : "0.0 / 5.0"}
-                        </span>
-                      </div>
-                      <div className="w-full h-2.5 bg-white rounded-full overflow-hidden border border-blue-200">
-                        <div
-                          className="h-full bg-blue-400 rounded-full transition-all group-hover:brightness-125"
-                          style={{
-                            width: `${hasTutorReviews ? (mast / 5) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                      {profileActiveTooltip === "subjectMastery" && (
-                        <div className="mt-2 p-2.5 bg-blue-50 border border-blue-500/50 rounded-xl text-xs text-slate-700 shadow-xl animate-in fade-in duration-150">
-                          <div className="font-bold text-white text-[11px] mb-0.5">
-                            {CATEGORY_TOOLTIPS.subjectMastery.title}
-                          </div>
-                          <p className="text-slate-600 text-[10px] leading-relaxed">
-                            {CATEGORY_TOOLTIPS.subjectMastery.description}
-                          </p>
-                          <div className="text-[9px] font-mono text-blue-700 mt-1 pt-0.5 border-t border-blue-200">
-                            {hasTutorReviews
-                              ? CATEGORY_TOOLTIPS.subjectMastery.metric
-                              : "Awaiting initial student ratings."}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-  
-                    {/* 3. Teaching Style with Tooltip */}
-                    <div
-                      className="relative group cursor-pointer"
-                      onMouseEnter={() =>
-                        setProfileActiveTooltip("teachingStyle")
-                      }
-                      onMouseLeave={() => setProfileActiveTooltip(null)}
-                      onClick={() =>
-                        setProfileActiveTooltip(
-                          profileActiveTooltip === "teachingStyle"
-                            ? null
-                            : "teachingStyle",
-                        )
-                      }
-                    >
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-600 flex items-center gap-1.5">
-                          <span>3. Teaching Style</span>
-                          <Info className="w-3 h-3 text-slate-500 group-hover:text-blue-700 transition-colors" />
-                        </span>
-                        <span className="font-bold text-blue-700">
-                          {hasTutorReviews
-                            ? `${styl.toFixed(1)} / 5.0`
-                            : "0.0 / 5.0"}
-                        </span>
-                      </div>
-                      <div className="w-full h-2.5 bg-white rounded-full overflow-hidden border border-blue-200">
-                        <div
-                          className="h-full bg-blue-500 rounded-full transition-all group-hover:brightness-125"
-                          style={{
-                            width: `${hasTutorReviews ? (styl / 5) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                      {profileActiveTooltip === "teachingStyle" && (
-                        <div className="mt-2 p-2.5 bg-blue-50 border border-blue-500/50 rounded-xl text-xs text-slate-700 shadow-xl animate-in fade-in duration-150">
-                          <div className="font-bold text-white text-[11px] mb-0.5">
-                            {CATEGORY_TOOLTIPS.teachingStyle.title}
-                          </div>
-                          <p className="text-slate-600 text-[10px] leading-relaxed">
-                            {CATEGORY_TOOLTIPS.teachingStyle.description}
-                          </p>
-                          <div className="text-[9px] font-mono text-blue-700 mt-1 pt-0.5 border-t border-blue-200">
-                            {hasTutorReviews
-                              ? CATEGORY_TOOLTIPS.teachingStyle.metric
-                              : "Awaiting initial student ratings."}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-      })()}
-    </>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <Award className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-slate-900">Teaching ratings</h2>
+            <p className="text-xs text-slate-500">
+              {hasTutorReviews
+                ? `${ratingSummary.reviewCount} approved reviews`
+                : "Ratings appear after approved reviews"}
+            </p>
+          </div>
+        </div>
+        <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-sm font-bold text-amber-800">
+          {hasTutorReviews ? ratingSummary.average.toFixed(1) : "—"}
+          <span className="ml-1 text-xs font-medium text-amber-700">/ 5</span>
+        </span>
+      </div>
+
+      <div className="mt-5 space-y-4">
+        {RATING_CATEGORIES.map((category) => {
+          const score = ratingSummary.breakdown[category.key];
+          const isOpen = profileActiveTooltip === category.key;
+          const tooltip = CATEGORY_TOOLTIPS[category.key];
+
+          return (
+            <div key={category.key}>
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() =>
+                  setProfileActiveTooltip(isOpen ? null : category.key)
+                }
+                className="flex w-full items-center justify-between gap-3 text-left"
+              >
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                  {category.label}
+                  <Info className="h-3.5 w-3.5 text-slate-400" />
+                </span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {hasTutorReviews ? score.toFixed(1) : "—"}
+                  <span className="ml-1 text-xs font-normal text-slate-500">/ 5</span>
+                </span>
+              </button>
+
+              <div
+                className="mt-2 grid grid-cols-5 gap-1"
+                role="meter"
+                aria-label={`${category.label} rating`}
+                aria-valuemin={0}
+                aria-valuemax={5}
+                aria-valuenow={hasTutorReviews ? score : 0}
+              >
+                {RATING_CATEGORIES.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1.5 rounded-full ${
+                      hasTutorReviews && score >= index + 1
+                        ? "bg-blue-600"
+                        : "bg-slate-100"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {isOpen && (
+                <p className="mt-2 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                  <span className="font-semibold text-slate-800">{tooltip.title}. </span>
+                  {tooltip.description}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

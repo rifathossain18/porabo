@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
   Award,
+  BookOpen,
   Building2,
   Check,
   CheckCircle,
@@ -18,7 +20,6 @@ import {
   ShieldCheck,
   Star,
   Tag,
-  User as UserIcon,
   Users,
 } from "lucide-react";
 import { GenderAvatar } from "../../../components/GenderAvatar";
@@ -60,741 +61,547 @@ export function TeacherProfileContent() {
     viewingTeacherProfileId,
   } = useAppContext();
 
-  if (!currentUser) return null;
-
-  // VIEW: DEDICATED TEACHER PROFILE PAGE (HIGH-TECH PERFORMANCE COVER, NO PHOTOS)
-    // =========================================================================
-  
-    if (viewingTeacherProfileId && viewingTeacherProfile) {
-      const tutor = viewingTeacherProfile;
-      const tutorRating = getTutorRatingSummary(tutor);
-      const approvedReviews = (tutor.reviews || []).filter(
+  const tutor = viewingTeacherProfile;
+  const tutorQuizzes = useMemo(
+    () => allQuizzes.filter((quiz) => quiz.teacherId === tutor?.id),
+    [allQuizzes, tutor?.id],
+  );
+  const approvedReviews = useMemo(
+    () =>
+      (tutor?.reviews || []).filter(
         (review) => (review.status || "APPROVED") === "APPROVED",
-      );
-      const tutorQuizzes = allQuizzes.filter((q) => q.teacherId === tutor.id);
-      const isStudentViewing = currentUser.role === "STUDENT";
-      const isSelfViewing = currentUser.id === tutor.id;
-      const isPending = tutor.verificationStatus === "PENDING";
-      const isRejected = tutor.verificationStatus === "REJECTED";
-  
-      const relevantApplication = isStudentViewing
-        ? applications.find(
-            (a) =>
-              a.tutorId === tutor.id &&
-              studentMyPosts.some((p) => p.id === a.postId),
-          )
-        : null;
-  
-      return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white">
-          {/* Toast Notification */}
-          <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
-  
-          {/* Top Header Navigation */}
-          <header className="sticky top-0 z-40 border-b border-blue-200 bg-white backdrop-blur-md px-4 py-3 sm:px-6">
-            <div className="max-w-5xl mx-auto flex items-center justify-between">
+      ),
+    [tutor?.reviews],
+  );
+  const tutorRating = useMemo(
+    () => getTutorRatingSummary(tutor),
+    [tutor],
+  );
+
+  if (!currentUser || !viewingTeacherProfileId || !tutor) return null;
+
+  const isStudentViewing = currentUser.role === "STUDENT";
+  const isSelfViewing = currentUser.id === tutor.id;
+  const isPending = tutor.verificationStatus === "PENDING";
+  const isRejected = tutor.verificationStatus === "REJECTED";
+  const isVerified = tutor.verificationStatus === "VERIFIED";
+  const subjects = tutor.subjectsTaught || [];
+  const degrees = tutor.degrees || [];
+  const teachingHistory = tutor.teachingHistory || [];
+  const studentsInMilestone = teachingHistory.reduce(
+    (largestCount, milestone) => Math.max(largestCount, milestone.studentsCount),
+    0,
+  );
+  const relevantApplication = isStudentViewing
+    ? applications.find(
+        (application) =>
+          application.tutorId === tutor.id &&
+          studentMyPosts.some((post) => post.id === application.postId),
+      )
+    : null;
+
+  const openEditProfile = () => {
+    setEditBio(tutor.bio || "");
+    setEditPhilosophy(tutor.teachingPhilosophy || "");
+    setEditExpectedFee(tutor.hourlyOrMonthlyRate ?? 0);
+    setEditSubjects(subjects);
+    setIsEditProfileOpen(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-sm sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setViewingTeacherProfileId(null)}
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+          >
+            <ArrowLeft className="h-4 w-4 text-blue-700" />
+            <span className="hidden sm:inline">
+              Back to {isStudentViewing ? "My Posts" : "Tuition Feed"}
+            </span>
+            <span className="sm:hidden">Back</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setQrModalData({
+                  isOpen: true,
+                  title: tutor.fullName,
+                  subtitle: `${tutor.institution || "Tutor"} • ${tutor.department || tutor.district}`,
+                  district: tutor.district,
+                  areaName: tutor.areaName,
+                  shareUrl: `${window.location.origin}/#tutor-${tutor.id}`,
+                  type: "tutor",
+                })
+              }
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              title="Share via QR code"
+            >
+              <QrCode className="h-4 w-4 text-blue-700" />
+              <span className="hidden sm:inline">QR Code</span>
+            </button>
+            <button
+              type="button"
+              onClick={(event) => handleShareTutorProfile(tutor, event)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              title="Share profile link"
+            >
+              <Share2 className="h-4 w-4 text-blue-700" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDownloadTeacherCard(tutor)}
+              disabled={downloadingTeacherCardId === tutor.id}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+              title="Download teacher profile card"
+            >
+              <Download
+                className={`h-4 w-4 ${downloadingTeacherCardId === tutor.id ? "animate-pulse" : ""}`}
+              />
+              <span className="hidden sm:inline">
+                {downloadingTeacherCardId === tutor.id ? "Preparing..." : "Bio Card"}
+              </span>
+            </button>
+            {isSelfViewing && (
               <button
-                onClick={() => setViewingTeacherProfileId(null)}
-                className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-xl border border-slate-300 transition-colors"
+                type="button"
+                onClick={openEditProfile}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
               >
-                <ArrowLeft className="w-4 h-4 text-blue-700" />
-                <span>
-                  Back to{" "}
-                  {currentUser.role === "STUDENT" ? "My Posts" : "Tuition Feed"}
-                </span>
+                <Edit3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Edit Profile</span>
               </button>
-  
-              <div className="flex items-center gap-2">
-                {/* Share via QR Code */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQrModalData({
-                      isOpen: true,
-                      title: tutor.fullName,
-                      subtitle: `${tutor.institution || "Verified Educator"} • ${tutor.department || tutor.district}`,
-                      district: tutor.district,
-                      areaName: tutor.areaName,
-                      shareUrl: `${window.location.origin}/#tutor-${tutor.id}`,
-                      type: "tutor",
-                    });
-                  }}
-                  className="px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  title="Share via QR Code for offline neighborhood distribution"
-                >
-                  <QrCode className="w-3.5 h-3.5 text-blue-700" />
-                  <span className="hidden sm:inline">QR Code</span>
-                </button>
-  
-                {/* Web Share */}
-                <button
-                  type="button"
-                  onClick={(e) => handleShareTutorProfile(tutor, e)}
-                  className="px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  title="Share profile link"
-                >
-                  <Share2 className="w-3.5 h-3.5 text-blue-700" />
-                  <span className="hidden sm:inline">Share</span>
-                </button>
-  
-                {/* 🆕 Download Premium Bio Card */}
-                <button
-                  type="button"
-                  onClick={() => handleDownloadTeacherCard(tutor)}
-                  disabled={downloadingTeacherCardId === tutor.id}
-                  className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
-                  title="Download premium bio card with QR code"
-                >
-                  <Download
-                    className={`w-3.5 h-3.5 ${downloadingTeacherCardId === tutor.id ? "animate-pulse" : ""}`}
-                  />
-                  <span className="hidden sm:inline">
-                    {downloadingTeacherCardId === tutor.id ? "..." : "Bio Card"}
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        {isSelfViewing && isPending && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-semibold text-slate-900">Verification in progress</h2>
+                  <span className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-medium text-amber-800">
+                    Usually 24–48 hours
                   </span>
-                </button>
-  
-                {isSelfViewing && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditBio(tutor.bio || "");
-                      setEditPhilosophy(tutor.teachingPhilosophy || "");
-                      setEditExpectedFee(tutor.hourlyOrMonthlyRate || 8500);
-                      setEditSubjects(
-                        tutor.subjectsTaught || ["Higher Math", "Physics"],
-                      );
-                      setIsEditProfileOpen(true);
-                    }}
-                    className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-700 border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>Edit Profile</span>
-                  </button>
-                )}
-  
-                <span
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded-full flex items-center gap-1.5 border ${
-                    tutor.verificationStatus === "VERIFIED"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>
-                    {tutor.verificationStatus === "VERIFIED"
-                      ? "Verified Teacher Profile"
-                      : "Verification Under Review"}
-                  </span>
-                </span>
+                </div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Your academic and identity documents are being reviewed. Your profile remains visible while the review is completed.
+                </p>
               </div>
             </div>
-          </header>
-  
-          {/* Dedicated Profile Body */}
-          <main className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6">
-            {/* Status Alert if Pending Verification */}
-            {isSelfViewing && isPending && (
-              <div className="p-5 rounded-3xl bg-amber-500/10 border border-amber-500/40 text-amber-700 text-xs sm:text-sm shadow-xl space-y-3">
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5 animate-pulse" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-white text-base">
-                        Verification in Progress
-                      </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                        ETA: 24–48 Hours
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-xs mt-1 leading-relaxed">
-                      Your institutional credentials (University, Department,
-                      Student ID Roll/Reg) and uploaded documents (Ear-Visible
-                      Selfie, 2-Sided NID, Student ID Card) are currently
-                      undergoing manual compliance audit.
-                    </p>
-                  </div>
-                </div>
-  
-                {/* Step Timeline Indicator */}
-                <div className="grid grid-cols-4 gap-2 pt-2 border-t border-amber-500/20 text-center font-mono text-[10px]">
-                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-500/40 text-emerald-700">
-                    <span className="block font-bold">1. Uploaded</span>
-                    <span className="text-emerald-700">✓ Complete</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-amber-50 border border-amber-500/60 text-amber-700">
-                    <span className="block font-bold">2. Ear Check</span>
-                    <span className="text-amber-700 animate-pulse">
-                      ● In Review
-                    </span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500">
-                    <span className="block font-bold">3. Campus ID</span>
-                    <span>Queue</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500">
-                    <span className="block font-bold">4. Badge</span>
-                    <span>Pending</span>
-                  </div>
+          </section>
+        )}
+
+        {isSelfViewing && isRejected && (
+          <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-700" />
+                <div>
+                  <h2 className="font-semibold text-slate-900">Verification needs attention</h2>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {tutor.verificationRejectionReason ||
+                      "Please review your submitted documents and send them again for verification."}
+                  </p>
                 </div>
               </div>
-            )}
-  
-            {/* Status Alert if Verification Rejected */}
-            {isSelfViewing && isRejected && (
-              <div className="p-5 rounded-3xl bg-rose-500/15 border border-rose-500/50 text-rose-700 text-xs sm:text-sm shadow-xl space-y-3">
-                <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-6 h-6 text-rose-700 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-base">
-                          Verification Dossier Rejected
-                        </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                          Action Required
-                        </span>
-                      </div>
-                      <p className="text-rose-700 text-xs mt-1 leading-relaxed">
-                        Reason:{" "}
-                        <span className="font-medium text-white">
-                          {tutor.verificationRejectionReason ||
-                            "Selfie did not show both ears clearly or Student ID / NID photo was illegible."}
-                        </span>
-                      </p>
-                      <p className="text-slate-500 text-[11px] mt-1">
-                        You can re-upload your documents and submit for immediate
-                        re-verification below.
-                      </p>
-                    </div>
-                  </div>
-  
+              <button
+                type="button"
+                onClick={() => {
+                  setResubmitNidNumber(tutor.nidNumber || "");
+                  setResubmitRoll(tutor.studentIdCardRoll || "");
+                  setResubmitReg(tutor.studentIdCardReg || "");
+                  setIsResubmitModalOpen(true);
+                }}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-700"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Re-submit documents
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]">
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-slate-900 px-5 pb-6 pt-7 sm:px-8 sm:pb-8 sm:pt-9">
+            <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-80 rounded-full border border-white/10" />
+            <div className="pointer-events-none absolute -right-8 -top-20 h-56 w-56 rounded-full border border-white/10" />
+
+            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end">
+              <GenderAvatar
+                gender={tutor.gender || "MALE"}
+                role="TUTOR"
+                size="xl"
+                name={tutor.fullName}
+                profilePicture={tutor.profilePicture}
+                className="rounded-3xl border-4 border-white shadow-lg"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    {isVerified
+                      ? "Verified tutor"
+                      : isPending
+                        ? "Verification in progress"
+                        : "Tutor profile"}
+                  </span>
+                  {tutor.department && (
+                    <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white">
+                      {tutor.department}
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {tutor.fullName}
+                </h1>
+                {(tutor.institution || tutor.department) && (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-blue-100">
+                    <Building2 className="h-4 w-4 shrink-0" />
+                    <span>
+                      {[tutor.institution, tutor.department]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </p>
+                )}
+                <p className="mt-2 flex items-center gap-2 text-sm text-blue-100">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>
+                    {[tutor.areaName, tutor.district].filter(Boolean).join(", ")}
+                  </span>
+                </p>
+              </div>
+
+              {isStudentViewing &&
+                relevantApplication?.status === "PENDING" && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setResubmitNidNumber(tutor.nidNumber || "");
-                      setResubmitRoll(tutor.studentIdCardRoll || "");
-                      setResubmitReg(tutor.studentIdCardReg || "");
-                      setIsResubmitModalOpen(true);
-                    }}
-                    className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-rose-600/30 flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+                    onClick={() => setTutorToAccept(relevantApplication)}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50"
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Re-submit Verification Documents</span>
+                    <Check className="h-4 w-4" />
+                    Accept this tutor
                   </button>
+                )}
+            </div>
+
+            <div className="relative mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5">
+                <div className="flex items-center gap-2 text-blue-100">
+                  <Star className="h-4 w-4 text-amber-300" />
+                  <span className="text-xs font-medium">Student rating</span>
                 </div>
+                <p className="mt-1.5 text-lg font-semibold text-white">
+                  {tutorRating.reviewCount
+                    ? `${tutorRating.average.toFixed(1)} / 5`
+                    : "New tutor"}
+                </p>
+                <p className="mt-0.5 text-xs text-blue-100">
+                  {tutorRating.reviewCount
+                    ? `${tutorRating.reviewCount} approved reviews`
+                    : "No reviews yet"}
+                </p>
               </div>
-            )}
-  
-            {/* Profile Hero Card with Ultra-Premium Minimalist Dark Cyber Cover */}
-            <div className="bg-white border border-blue-200 rounded-3xl overflow-hidden shadow-2xl relative">
-              {/* Minimalist Top-Notch Cover Header */}
-              <div className="bg-gradient-to-r from-blue-50 via-blue-50 to-slate-50 border-b border-blue-200 p-6 sm:p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.12),_transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(37,99,235,0.08),_transparent_50%)]" />
-  
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-mono tracking-widest px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1.5 shadow-sm">
-                        <ShieldCheck className="w-3 h-3 text-blue-700" />
-                        <span>Verified Educator Dossier</span>
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-500">
-                        ID: {tutor.id.substring(0, 10)}
-                      </span>
-                    </div>
-                  </div>
-  
-                  {/* Minimalist Authentic Performance Indicators */}
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                        Authentic Rating
-                      </span>
-                      <span className="text-sm font-bold text-amber-700 flex items-center justify-center gap-1">
-                        <Star
-                          className={`h-3.5 w-3.5 ${
-                            tutorRating.average > 0 ? "fill-amber-400" : ""
-                          }`}
-                        />
-                        <span>
-                          {tutorRating.average.toFixed(1)}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                        Verified Reviews
-                      </span>
-                      <span className="text-sm font-bold text-blue-700 font-mono">
-                        {tutorRating.reviewCount} Real
-                      </span>
-                    </div>
-                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                        Experience
-                      </span>
-                      <span className="text-sm font-bold text-emerald-700 font-mono">
-                        {tutor.yearsOfExperience || 2}+ Yrs
-                      </span>
-                    </div>
-                  </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5">
+                <div className="flex items-center gap-2 text-blue-100">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-xs font-medium">Experience</span>
                 </div>
+                <p className="mt-1.5 text-lg font-semibold text-white">
+                  {tutor.yearsOfExperience != null
+                    ? `${tutor.yearsOfExperience} years`
+                    : "Not listed"}
+                </p>
+                <p className="mt-0.5 text-xs text-blue-100">Teaching experience</p>
               </div>
-  
-              {/* Avatar & Core Profile Identity */}
-              <div className="px-6 pb-6 pt-0 relative">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-10 sm:-mt-12 gap-4 mb-4">
-                  <div className="flex items-end gap-4">
-                    <GenderAvatar
-                      gender={tutor.gender || "MALE"}
-                      role="TUTOR"
-                      size="xl"
-                      className="border-4 border-[#111827] shadow-2xl"
-                      profilePicture={tutor.profilePicture}
-                    />
-                    <div className="mb-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl sm:text-2xl font-bold text-white">
-                          {tutor.fullName}
-                        </h1>
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1 ${
-                            tutor.verificationStatus === "VERIFIED"
-                              ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30"
-                              : "bg-amber-500/20 text-amber-700 border-amber-500/30"
-                          }`}
-                        >
-                          <ShieldCheck className="w-3 h-3" />
-                          {tutor.verificationStatus === "VERIFIED"
-                            ? "Verified Scholar"
-                            : "Pending Verification"}
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5 mt-0.5">
-                        <Building2 className="w-3.5 h-3.5 text-blue-700" />
-                        <span>
-                          {tutor.institution || "University of Dhaka"} &bull;{" "}
-                          {tutor.department || "Science"}
-                        </span>
-                      </p>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                        <span>
-                          {tutor.areaName}, {tutor.district}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-  
-                  {isStudentViewing &&
-                    relevantApplication &&
-                    relevantApplication.status === "PENDING" && (
-                      <button
-                        type="button"
-                        onClick={() => setTutorToAccept(relevantApplication)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>Accept This Tutor</span>
-                      </button>
-                    )}
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5">
+                <div className="flex items-center gap-2 text-blue-100">
+                  <BookOpen className="h-4 w-4" />
+                  <span className="text-xs font-medium">Subjects</span>
                 </div>
-  
-                {/* Professional Bio */}
-                <div className="mt-4 p-4 rounded-2xl bg-white border border-blue-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
-                      <UserIcon className="w-3.5 h-3.5" />
-                      <span>Professional Bio</span>
+                <p className="mt-1.5 text-lg font-semibold text-white">
+                  {subjects.length}
+                </p>
+                <p className="mt-0.5 text-xs text-blue-100">Specializations</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3.5">
+                <div className="flex items-center gap-2 text-blue-100">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-xs font-medium">Monthly fee</span>
+                </div>
+                <p className="mt-1.5 text-lg font-semibold text-white">
+                  {tutor.hourlyOrMonthlyRate
+                    ? `৳${tutor.hourlyOrMonthlyRate.toLocaleString()}`
+                    : "Discuss"}
+                </p>
+                <p className="mt-0.5 text-xs text-blue-100">Expected rate</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)]">
+            <div className="space-y-6">
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                      <Users className="h-4 w-4" />
                     </span>
-                    {isSelfViewing && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditBio(tutor.bio || "");
-                          setEditPhilosophy(tutor.teachingPhilosophy || "");
-                          setEditExpectedFee(tutor.hourlyOrMonthlyRate || 8500);
-                          setEditSubjects(
-                            tutor.subjectsTaught || ["Higher Math", "Physics"],
-                          );
-                          setIsEditProfileOpen(true);
-                        }}
-                        className="text-[11px] text-blue-700 hover:text-blue-700 flex items-center gap-1"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        <span>Edit</span>
-                      </button>
-                    )}
+                    <div>
+                      <h2 className="font-semibold text-slate-900">About the tutor</h2>
+                      <p className="text-xs text-slate-500">Teaching approach and background</p>
+                    </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    {tutor.bio ||
-                      "Dedicated educator focused on conceptual clarity, weekly evaluations, and syllabus mastery for board & university entrance readiness."}
+                  {isSelfViewing && (
+                    <button
+                      type="button"
+                      onClick={openEditProfile}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+                  <p className="whitespace-pre-line text-sm leading-7 text-slate-700">
+                    {tutor.bio || "This tutor has not added a professional bio yet."}
                   </p>
                   {tutor.teachingPhilosophy && (
-                    <p className="text-xs text-slate-500 italic pt-1 border-t border-slate-200">
-                      "{tutor.teachingPhilosophy}"
+                    <blockquote className="mt-4 border-l-2 border-blue-300 pl-4 text-sm italic leading-6 text-slate-600">
+                      {tutor.teachingPhilosophy}
+                    </blockquote>
+                  )}
+                  {studentsInMilestone > 0 && (
+                    <p className="mt-4 flex items-center gap-2 border-t border-slate-200 pt-3 text-xs font-medium text-slate-600">
+                      <Users className="h-4 w-4 text-blue-700" />
+                      {studentsInMilestone}+ students supported in teaching history
                     </p>
                   )}
                 </div>
-  
-                {/* SUBJECT EXPERTISE - VIBRANT CLICKABLE TAGS */}
-                <div className="mt-4 p-4 rounded-2xl bg-white border border-blue-200 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>
-                        Subject Expertise (Click to Search Similar Tuitions)
-                      </span>
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      Interactive Tags
-                    </span>
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <Tag className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h2 className="font-semibold text-slate-900">Subject expertise</h2>
+                    <p className="text-xs text-slate-500">Select a subject to explore matching tuitions</p>
                   </div>
+                </div>
+                {subjects.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {(
-                      tutor.subjectsTaught || [
-                        "Higher Math",
-                        "Physics",
-                        "General Science",
-                      ]
-                    ).map((subj, sIdx) => (
+                    {subjects.map((subject) => (
                       <button
-                        key={sIdx}
+                        key={subject}
                         type="button"
                         onClick={() => {
-                          setFilterSubject(subj);
+                          setFilterSubject(subject);
                           setViewingTeacherProfileId(null);
                           setTeacherViewMode("feed");
-                          showToast(`Filtered tuitions & tutors by "${subj}".`);
+                          showToast(`Filtered tuitions & tutors by "${subject}".`);
                         }}
-                        className="group px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600/30 text-blue-700 hover:text-slate-900 border border-blue-200 hover:border-blue-400 text-xs font-medium transition-all shadow-sm flex items-center gap-1.5"
+                        className="rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2 text-sm font-medium text-blue-800 transition-colors hover:border-blue-200 hover:bg-blue-100"
                       >
-                        <span className="text-blue-500 group-hover:text-blue-700 font-mono">
-                          #
-                        </span>
-                        <span>{subj}</span>
+                        {subject}
                       </button>
                     ))}
                   </div>
-                </div>
-  
-                {/* Quick Metrics Bar - Real Data Disciplined */}
-                {(() => {
-                  const hasTutorReviews = tutorRating.reviewCount > 0;
-                  const reviewsCountVal = tutorRating.reviewCount;
-  
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-200 mt-4">
-                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                          Overall Rating
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Star
-                            className={`h-4 w-4 ${
-                              tutorRating.average > 0
-                                ? "fill-amber-400 text-amber-700"
-                                : "text-slate-400"
-                            }`}
-                          />
-                          <span className="text-base font-bold text-white">
-                            {tutorRating.average.toFixed(1)}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            (
-                            {reviewsCountVal > 0
-                              ? `${reviewsCountVal} reviews`
-                              : "0 Reviews"}
-                            )
-                          </span>
-                        </div>
-                      </div>
-  
-                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                          Experience
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Clock className="w-4 h-4 text-blue-700" />
-                          <span className="text-base font-bold text-white">
-                            {tutor.yearsOfExperience || 2}+ Years
-                          </span>
-                        </div>
-                      </div>
-  
-                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                          Students Taught
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Users className="w-4 h-4 text-blue-700" />
-                          <span className="text-base font-bold text-white">
-                            {hasTutorReviews
-                              ? `${reviewsCountVal * 3}+ Students`
-                              : "Starting Portfolio"}
-                          </span>
-                        </div>
-                      </div>
-  
-                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                          Quiz Points
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Award className="w-4 h-4 text-blue-700" />
-                          <span className="text-base font-bold text-white">
-                            {tutorQuizzes.length} Quizzes
-                          </span>
-                        </div>
-                      </div>
-  
-                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
-                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                          Expected Monthly Fee
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <DollarSign className="w-4 h-4 text-emerald-700" />
-                          <span className="text-base font-bold text-white">
-                            ৳{" "}
-                            {(tutor.hourlyOrMonthlyRate || 8500).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-  
-            <TeacherProfileRatings tutor={tutor} />
-
-            {/* Academic Degrees & Credentials */}
-            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-blue-700" />
-                  <h2 className="text-base font-bold text-white">
-                    Academic Degrees
-                  </h2>
-                </div>
-                <span className="text-xs font-mono text-emerald-700">
-                  Admin Verified
-                </span>
-              </div>
-  
-              <div className="space-y-2">
-                {(
-                  tutor.degrees || [
-                    {
-                      degreeName: "B.Sc (Hons) in Mathematics",
-                      institution: "University of Dhaka",
-                      passingYear: "2024",
-                      result: "CGPA 3.88 / 4.00",
-                    },
-                    {
-                      degreeName: "Higher Secondary Certificate (HSC)",
-                      institution: "Viqarunnisa Noon College",
-                      passingYear: "2020",
-                      result: "GPA 5.00",
-                    },
-                  ]
-                ).map((deg, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-2xl bg-white border border-blue-200"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="font-semibold text-sm text-white">
-                          {deg.degreeName}
-                        </div>
-                        <div className="text-xs text-blue-700 mt-0.5">
-                          {deg.institution}
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-300">
-                        {deg.passingYear}
-                      </span>
-                    </div>
-                    {deg.result && (
-                      <div className="mt-1 text-xs text-slate-500">
-                        Result:{" "}
-                        <span className="text-emerald-700 font-semibold">
-                          {deg.result}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-  
-            {/* Teacher's Quiz Bank Section */}
-            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 mt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-blue-700" />
-                  <h2 className="text-base font-bold text-white">
-                    Teacher's Quiz Bank ({tutorQuizzes.length})
-                  </h2>
-                </div>
-                <span className="text-xs font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                  🏆 {tutorQuizzes.length} Quiz Points
-                </span>
-              </div>
-  
-              {tutorQuizzes.length === 0 ? (
-                <div className="p-6 text-center bg-white rounded-2xl border border-slate-200">
-                  <p className="text-xs text-slate-500">
-                    This teacher hasn't created any quizzes yet.
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-5 text-sm text-slate-500">
+                    No subjects have been added to this profile yet.
                   </p>
+                )}
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <GraduationCap className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h2 className="font-semibold text-slate-900">Education</h2>
+                    <p className="text-xs text-slate-500">Academic background provided by the tutor</p>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {tutorQuizzes.map((quiz, idx) => (
-                    <div
-                      key={quiz.id}
-                      className="p-4 rounded-2xl bg-white border border-blue-200 space-y-3"
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="text-blue-700 font-bold font-mono text-sm mt-0.5">
-                          Q{idx + 1}.
-                        </span>
-                        <p className="text-sm text-white font-medium">
-                          {quiz.questionText}
-                        </p>
-                      </div>
-  
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
-                        {(Array.isArray(quiz.options)
-                          ? quiz.options
-                          : (() => {
-                              try {
-                                return JSON.parse(quiz.options || "[]");
-                              } catch {
-                                return [];
-                              }
-                            })()
-                        ).map((opt: string, oIdx: number) => (
-                          <div
-                            key={oIdx}
-                            className={`p-2.5 rounded-xl text-xs border flex items-center justify-between ${
-                              quiz.correctIndex === oIdx
-                                ? "bg-emerald-50 border-emerald-500/50 text-emerald-700 font-semibold"
-                                : "bg-slate-50 border-slate-200 text-slate-500"
-                            }`}
-                          >
-                            <span>
-                              {String.fromCharCode(65 + oIdx)}. {opt}
-                            </span>
-                            {quiz.correctIndex === oIdx && (
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-700" />
-                            )}
+                {degrees.length > 0 ? (
+                  <div className="space-y-3">
+                    {degrees.map((degree, index) => (
+                      <article
+                        key={`${degree.degreeName}-${degree.institution}-${index}`}
+                        className="rounded-2xl border border-slate-200 bg-white p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="font-semibold text-slate-900">{degree.degreeName}</h3>
+                            <p className="mt-1 text-sm text-blue-700">{degree.institution}</p>
                           </div>
-                        ))}
-                      </div>
-  
-                      <div className="flex items-center justify-end gap-2 text-[10px] text-slate-500 font-mono pt-1">
-                        <span className="px-2 py-0.5 rounded bg-slate-100">
-                          {quiz.subject}
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-slate-100">
-                          {quiz.gradeLevel}
-                        </span>
-                        {quiz.topic && (
-                          <span className="px-2 py-0.5 rounded bg-slate-100">
-                            Topic: {quiz.topic}
+                          <span className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                            {degree.passingYear}
                           </span>
+                        </div>
+                        {degree.result && (
+                          <p className="mt-2 text-xs text-slate-500">
+                            Result: <span className="font-semibold text-emerald-700">{degree.result}</span>
+                          </p>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-  
-            {/* Student Reviews Section (Vector Avatars, Zero Photos) */}
-            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-700" />
-                  <h2 className="text-base font-bold text-white">
-                    Verified Reviews ({tutorRating.reviewCount})
-                  </h2>
-                </div>
-              </div>
-  
-              <div className="space-y-3">
-                {approvedReviews.length === 0 ? (
-                  <div className="p-6 text-center bg-white rounded-2xl border border-slate-200">
-                    <MessageSquare className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-                    <p className="text-xs text-slate-500">
-                      No approved reviews yet. Reviews will appear here after
-                      admin moderation.
-                    </p>
+                      </article>
+                    ))}
                   </div>
                 ) : (
-                  approvedReviews.map((rev) => (
-                      <div
-                        key={rev.id}
-                        className="p-4 rounded-2xl bg-white border border-blue-200 space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <GenderAvatar
-                              gender="FEMALE"
-                              role="STUDENT"
-                              size="sm"
-                              name={rev.studentName}
-                              profilePicture={rev.studentPhotoUrl}
-                            />
-                            <div>
-                              <div className="font-semibold text-xs sm:text-sm text-white">
-                                {rev.studentName}
-                              </div>
-                              <div className="text-[10px] text-slate-500">
-                                {rev.studentRoleOrGrade}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20 text-xs font-bold text-amber-700">
-                            <Star
-                              className={`h-3.5 w-3.5 ${
-                                rev.overall > 0 ? "fill-amber-400" : ""
-                              }`}
-                            />
-                            <span>{rev.overall}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed italic">
-                          "{rev.comment}"
-                        </p>
-                      </div>
-                    ))
+                  <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-5 text-sm text-slate-500">
+                    No education details have been added yet.
+                  </p>
                 )}
+              </section>
+            </div>
+
+            <aside className="space-y-6">
+              <TeacherProfileRatings tutor={tutor} />
+
+              <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h2 className="font-semibold text-slate-900">Trust & verification</h2>
+                    <p className="text-xs text-slate-500">
+                      {isVerified
+                        ? "Identity and credentials verified"
+                        : isPending
+                          ? "Documents are being reviewed"
+                          : "Verification not completed"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
+                  {isVerified ? (
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-amber-600" />
+                  )}
+                  {isVerified ? "Profile reviewed by Porabo" : "Review status shown transparently"}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-blue-700" />
+                    <h2 className="font-semibold text-slate-900">Quiz portfolio</h2>
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+                    {tutorQuizzes.length}
+                  </span>
+                </div>
+                {tutorQuizzes.length === 0 ? (
+                  <div className="mt-4 rounded-xl bg-slate-50 px-3 py-4 text-center">
+                    <p className="text-sm text-slate-500">No quizzes published yet.</p>
+                  </div>
+                ) : (
+                  <ul className="mt-4 space-y-2">
+                    {tutorQuizzes.map((quiz) => (
+                      <li
+                        key={quiz.id}
+                        className="rounded-xl border border-slate-200 px-3.5 py-3"
+                      >
+                        <p className="line-clamp-2 text-sm font-medium text-slate-800">
+                          {quiz.questionText}
+                        </p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {quiz.subject} · {quiz.gradeLevel}
+                          {quiz.topic ? ` · ${quiz.topic}` : ""}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-blue-700" />
+              <div>
+                <h2 className="font-semibold text-slate-900">Student reviews</h2>
+                <p className="text-xs text-slate-500">Approved feedback from students</p>
               </div>
             </div>
-          </main>
-  
-          {/* MODAL: EDIT PROFILE / PROFESSIONAL BIO */}
-          <TeacherProfileEditModal />
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {tutorRating.reviewCount}
+            </span>
+          </div>
 
-          {/* MODAL: QR CODE NEIGHBORHOOD SHARING (Teacher Profile) */}
-          <QRCodeModal
-            isOpen={qrModalData.isOpen}
-            onClose={() => setQrModalData((prev) => ({ ...prev, isOpen: false }))}
-            title={qrModalData.title}
-            subtitle={qrModalData.subtitle}
-            district={qrModalData.district}
-            areaName={qrModalData.areaName}
-            shareUrl={qrModalData.shareUrl}
-            type={qrModalData.type}
-          />
-        </div>
-      );
-    }
-  
-    // =========================================================================
-  return null;
- }
+          {approvedReviews.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center">
+              <MessageSquare className="mx-auto h-7 w-7 text-slate-400" />
+              <p className="mt-2 text-sm font-medium text-slate-700">No reviews yet</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Approved reviews will appear here as students share feedback.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {approvedReviews.map((review) => (
+                <article key={review.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <GenderAvatar
+                        gender="FEMALE"
+                        role="STUDENT"
+                        size="sm"
+                        name={review.studentName}
+                        profilePicture={review.studentPhotoUrl}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {review.studentName}
+                        </p>
+                        <p className="text-xs text-slate-500">{review.studentRoleOrGrade}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-600" />
+                      {review.overall.toFixed(1)}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{review.comment}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      <TeacherProfileEditModal />
+      <QRCodeModal
+        isOpen={qrModalData.isOpen}
+        onClose={() => setQrModalData((previous) => ({ ...previous, isOpen: false }))}
+        title={qrModalData.title}
+        subtitle={qrModalData.subtitle}
+        district={qrModalData.district}
+        areaName={qrModalData.areaName}
+        shareUrl={qrModalData.shareUrl}
+        type={qrModalData.type}
+      />
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { MapPin, CheckCircle2, Unlock, Phone, MessageSquare, Send, BookOpen, Clock, TrendingUp, Eye, Activity, LayoutGrid, Radio } from "lucide-react";
+import { AlertTriangle, MapPin, CheckCircle2, Unlock, Phone, MessageSquare, Send, BookOpen, Clock, TrendingUp, Eye, Activity, LayoutGrid, Radio } from "lucide-react";
 import { DistrictRadarView } from "../../../components/DistrictRadarView";
 import { EmptyApplicationsIllustration } from "../../../components/EmptyStateIllustrations";
 import { useAppContext } from "../../AppContext";
@@ -22,22 +22,34 @@ export function TutorOverviewSection() {
   if (!currentUser || currentUser.role !== "TUTOR") return null;
   return (
     <>
-      {/* Verification Status Warning if Pending or Rejected */}
-                    {currentUser.verificationStatus !== "VERIFIED" && (
-                      <div className="p-4 rounded-3xl bg-amber-500/15 border border-amber-500/40 text-amber-700 text-xs sm:text-sm flex items-start gap-3 shadow-lg">
-                        <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-bold text-white block mb-0.5">
-                            Verification in Progress
-                          </span>
-                          Your profile documents and institutional student roll (
-                          {currentUser.studentIdCardRoll || "Submitted"}) are under
-                          review. You will be able to apply to tuition posts once
-                          verified by the Porabo administrative team (within 24–48
-                          hours).
-                        </div>
-                      </div>
-                    )}
+      {currentUser.verificationStatus === "REJECTED" ? (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 shadow-sm sm:text-sm"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <span className="mb-0.5 block font-bold text-rose-800">
+              Verification rejected
+            </span>
+            {currentUser.verificationRejectionReason ||
+              "Please review your submitted documents and send them again for verification."}
+          </div>
+        </div>
+      ) : currentUser.verificationStatus !== "VERIFIED" ? (
+        <div className="flex items-start gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-700 shadow-sm sm:text-sm">
+          <Clock className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <span className="mb-0.5 block font-bold text-amber-800">
+              Verification in Progress
+            </span>
+            Your profile documents and institutional student roll (
+            {currentUser.studentIdCardRoll || "Submitted"}) are under review. You
+            will be able to apply to tuition posts once verified by the Porabo
+            administrative team (within 24–48 hours).
+          </div>
+        </div>
+      ) : null}
         
                     {/* Teacher Dashboard View Switcher */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-blue-200 rounded-2xl p-2.5">

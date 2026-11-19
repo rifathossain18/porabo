@@ -587,18 +587,6 @@ export default {
       }
 
       // ========== USERS ==========
-      const adminUserMatch = path.match(/^\/api\/admin\/users\/([^/]+)$/);
-      if (adminUserMatch && method === 'GET') {
-        const ctx = await getAuth(request, env);
-        if (!ctx.isAdmin) return errorResponse('Admin token required', 401);
-        const userId = decodeURIComponent(adminUserMatch[1]);
-        const row: any = await env.DB.prepare(
-          'SELECT data FROM users WHERE id = ?'
-        ).bind(userId).first();
-        if (!row) return errorResponse('User not found', 404);
-        return jsonResponse(flattenUser(JSON.parse(row.data)));
-      }
-
       if (path === '/api/users' && method === 'GET') {
         const ctx = await getAuth(request, env);
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();

@@ -82,7 +82,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
     return (
       <div className="py-8 text-center text-slate-500 space-y-2">
         <Clock className="w-8 h-8 mx-auto text-slate-600" />
-        <p className="text-sm font-semibold text-slate-400">No activity logged yet.</p>
+        <p className="text-sm font-semibold text-slate-500">No activity logged yet.</p>
         <p className="text-xs text-slate-500">
           Your posts, teacher applications, and tutor acceptance records will be tracked here.
         </p>
@@ -92,12 +92,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs text-slate-400 font-mono border-b border-blue-950/60 pb-2">
+      <div className="flex items-center justify-between text-xs text-slate-500 font-mono border-b border-blue-200 pb-2">
         <span>Timeline of Student Actions & Inquiries</span>
         <span>{timelineEvents.length} Recorded Events</span>
       </div>
 
-      <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-900/40">
+      <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-50">
         {timelineEvents.map((item) => {
           const isMatch = item.type === 'MATCH_ACCEPTED';
           const isApp = item.type === 'APPLICATION_RECEIVED';
@@ -112,7 +112,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
                     ? 'bg-emerald-500 border-emerald-300 text-slate-950 shadow-md shadow-emerald-500/40'
                     : isApp
                     ? 'bg-blue-500 border-blue-300 text-white shadow-md shadow-blue-500/40'
-                    : 'bg-cyan-600 border-cyan-400 text-slate-950'
+                    : 'bg-blue-600 border-blue-400 text-slate-950'
                 }`}
               >
                 {isMatch ? (
@@ -125,7 +125,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
               </div>
 
               {/* Event Content Box */}
-              <div className="bg-[#0B0F19] border border-blue-950/70 rounded-2xl p-3.5 hover:border-blue-800/60 transition-all space-y-1">
+              <div className="bg-white border border-blue-200 rounded-2xl p-3.5 hover:border-blue-200 transition-all space-y-1">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <h4 className="font-bold text-xs sm:text-sm text-white">
                     {item.title}
@@ -134,10 +134,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
                     <span
                       className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${
                         item.statusBadge === 'Match Complete' || item.statusBadge === 'Accepted'
-                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : item.statusBadge === 'Under Review'
-                          ? 'bg-amber-950 text-amber-400 border-amber-800/60'
-                          : 'bg-blue-950 text-blue-400 border-blue-800/60'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-blue-50 text-blue-700 border-blue-200'
                       }`}
                     >
                       {item.statusBadge}
@@ -145,7 +145,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
                   )}
                 </div>
 
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {item.description}
                 </p>
 

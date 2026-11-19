@@ -22,24 +22,24 @@ export function TeacherProfileEditModal() {
     <>
       {isEditProfileOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-              <div className="w-full max-w-lg bg-[#111827] border border-blue-900/50 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+              <div className="w-full max-w-lg bg-white border border-blue-200 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="absolute right-5 top-5 text-slate-400 hover:text-white"
+                  className="absolute right-5 top-5 text-slate-500 hover:text-slate-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
   
                 <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-700 flex items-center justify-center">
                     <Edit3 className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-white">
                       Edit Professional Profile
                     </h3>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       Update your public biography and tutoring offerings
                     </p>
                   </div>
@@ -47,7 +47,7 @@ export function TeacherProfileEditModal() {
   
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       Professional Bio
                     </label>
                     <textarea
@@ -55,12 +55,12 @@ export function TeacherProfileEditModal() {
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
                       placeholder="Describe your academic expertise, teaching experience, and methodology..."
-                      className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-blue-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500"
                     />
                   </div>
   
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       Teaching Philosophy / Slogan
                     </label>
                     <input
@@ -68,31 +68,31 @@ export function TeacherProfileEditModal() {
                       value={editPhilosophy}
                       onChange={(e) => setEditPhilosophy(e.target.value)}
                       placeholder="e.g. Conceptual understanding through step-by-step problem dissection."
-                      className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                     />
                   </div>
   
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       Expected Monthly Fee (৳)
                     </label>
                     <input
                       type="number"
                       value={editExpectedFee}
                       onChange={(e) => setEditExpectedFee(Number(e.target.value))}
-                      className="w-full bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                     />
                   </div>
   
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       Subject Specializations
                     </label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {editSubjects.map((s, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 rounded-lg bg-blue-950 border border-blue-800 text-blue-300 text-xs flex items-center gap-1.5"
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs flex items-center gap-1.5"
                         >
                           <span>{s}</span>
                           <button
@@ -102,7 +102,7 @@ export function TeacherProfileEditModal() {
                                 editSubjects.filter((_, i) => i !== idx),
                               )
                             }
-                            className="hover:text-rose-400"
+                            className="hover:text-rose-700"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -116,7 +116,7 @@ export function TeacherProfileEditModal() {
                         value={newSubjectInput}
                         onChange={(e) => setNewSubjectInput(e.target.value)}
                         placeholder="Add subject (e.g. Calculus, Physics)"
-                        className="flex-1 bg-[#0B0F19] border border-blue-950/60 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                        className="flex-1 bg-white border border-blue-200 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
                       />
                       <button
                         type="button"
@@ -143,7 +143,7 @@ export function TeacherProfileEditModal() {
                     <button
                       type="button"
                       onClick={() => setIsEditProfileOpen(false)}
-                      className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm"
+                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl text-sm"
                     >
                       Cancel
                     </button>

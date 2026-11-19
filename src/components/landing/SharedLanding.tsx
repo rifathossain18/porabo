@@ -11,58 +11,12 @@ import {
 import { THEMES } from './theme';
 import type { Pin, Variant } from './types';
 
-export const PremiumBackground: React.FC<{ variant: Variant | 'mixed' }> = ({
-  variant,
-}) => {
-  const glow1 =
-    variant === 'green' ? THEMES.green.glow1 : THEMES.blue.glow1;
-  const glow2 =
-    variant === 'mixed' ? 'rgba(16,185,129,0.14)' : THEMES[variant].glow2;
-  const line =
-    variant === 'green' ? THEMES.green.line : THEMES.blue.line;
-
-  return (
-    <div
-      aria-hidden="true"
-      className="fixed inset-0 pointer-events-none"
-      style={{ transform: 'translateZ(0)' }}
-    >
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(circle at 20% 10%, #0B1428 0%, #070A12 40%, #050810 100%)',
-        }}
-      />
-      <div
-        className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full"
-        style={{
-          background: `radial-gradient(circle, ${glow1} 0%, transparent 70%)`,
-        }}
-      />
-      <div
-        className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full"
-        style={{
-          background: `radial-gradient(circle, ${glow2} 0%, transparent 70%)`,
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(59,130,246,0.12) 1px, transparent 0)',
-          backgroundSize: '36px 36px',
-        }}
-      />
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${line}, transparent)`,
-        }}
-      />
-    </div>
-  );
-};
+export const PremiumBackground: React.FC<{ variant: Variant | 'mixed' }> = () => (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-slate-50"
+  />
+);
 
 export const Logo: React.FC<{ sub: string; subClass: string; small?: boolean }> = ({
   sub,
@@ -113,7 +67,7 @@ export const Radar: React.FC<{ variant: Variant; pins: Pin[] }> = ({
       {rings.map((r) => (
         <React.Fragment key={r.label}>
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-700/60"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-300"
             style={{
               width: `${r.size}%`,
               height: `${r.size}%`,
@@ -124,15 +78,15 @@ export const Radar: React.FC<{ variant: Variant; pins: Pin[] }> = ({
             }}
           />
           <div
-            className="absolute left-1/2 -translate-x-1/2 text-[9px] font-mono text-slate-500 px-1 bg-[#070A12]"
+            className="absolute left-1/2 -translate-x-1/2 text-[9px] font-mono text-slate-500 px-1 bg-slate-50"
             style={{ top: r.top }}
           >
             {r.label}
           </div>
         </React.Fragment>
       ))}
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-800/70" />
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-800/70" />
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-100" />
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-100" />
       <div className="absolute inset-0 rounded-full overflow-hidden">
         <div
           className="absolute inset-0 pb-sweep"
@@ -165,7 +119,7 @@ export const Radar: React.FC<{ variant: Variant; pins: Pin[] }> = ({
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
           </span>
           <span
-            className={`ml-1.5 whitespace-nowrap rounded-full border ${t.border} bg-[#0B0F19]/90 px-2 py-0.5 text-[10px] text-slate-200`}
+            className={`ml-1.5 whitespace-nowrap rounded-full border ${t.border} bg-white px-2 py-0.5 text-[10px] text-slate-700`}
           >
             {p.label}
           </span>
@@ -180,7 +134,7 @@ export const GlassCard: React.FC<{
   className?: string;
 }> = ({ children, className = '' }) => (
   <div
-    className={`rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0F1626] to-[#0B0F19] p-4 sm:p-5 shadow-2xl shadow-black/40 ${className}`}
+    className={`rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-white p-4 sm:p-5 shadow-2xl shadow-black/40 ${className}`}
   >
     {children}
   </div>
@@ -189,41 +143,41 @@ export const GlassCard: React.FC<{
 export const EarningsCard: React.FC = () => (
   <GlassCard>
     <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2 text-xs text-slate-300">
-        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-950/80 border border-blue-800/50">
-          <Search className="w-3.5 h-3.5 text-blue-400" />
+      <div className="flex items-center gap-2 text-xs text-slate-600">
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 border border-blue-200">
+          <Search className="w-3.5 h-3.5 text-blue-700" />
         </span>
         New tuition request nearby
       </div>
-      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 rounded-full px-2 py-0.5">
+      <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
         0.8 km
       </span>
     </div>
     <div className="text-sm font-bold text-white">
       Class 9 · Physics · 3 days a week
     </div>
-    <div className="text-[11px] text-slate-400 mt-0.5">
+    <div className="text-[11px] text-slate-500 mt-0.5">
       Mirpur 10 · Evening batch · Verified guardian
     </div>
     <div className="mt-4 space-y-2 text-xs">
-      <div className="flex justify-between text-slate-400">
+      <div className="flex justify-between text-slate-500">
         <span>Monthly fee</span>
-        <span className="text-slate-200 font-mono">৳ 5,000</span>
+        <span className="text-slate-700 font-mono">৳ 5,000</span>
       </div>
-      <div className="flex justify-between text-slate-400">
+      <div className="flex justify-between text-slate-500">
         <span>Porabo commission</span>
-        <span className="text-slate-200 font-mono">৳ 0</span>
+        <span className="text-slate-700 font-mono">৳ 0</span>
       </div>
-      <div className="h-px bg-slate-800" />
+      <div className="h-px bg-slate-100" />
       <div className="flex justify-between items-center">
-        <span className="flex items-center gap-1.5 text-slate-200 font-semibold">
-          <Wallet className="w-3.5 h-3.5 text-blue-400" />
+        <span className="flex items-center gap-1.5 text-slate-700 font-semibold">
+          <Wallet className="w-3.5 h-3.5 text-blue-700" />
           You keep
         </span>
         <span className="font-mono font-bold text-base text-white">৳ 5,000</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-        <div className="h-full w-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" />
+      <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-full w-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
       </div>
       <div className="text-[10px] text-slate-500 font-mono text-right">
         100% of your earnings
@@ -235,39 +189,39 @@ export const EarningsCard: React.FC = () => (
 export const MatchCard: React.FC = () => (
   <GlassCard>
     <div className="flex items-center gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-500 text-sm font-extrabold text-white">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-green-500 text-sm font-extrabold text-white">
         NJ
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-sm font-bold text-white">
           Nusrat Jahan
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
         </div>
-        <div className="text-[11px] text-slate-400 truncate">
+        <div className="text-[11px] text-slate-500 truncate">
           BUET · Mathematics &amp; Physics
         </div>
       </div>
       <div className="text-right">
         <div className="flex items-center justify-end gap-1 text-xs font-bold text-white">
-          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+          <Star className="w-3 h-3 text-amber-700 fill-amber-400" />
           4.9
         </div>
-        <div className="text-[10px] font-mono text-emerald-400">0.9 km</div>
+        <div className="text-[10px] font-mono text-emerald-700">0.9 km</div>
       </div>
     </div>
     <div className="mt-3 flex flex-wrap gap-1.5">
       {['NID verified', 'Student ID', 'Institution'].map((b) => (
         <span
           key={b}
-          className="inline-flex items-center gap-1 rounded-full border border-emerald-800/50 bg-emerald-950/60 px-2 py-0.5 text-[10px] text-emerald-300"
+          className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700"
         >
           <CheckCircle className="w-3 h-3" />
           {b}
         </span>
       ))}
     </div>
-    <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-800 bg-[#070A12] px-3 py-2.5">
-      <span className="flex items-center gap-2 text-xs text-slate-400">
+    <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+      <span className="flex items-center gap-2 text-xs text-slate-500">
         <Phone className="w-3.5 h-3.5" />
         <span className="font-mono tracking-wider">01•• ••• ••••</span>
       </span>
@@ -298,21 +252,21 @@ export const PrivacyPanel: React.FC<{
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
           {title}
         </h2>
-        <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-md">
+        <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-md">
           {body}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <GlassCard>
-          <div className="text-[11px] text-slate-400 mb-3 flex items-center gap-1.5">
+          <div className="text-[11px] text-slate-500 mb-3 flex items-center gap-1.5">
             <Lock className="w-3 h-3" />
             {beforeLabel}
           </div>
           <div className="space-y-2 text-xs">
-            <div className="rounded-lg bg-[#070A12] border border-slate-800 px-2.5 py-2 font-mono text-slate-500 tracking-wider">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-2 font-mono text-slate-500 tracking-wider">
               01•• ••• ••••
             </div>
-            <div className="rounded-lg bg-[#070A12] border border-slate-800 px-2.5 py-2 text-slate-500">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-2 text-slate-500">
               Address hidden
             </div>
           </div>
@@ -323,10 +277,10 @@ export const PrivacyPanel: React.FC<{
             {afterLabel}
           </div>
           <div className="space-y-2 text-xs">
-            <div className="rounded-lg bg-[#070A12] border border-slate-800 px-2.5 py-2 font-mono text-white tracking-wider">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-2 font-mono text-white tracking-wider">
               01700-000000
             </div>
-            <div className="rounded-lg bg-[#070A12] border border-slate-800 px-2.5 py-2 text-slate-200">
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-2 text-slate-700">
               Full address shared
             </div>
           </div>

@@ -13,13 +13,13 @@ export const InfoField: React.FC<{
   danger?: boolean;
 }> = ({ label, value, span, mono, danger }) => (
   <div
-    className={`bg-[#111827] p-2.5 rounded-xl border border-slate-800 ${span === 2 ? "col-span-2" : ""}`}
+    className={`bg-white p-2.5 rounded-xl border border-slate-200 ${span === 2 ? "col-span-2" : ""}`}
   >
     <span className="text-[10px] text-slate-500 font-mono uppercase block mb-0.5">
       {label}
     </span>
     <span
-      className={`text-xs font-semibold break-words ${danger ? "text-rose-400" : "text-white"} ${mono ? "font-mono" : ""}`}
+      className={`text-xs font-semibold break-words ${danger ? "text-rose-700" : "text-white"} ${mono ? "font-mono" : ""}`}
     >
       {value ? (
         value
@@ -83,15 +83,15 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="w-full max-w-3xl bg-[#0B0F19] border border-blue-900/80 rounded-3xl p-5 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto relative">
+      <div className="w-full max-w-3xl bg-white border border-blue-200 rounded-3xl p-5 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto relative">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+          className="absolute right-4 top-4 p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-start gap-4 border-b border-slate-800 pb-4">
+        <div className="flex items-start gap-4 border-b border-slate-200 pb-4">
           <GenderAvatar
             gender={user.gender || "MALE"}
             role={user.role}
@@ -103,32 +103,32 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               <h2 className="text-xl font-bold text-white truncate">
                 {user.fullName}
               </h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono">
                 {user.role}
               </span>
               {isTutor && (
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${user.verificationStatus === "VERIFIED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : user.verificationStatus === "REJECTED" ? "bg-rose-950 text-rose-400 border border-rose-800/60" : "bg-amber-950 text-amber-400 border border-amber-800/60"}`}
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${user.verificationStatus === "VERIFIED" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : user.verificationStatus === "REJECTED" ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
                 >
                   {user.verificationStatus || "PENDING"}
                 </span>
               )}
             </div>
             {isTutor && (
-              <p className="text-xs text-blue-400 mt-1">
+              <p className="text-xs text-blue-700 mt-1">
                 {user.institution || "—"} • {user.department || "—"}
               </p>
             )}
-            <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
+            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
               <MapPin className="w-3 h-3" /> {user.areaName}, {user.district}
             </p>
           </div>
         </div>
 
         {/* Basic Info */}
-        <div className="border-b border-slate-800 pb-4">
+        <div className="border-b border-slate-200 pb-4">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <UserIcon className="w-4 h-4 text-cyan-400" />
+            <UserIcon className="w-4 h-4 text-blue-700" />
             <h3 className="text-xs font-bold text-white uppercase">
               Basic Information
             </h3>
@@ -148,9 +148,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
         </div>
 
         {/* Location */}
-        <div className="border-b border-slate-800 pb-4">
+        <div className="border-b border-slate-200 pb-4">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <MapPin className="w-4 h-4 text-cyan-400" />
+            <MapPin className="w-4 h-4 text-blue-700" />
             <h3 className="text-xs font-bold text-white uppercase">Location</h3>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -174,9 +174,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
           </div>
         </div>
 
-        <div className="border-b border-slate-800 pb-4">
+        <div className="border-b border-slate-200 pb-4">
           <div className="mb-2.5 flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <ShieldCheck className="h-4 w-4 text-emerald-700" />
             <h3 className="text-xs font-bold uppercase text-white">
               Photos & verification documents
             </h3>
@@ -184,13 +184,13 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <VerificationImage label="Profile picture" src={user.profilePicture} />
             {documentsLoading ? (
-              <p className="self-center text-xs text-slate-400">
+              <p className="self-center text-xs text-slate-500">
                 Loading protected verification images...
               </p>
             ) : documentsError ? (
               <p
                 role="alert"
-                className="self-center rounded-xl border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300"
+                className="self-center rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
               >
                 {documentsError}
               </p>
@@ -218,7 +218,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                 />
               </>
             ) : (
-              <p className="self-center text-xs text-slate-400">
+              <p className="self-center text-xs text-slate-500">
                 No verification documents are on file for this profile.
               </p>
             )}
@@ -227,9 +227,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
 
         {isTutor && (
           <>
-            <div className="border-b border-slate-800 pb-4">
+            <div className="border-b border-slate-200 pb-4">
               <div className="flex items-center gap-1.5 mb-2.5">
-                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <ShieldCheck className="w-4 h-4 text-blue-700" />
                 <h3 className="text-xs font-bold text-white uppercase">
                   Verification Dossier
                 </h3>
@@ -281,9 +281,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               </div>
             </div>
 
-            <div className="border-b border-slate-800 pb-4">
+            <div className="border-b border-slate-200 pb-4">
               <div className="flex items-center gap-1.5 mb-2.5">
-                <Briefcase className="w-4 h-4 text-cyan-400" />
+                <Briefcase className="w-4 h-4 text-blue-700" />
                 <h3 className="text-xs font-bold text-white uppercase">
                   Professional
                 </h3>
@@ -332,7 +332,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                     (user.subjectsTaught || []).map((s, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 rounded bg-blue-950 text-blue-300 text-xs border border-blue-800/50"
+                        className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs border border-blue-200"
                       >
                         {s}
                       </span>
@@ -351,7 +351,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                     (user.gradesTaught || []).map((g, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 text-xs border border-cyan-800/50"
+                        className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs border border-blue-200"
                       >
                         {g}
                       </span>
@@ -364,9 +364,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             </div>
 
             {(user.bio || user.teachingPhilosophy) && (
-              <div className="border-b border-slate-800 pb-4">
+              <div className="border-b border-slate-200 pb-4">
                 <div className="flex items-center gap-1.5 mb-2.5">
-                  <UserIcon className="w-4 h-4 text-cyan-400" />
+                  <UserIcon className="w-4 h-4 text-blue-700" />
                   <h3 className="text-xs font-bold text-white uppercase">
                     Bio & Philosophy
                   </h3>
@@ -376,7 +376,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                     <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">
                       Bio
                     </span>
-                    <p className="text-xs text-slate-300">{user.bio}</p>
+                    <p className="text-xs text-slate-600">{user.bio}</p>
                   </div>
                 )}
                 {user.teachingPhilosophy && (
@@ -384,7 +384,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                     <span className="text-[10px] text-slate-500 font-mono uppercase block mb-1">
                       Philosophy
                     </span>
-                    <p className="text-xs text-slate-300 italic">
+                    <p className="text-xs text-slate-600 italic">
                       "{user.teachingPhilosophy}"
                     </p>
                   </div>
@@ -393,9 +393,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             )}
 
             {(user.degrees || []).length > 0 && (
-              <div className="border-b border-slate-800 pb-4">
+              <div className="border-b border-slate-200 pb-4">
                 <div className="flex items-center gap-1.5 mb-2.5">
-                  <GraduationCap className="w-4 h-4 text-cyan-400" />
+                  <GraduationCap className="w-4 h-4 text-blue-700" />
                   <h3 className="text-xs font-bold text-white uppercase">
                     Degrees ({user.degrees!.length})
                   </h3>
@@ -404,15 +404,15 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                   {user.degrees!.map((d, i) => (
                     <div
                       key={i}
-                      className="p-2.5 bg-[#111827] rounded-xl border border-slate-800 text-xs"
+                      className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs"
                     >
                       <div className="font-semibold text-white">
                         {d.degreeName}
                       </div>
-                      <div className="text-blue-400 text-[11px]">
+                      <div className="text-blue-700 text-[11px]">
                         {d.institution}
                       </div>
-                      <div className="text-slate-400 text-[10px] mt-1">
+                      <div className="text-slate-500 text-[10px] mt-1">
                         Year: {d.passingYear}{" "}
                         {d.result ? `• Result: ${d.result}` : ""}
                       </div>
@@ -423,9 +423,9 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             )}
 
             {(user.reviews || []).length > 0 && (
-              <div className="border-b border-slate-800 pb-4">
+              <div className="border-b border-slate-200 pb-4">
                 <div className="flex items-center gap-1.5 mb-2.5">
-                  <MessageSquare className="w-4 h-4 text-cyan-400" />
+                  <MessageSquare className="w-4 h-4 text-blue-700" />
                   <h3 className="text-xs font-bold text-white uppercase">
                     Reviews ({approvedReviews.length} approved
                     {pendingReviews.length > 0
@@ -438,19 +438,19 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                   {(user.reviews || []).slice(0, 10).map((r) => (
                     <div
                       key={r.id}
-                      className="p-2.5 bg-[#111827] rounded-xl border border-slate-800 text-xs"
+                      className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-white">
                           {r.studentName}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] ${r.status === "APPROVED" ? "bg-emerald-950 text-emerald-400" : r.status === "REJECTED" ? "bg-rose-950 text-rose-400" : "bg-amber-950 text-amber-400"}`}
+                          className={`px-1.5 py-0.5 rounded text-[10px] ${r.status === "APPROVED" ? "bg-emerald-50 text-emerald-700" : r.status === "REJECTED" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}
                         >
                           {r.status || "APPROVED"}
                         </span>
                       </div>
-                      <p className="text-slate-400 mt-1 italic">
+                      <p className="text-slate-500 mt-1 italic">
                         "{r.comment}"
                       </p>
                       <div className="text-slate-500 text-[10px] mt-1">
@@ -464,10 +464,10 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
           </>
         )}
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-slate-800 sticky bottom-0 bg-[#0B0F19] pb-1">
+        <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 sticky bottom-0 bg-white pb-1">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
+            className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold"
           >
             Close
           </button>
@@ -475,7 +475,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             <>
               <button
                 onClick={onReject}
-                className="px-4 py-2.5 bg-rose-950/80 text-rose-300 rounded-xl text-xs font-semibold border border-rose-800/50"
+                className="px-4 py-2.5 bg-rose-50 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200"
               >
                 Reject
               </button>
@@ -495,8 +495,8 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
 
 function VerificationImage({ label, src }: { label: string; src?: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-[#111827] p-2.5">
-      <p className="mb-2 text-[10px] font-mono uppercase text-slate-400">{label}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-2.5">
+      <p className="mb-2 text-[10px] font-mono uppercase text-slate-500">{label}</p>
       {src ? (
         <a href={src} target="_blank" rel="noreferrer">
           <img
@@ -504,11 +504,11 @@ function VerificationImage({ label, src }: { label: string; src?: string }) {
             alt={label}
             loading="eager"
             decoding="async"
-            className="h-44 w-full rounded-lg bg-slate-950 object-contain"
+            className="h-44 w-full rounded-lg bg-white object-contain"
           />
         </a>
       ) : (
-        <div className="flex h-44 items-center justify-center rounded-lg bg-slate-950 text-xs text-slate-500">
+        <div className="flex h-44 items-center justify-center rounded-lg bg-white text-xs text-slate-500">
           Not provided
         </div>
       )}

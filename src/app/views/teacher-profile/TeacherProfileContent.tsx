@@ -81,18 +81,18 @@ export function TeacherProfileContent() {
         : null;
   
       return (
-        <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white">
           {/* Toast Notification */}
           <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
   
           {/* Top Header Navigation */}
-          <header className="sticky top-0 z-40 border-b border-blue-950/50 bg-[#0B0F19]/90 backdrop-blur-md px-4 py-3 sm:px-6">
+          <header className="sticky top-0 z-40 border-b border-blue-200 bg-white backdrop-blur-md px-4 py-3 sm:px-6">
             <div className="max-w-5xl mx-auto flex items-center justify-between">
               <button
                 onClick={() => setViewingTeacherProfileId(null)}
-                className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60 transition-colors"
+                className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-xl border border-slate-300 transition-colors"
               >
-                <ArrowLeft className="w-4 h-4 text-blue-400" />
+                <ArrowLeft className="w-4 h-4 text-blue-700" />
                 <span>
                   Back to{" "}
                   {currentUser.role === "STUDENT" ? "My Posts" : "Tuition Feed"}
@@ -114,10 +114,10 @@ export function TeacherProfileContent() {
                       type: "tutor",
                     });
                   }}
-                  className="px-2.5 sm:px-3 py-1.5 bg-[#111827] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                   title="Share via QR Code for offline neighborhood distribution"
                 >
-                  <QrCode className="w-3.5 h-3.5 text-cyan-400" />
+                  <QrCode className="w-3.5 h-3.5 text-blue-700" />
                   <span className="hidden sm:inline">QR Code</span>
                 </button>
   
@@ -125,10 +125,10 @@ export function TeacherProfileContent() {
                 <button
                   type="button"
                   onClick={(e) => handleShareTutorProfile(tutor, e)}
-                  className="px-2.5 sm:px-3 py-1.5 bg-[#111827] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                   title="Share profile link"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-blue-400" />
+                  <Share2 className="w-3.5 h-3.5 text-blue-700" />
                   <span className="hidden sm:inline">Share</span>
                 </button>
   
@@ -137,7 +137,7 @@ export function TeacherProfileContent() {
                   type="button"
                   onClick={() => handleDownloadTeacherCard(tutor)}
                   disabled={downloadingTeacherCardId === tutor.id}
-                  className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white border border-cyan-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
+                  className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
                   title="Download premium bio card with QR code"
                 >
                   <Download
@@ -160,7 +160,7 @@ export function TeacherProfileContent() {
                       );
                       setIsEditProfileOpen(true);
                     }}
-                    className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-700 border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>Edit Profile</span>
@@ -170,8 +170,8 @@ export function TeacherProfileContent() {
                 <span
                   className={`text-[11px] font-mono px-2.5 py-1 rounded-full flex items-center gap-1.5 border ${
                     tutor.verificationStatus === "VERIFIED"
-                      ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
-                      : "bg-amber-950 text-amber-400 border-amber-800/60"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -189,19 +189,19 @@ export function TeacherProfileContent() {
           <main className="flex-1 max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6">
             {/* Status Alert if Pending Verification */}
             {isSelfViewing && isPending && (
-              <div className="p-5 rounded-3xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs sm:text-sm shadow-xl space-y-3">
+              <div className="p-5 rounded-3xl bg-amber-500/10 border border-amber-500/40 text-amber-700 text-xs sm:text-sm shadow-xl space-y-3">
                 <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+                  <Clock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5 animate-pulse" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-white text-base">
                         Verification in Progress
                       </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800/60">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
                         ETA: 24–48 Hours
                       </span>
                     </div>
-                    <p className="text-slate-300 text-xs mt-1 leading-relaxed">
+                    <p className="text-slate-600 text-xs mt-1 leading-relaxed">
                       Your institutional credentials (University, Department,
                       Student ID Roll/Reg) and uploaded documents (Ear-Visible
                       Selfie, 2-Sided NID, Student ID Card) are currently
@@ -212,21 +212,21 @@ export function TeacherProfileContent() {
   
                 {/* Step Timeline Indicator */}
                 <div className="grid grid-cols-4 gap-2 pt-2 border-t border-amber-500/20 text-center font-mono text-[10px]">
-                  <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300">
+                  <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-500/40 text-emerald-700">
                     <span className="block font-bold">1. Uploaded</span>
-                    <span className="text-emerald-400">✓ Complete</span>
+                    <span className="text-emerald-700">✓ Complete</span>
                   </div>
-                  <div className="p-2 rounded-xl bg-amber-950/60 border border-amber-500/60 text-amber-300">
+                  <div className="p-2 rounded-xl bg-amber-50 border border-amber-500/60 text-amber-700">
                     <span className="block font-bold">2. Ear Check</span>
-                    <span className="text-amber-400 animate-pulse">
+                    <span className="text-amber-700 animate-pulse">
                       ● In Review
                     </span>
                   </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500">
                     <span className="block font-bold">3. Campus ID</span>
                     <span>Queue</span>
                   </div>
-                  <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500">
                     <span className="block font-bold">4. Badge</span>
                     <span>Pending</span>
                   </div>
@@ -236,27 +236,27 @@ export function TeacherProfileContent() {
   
             {/* Status Alert if Verification Rejected */}
             {isSelfViewing && isRejected && (
-              <div className="p-5 rounded-3xl bg-rose-500/15 border border-rose-500/50 text-rose-300 text-xs sm:text-sm shadow-xl space-y-3">
+              <div className="p-5 rounded-3xl bg-rose-500/15 border border-rose-500/50 text-rose-700 text-xs sm:text-sm shadow-xl space-y-3">
                 <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-6 h-6 text-rose-700 shrink-0 mt-0.5" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-white text-base">
                           Verification Dossier Rejected
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/60">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
                           Action Required
                         </span>
                       </div>
-                      <p className="text-rose-200 text-xs mt-1 leading-relaxed">
+                      <p className="text-rose-700 text-xs mt-1 leading-relaxed">
                         Reason:{" "}
                         <span className="font-medium text-white">
                           {tutor.verificationRejectionReason ||
                             "Selfie did not show both ears clearly or Student ID / NID photo was illegible."}
                         </span>
                       </p>
-                      <p className="text-slate-400 text-[11px] mt-1">
+                      <p className="text-slate-500 text-[11px] mt-1">
                         You can re-upload your documents and submit for immediate
                         re-verification below.
                       </p>
@@ -281,17 +281,17 @@ export function TeacherProfileContent() {
             )}
   
             {/* Profile Hero Card with Ultra-Premium Minimalist Dark Cyber Cover */}
-            <div className="bg-[#111827] border border-blue-900/40 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="bg-white border border-blue-200 rounded-3xl overflow-hidden shadow-2xl relative">
               {/* Minimalist Top-Notch Cover Header */}
-              <div className="bg-gradient-to-r from-[#070D1A] via-[#0B1528] to-[#080E1D] border-b border-blue-900/60 p-6 sm:p-8 relative overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 via-blue-50 to-slate-50 border-b border-blue-200 p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.12),_transparent_50%)]" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(37,99,235,0.08),_transparent_50%)]" />
   
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-mono tracking-widest px-2.5 py-0.5 rounded-full bg-blue-950/90 text-cyan-400 border border-cyan-800/60 flex items-center gap-1.5 shadow-sm">
-                        <ShieldCheck className="w-3 h-3 text-cyan-400" />
+                      <span className="text-[10px] uppercase font-mono tracking-widest px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1.5 shadow-sm">
+                        <ShieldCheck className="w-3 h-3 text-blue-700" />
                         <span>Verified Educator Dossier</span>
                       </span>
                       <span className="text-[10px] font-mono text-slate-500">
@@ -302,11 +302,11 @@ export function TeacherProfileContent() {
   
                   {/* Minimalist Authentic Performance Indicators */}
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <div className="bg-[#0B0F19]/90 px-3.5 py-2 rounded-2xl border border-blue-900/60 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
+                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
                         Authentic Rating
                       </span>
-                      <span className="text-sm font-bold text-amber-400 flex items-center justify-center gap-1">
+                      <span className="text-sm font-bold text-amber-700 flex items-center justify-center gap-1">
                         <Star className="w-3.5 h-3.5 fill-amber-400" />
                         <span>
                           {tutor.totalReviews && tutor.totalReviews > 0
@@ -315,19 +315,19 @@ export function TeacherProfileContent() {
                         </span>
                       </span>
                     </div>
-                    <div className="bg-[#0B0F19]/90 px-3.5 py-2 rounded-2xl border border-blue-900/60 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
+                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
                         Verified Reviews
                       </span>
-                      <span className="text-sm font-bold text-cyan-400 font-mono">
+                      <span className="text-sm font-bold text-blue-700 font-mono">
                         {tutor.totalReviews || 0} Real
                       </span>
                     </div>
-                    <div className="bg-[#0B0F19]/90 px-3.5 py-2 rounded-2xl border border-blue-900/60 text-center shadow-lg">
-                      <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    <div className="bg-white px-3.5 py-2 rounded-2xl border border-blue-200 text-center shadow-lg">
+                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
                         Experience
                       </span>
-                      <span className="text-sm font-bold text-emerald-400 font-mono">
+                      <span className="text-sm font-bold text-emerald-700 font-mono">
                         {tutor.yearsOfExperience || 2}+ Yrs
                       </span>
                     </div>
@@ -354,8 +354,8 @@ export function TeacherProfileContent() {
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1 ${
                             tutor.verificationStatus === "VERIFIED"
-                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                              ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30"
+                              : "bg-amber-500/20 text-amber-700 border-amber-500/30"
                           }`}
                         >
                           <ShieldCheck className="w-3 h-3" />
@@ -364,14 +364,14 @@ export function TeacherProfileContent() {
                             : "Pending Verification"}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-300 flex items-center gap-1.5 mt-0.5">
-                        <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                      <p className="text-xs sm:text-sm text-slate-600 flex items-center gap-1.5 mt-0.5">
+                        <Building2 className="w-3.5 h-3.5 text-blue-700" />
                         <span>
                           {tutor.institution || "University of Dhaka"} &bull;{" "}
                           {tutor.department || "Science"}
                         </span>
                       </p>
-                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-500" />
                         <span>
                           {tutor.areaName}, {tutor.district}
@@ -386,7 +386,7 @@ export function TeacherProfileContent() {
                       <button
                         type="button"
                         onClick={() => setTutorToAccept(relevantApplication)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2"
                       >
                         <Check className="w-4 h-4" />
                         <span>Accept This Tutor</span>
@@ -395,9 +395,9 @@ export function TeacherProfileContent() {
                 </div>
   
                 {/* Professional Bio */}
-                <div className="mt-4 p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/60 space-y-2">
+                <div className="mt-4 p-4 rounded-2xl bg-white border border-blue-200 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
                       <UserIcon className="w-3.5 h-3.5" />
                       <span>Professional Bio</span>
                     </span>
@@ -413,34 +413,34 @@ export function TeacherProfileContent() {
                           );
                           setIsEditProfileOpen(true);
                         }}
-                        className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                        className="text-[11px] text-blue-700 hover:text-blue-700 flex items-center gap-1"
                       >
                         <Edit3 className="w-3 h-3" />
                         <span>Edit</span>
                       </button>
                     )}
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                     {tutor.bio ||
                       "Dedicated educator focused on conceptual clarity, weekly evaluations, and syllabus mastery for board & university entrance readiness."}
                   </p>
                   {tutor.teachingPhilosophy && (
-                    <p className="text-xs text-slate-400 italic pt-1 border-t border-slate-800/80">
+                    <p className="text-xs text-slate-500 italic pt-1 border-t border-slate-200">
                       "{tutor.teachingPhilosophy}"
                     </p>
                   )}
                 </div>
   
                 {/* SUBJECT EXPERTISE - VIBRANT CLICKABLE TAGS */}
-                <div className="mt-4 p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/60 space-y-2.5">
+                <div className="mt-4 p-4 rounded-2xl bg-white border border-blue-200 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5" />
                       <span>
                         Subject Expertise (Click to Search Similar Tuitions)
                       </span>
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">
+                    <span className="text-[10px] font-mono text-slate-500">
                       Interactive Tags
                     </span>
                   </div>
@@ -461,9 +461,9 @@ export function TeacherProfileContent() {
                           setTeacherViewMode("feed");
                           showToast(`Filtered tuitions & tutors by "${subj}".`);
                         }}
-                        className="group px-3 py-1.5 rounded-xl bg-blue-950/40 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-800/60 hover:border-blue-400 text-xs font-medium transition-all shadow-sm flex items-center gap-1.5"
+                        className="group px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600/30 text-blue-700 hover:text-slate-900 border border-blue-200 hover:border-blue-400 text-xs font-medium transition-all shadow-sm flex items-center gap-1.5"
                       >
-                        <span className="text-blue-500 group-hover:text-cyan-300 font-mono">
+                        <span className="text-blue-500 group-hover:text-blue-700 font-mono">
                           #
                         </span>
                         <span>{subj}</span>
@@ -483,13 +483,13 @@ export function TeacherProfileContent() {
                   const reviewsCountVal = tutor.totalReviews || 0;
   
                   return (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-800 mt-4">
-                      <div className="bg-[#0B0F19] p-3 rounded-2xl border border-blue-950/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-200 mt-4">
+                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
                           Overall Rating
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                          <Star className="w-4 h-4 text-amber-700 fill-amber-400" />
                           <span className="text-base font-bold text-white">
                             {hasTutorReviews ? tutorRatingVal.toFixed(1) : "0.0"}
                           </span>
@@ -503,24 +503,24 @@ export function TeacherProfileContent() {
                         </div>
                       </div>
   
-                      <div className="bg-[#0B0F19] p-3 rounded-2xl border border-blue-950/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
                           Experience
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Clock className="w-4 h-4 text-blue-400" />
+                          <Clock className="w-4 h-4 text-blue-700" />
                           <span className="text-base font-bold text-white">
                             {tutor.yearsOfExperience || 2}+ Years
                           </span>
                         </div>
                       </div>
   
-                      <div className="bg-[#0B0F19] p-3 rounded-2xl border border-blue-950/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
                           Students Taught
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Users className="w-4 h-4 text-cyan-400" />
+                          <Users className="w-4 h-4 text-blue-700" />
                           <span className="text-base font-bold text-white">
                             {hasTutorReviews
                               ? `${reviewsCountVal * 3}+ Students`
@@ -529,24 +529,24 @@ export function TeacherProfileContent() {
                         </div>
                       </div>
   
-                      <div className="bg-[#0B0F19] p-3 rounded-2xl border border-indigo-950/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
                           Quiz Points
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Award className="w-4 h-4 text-indigo-400" />
+                          <Award className="w-4 h-4 text-blue-700" />
                           <span className="text-base font-bold text-white">
                             {tutorQuizzes.length} Quizzes
                           </span>
                         </div>
                       </div>
   
-                      <div className="bg-[#0B0F19] p-3 rounded-2xl border border-blue-950/60">
-                        <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                      <div className="bg-white p-3 rounded-2xl border border-blue-200">
+                        <span className="text-[10px] text-slate-500 uppercase font-mono block">
                           Expected Monthly Fee
                         </span>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <DollarSign className="w-4 h-4 text-emerald-400" />
+                          <DollarSign className="w-4 h-4 text-emerald-700" />
                           <span className="text-base font-bold text-white">
                             ৳{" "}
                             {(tutor.hourlyOrMonthlyRate || 8500).toLocaleString()}
@@ -562,15 +562,15 @@ export function TeacherProfileContent() {
             <TeacherProfileRatings tutor={tutor} />
 
             {/* Academic Degrees & Credentials */}
-            <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3">
+            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-blue-400" />
+                  <GraduationCap className="w-5 h-5 text-blue-700" />
                   <h2 className="text-base font-bold text-white">
                     Academic Degrees
                   </h2>
                 </div>
-                <span className="text-xs font-mono text-emerald-400">
+                <span className="text-xs font-mono text-emerald-700">
                   Admin Verified
                 </span>
               </div>
@@ -594,25 +594,25 @@ export function TeacherProfileContent() {
                 ).map((deg, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-[#0B0F19] border border-blue-950/70"
+                    className="p-3.5 rounded-2xl bg-white border border-blue-200"
                   >
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-semibold text-sm text-white">
                           {deg.degreeName}
                         </div>
-                        <div className="text-xs text-blue-400 mt-0.5">
+                        <div className="text-xs text-blue-700 mt-0.5">
                           {deg.institution}
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-300">
                         {deg.passingYear}
                       </span>
                     </div>
                     {deg.result && (
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-slate-500">
                         Result:{" "}
-                        <span className="text-emerald-400 font-semibold">
+                        <span className="text-emerald-700 font-semibold">
                           {deg.result}
                         </span>
                       </div>
@@ -623,22 +623,22 @@ export function TeacherProfileContent() {
             </div>
   
             {/* Teacher's Quiz Bank Section */}
-            <div className="bg-[#111827] border border-indigo-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 mt-6">
+            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 mt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-indigo-400" />
+                  <Award className="w-5 h-5 text-blue-700" />
                   <h2 className="text-base font-bold text-white">
                     Teacher's Quiz Bank ({tutorQuizzes.length})
                   </h2>
                 </div>
-                <span className="text-xs font-mono text-indigo-400 bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-800/60">
+                <span className="text-xs font-mono text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
                   🏆 {tutorQuizzes.length} Quiz Points
                 </span>
               </div>
   
               {tutorQuizzes.length === 0 ? (
-                <div className="p-6 text-center bg-[#0B0F19] rounded-2xl border border-slate-800">
-                  <p className="text-xs text-slate-400">
+                <div className="p-6 text-center bg-white rounded-2xl border border-slate-200">
+                  <p className="text-xs text-slate-500">
                     This teacher hasn't created any quizzes yet.
                   </p>
                 </div>
@@ -647,10 +647,10 @@ export function TeacherProfileContent() {
                   {tutorQuizzes.map((quiz, idx) => (
                     <div
                       key={quiz.id}
-                      className="p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/70 space-y-3"
+                      className="p-4 rounded-2xl bg-white border border-blue-200 space-y-3"
                     >
                       <div className="flex items-start gap-2">
-                        <span className="text-indigo-400 font-bold font-mono text-sm mt-0.5">
+                        <span className="text-blue-700 font-bold font-mono text-sm mt-0.5">
                           Q{idx + 1}.
                         </span>
                         <p className="text-sm text-white font-medium">
@@ -673,29 +673,29 @@ export function TeacherProfileContent() {
                             key={oIdx}
                             className={`p-2.5 rounded-xl text-xs border flex items-center justify-between ${
                               quiz.correctIndex === oIdx
-                                ? "bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-semibold"
-                                : "bg-slate-900/60 border-slate-800 text-slate-400"
+                                ? "bg-emerald-50 border-emerald-500/50 text-emerald-700 font-semibold"
+                                : "bg-slate-50 border-slate-200 text-slate-500"
                             }`}
                           >
                             <span>
                               {String.fromCharCode(65 + oIdx)}. {opt}
                             </span>
                             {quiz.correctIndex === oIdx && (
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-700" />
                             )}
                           </div>
                         ))}
                       </div>
   
                       <div className="flex items-center justify-end gap-2 text-[10px] text-slate-500 font-mono pt-1">
-                        <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                        <span className="px-2 py-0.5 rounded bg-slate-100">
                           {quiz.subject}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                        <span className="px-2 py-0.5 rounded bg-slate-100">
                           {quiz.gradeLevel}
                         </span>
                         {quiz.topic && (
-                          <span className="px-2 py-0.5 rounded bg-slate-800/80">
+                          <span className="px-2 py-0.5 rounded bg-slate-100">
                             Topic: {quiz.topic}
                           </span>
                         )}
@@ -707,10 +707,10 @@ export function TeacherProfileContent() {
             </div>
   
             {/* Student Reviews Section (Vector Avatars, Zero Photos) */}
-            <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+            <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-400" />
+                  <Users className="w-5 h-5 text-blue-700" />
                   <h2 className="text-base font-bold text-white">
                     Verified Reviews ({tutor.reviews?.length || 2})
                   </h2>
@@ -721,9 +721,9 @@ export function TeacherProfileContent() {
                 {(tutor.reviews || []).filter(
                   (r) => (r.status || "APPROVED") === "APPROVED",
                 ).length === 0 ? (
-                  <div className="p-6 text-center bg-[#0B0F19] rounded-2xl border border-slate-800">
+                  <div className="p-6 text-center bg-white rounded-2xl border border-slate-200">
                     <MessageSquare className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       No approved reviews yet. Reviews will appear here after
                       admin moderation.
                     </p>
@@ -734,7 +734,7 @@ export function TeacherProfileContent() {
                     .map((rev) => (
                       <div
                         key={rev.id}
-                        className="p-4 rounded-2xl bg-[#0B0F19] border border-blue-950/70 space-y-2"
+                        className="p-4 rounded-2xl bg-white border border-blue-200 space-y-2"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
@@ -749,17 +749,17 @@ export function TeacherProfileContent() {
                               <div className="font-semibold text-xs sm:text-sm text-white">
                                 {rev.studentName}
                               </div>
-                              <div className="text-[10px] text-slate-400">
+                              <div className="text-[10px] text-slate-500">
                                 {rev.studentRoleOrGrade}
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20 text-xs font-bold text-amber-400">
+                          <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-1 rounded-lg border border-amber-400/20 text-xs font-bold text-amber-700">
                             <Star className="w-3.5 h-3.5 fill-amber-400" />
                             <span>{rev.overall}</span>
                           </div>
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed italic">
+                        <p className="text-xs text-slate-600 leading-relaxed italic">
                           "{rev.comment}"
                         </p>
                       </div>

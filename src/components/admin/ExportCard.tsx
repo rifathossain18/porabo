@@ -11,15 +11,15 @@ interface ExportCardProps {
 export const ExportCard: React.FC<ExportCardProps> = ({ title, count, color, onExport }) => {
   const colorMap = {
     blue: "from-blue-600 to-blue-500",
-    cyan: "from-cyan-600 to-cyan-500",
-    purple: "from-purple-600 to-purple-500",
+    cyan: "from-blue-600 to-blue-500",
+    purple: "from-blue-600 to-blue-500",
     amber: "from-amber-600 to-amber-500",
   };
 
   return (
-    <div className="bg-[#111827] border border-blue-900/40 rounded-2xl p-4 flex flex-col justify-between">
+    <div className="bg-white border border-blue-200 rounded-2xl p-4 flex flex-col justify-between">
       <div>
-        <div className="text-xs text-slate-400 font-mono uppercase">{title}</div>
+        <div className="text-xs text-slate-500 font-mono uppercase">{title}</div>
         <div className="text-2xl font-black text-white mt-1">{count}</div>
       </div>
       <button

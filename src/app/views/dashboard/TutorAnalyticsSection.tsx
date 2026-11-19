@@ -18,61 +18,61 @@ export function TutorAnalyticsSection() {
                       <div className="space-y-6">
                         {/* 1. KPI Conversion & Engagement Summary Cards */}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                          <div className="bg-[#111827] border border-blue-900/40 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-                            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                          <div className="bg-white border border-blue-200 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                            <div className="flex items-center justify-between text-slate-500 text-xs mb-2">
                               <span>Total Applied</span>
-                              <Send className="w-4 h-4 text-blue-400" />
+                              <Send className="w-4 h-4 text-blue-700" />
                             </div>
                             <div>
                               <div className="text-2xl sm:text-3xl font-extrabold text-white">
                                 {analyticsData.totalApplied}
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1">
+                              <p className="text-[11px] text-slate-500 mt-1">
                                 Submitted tuition bids
                               </p>
                             </div>
                           </div>
         
-                          <div className="bg-[#111827] border border-cyan-900/40 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-                            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                          <div className="bg-white border border-blue-200 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                            <div className="flex items-center justify-between text-slate-500 text-xs mb-2">
                               <span>In Review</span>
-                              <Clock className="w-4 h-4 text-cyan-400" />
+                              <Clock className="w-4 h-4 text-blue-700" />
                             </div>
                             <div>
-                              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400">
+                              <div className="text-2xl sm:text-3xl font-extrabold text-blue-700">
                                 {analyticsData.inReviewCount}
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1">
+                              <p className="text-[11px] text-slate-500 mt-1">
                                 Guardian screening queue
                               </p>
                             </div>
                           </div>
         
-                          <div className="bg-[#111827] border border-emerald-900/40 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-                            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                          <div className="bg-white border border-emerald-200 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                            <div className="flex items-center justify-between text-slate-500 text-xs mb-2">
                               <span>Matches Accepted</span>
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                             </div>
                             <div>
-                              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
+                              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
                                 {analyticsData.acceptedCount}
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1">
+                              <p className="text-[11px] text-slate-500 mt-1">
                                 Direct contact unlocked
                               </p>
                             </div>
                           </div>
         
-                          <div className="bg-[#111827] border border-violet-900/40 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-                            <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                            <div className="flex items-center justify-between text-slate-500 text-xs mb-2">
                               <span>Conversion Rate</span>
-                              <TrendingUp className="w-4 h-4 text-violet-400" />
+                              <TrendingUp className="w-4 h-4 text-blue-700" />
                             </div>
                             <div>
-                              <div className="text-2xl sm:text-3xl font-extrabold text-violet-400">
+                              <div className="text-2xl sm:text-3xl font-extrabold text-blue-700">
                                 {analyticsData.conversionRate}%
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1">
+                              <p className="text-[11px] text-slate-500 mt-1">
                                 Application acceptance yield
                               </p>
                             </div>
@@ -81,19 +81,19 @@ export function TutorAnalyticsSection() {
         
                         {/* 2. Visual Funnel: Application Conversion Stages */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                          <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                               <div>
                                 <h3 className="font-bold text-base text-white flex items-center gap-2">
-                                  <BarChart3 className="w-4 h-4 text-blue-400" />
+                                  <BarChart3 className="w-4 h-4 text-blue-700" />
                                   <span>Application Conversion Funnel</span>
                                 </h3>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-500 mt-0.5">
                                   Stage-by-stage progression from proposal to student
                                   match
                                 </p>
                               </div>
-                              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800/50">
+                              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                                 Real-time Data
                               </span>
                             </div>
@@ -144,10 +144,10 @@ export function TutorAnalyticsSection() {
                               {analyticsData.funnelData.map((f) => (
                                 <div
                                   key={f.stage}
-                                  className="p-2 rounded-xl bg-[#0B0F19] border border-blue-950/60"
+                                  className="p-2 rounded-xl bg-white border border-blue-200"
                                 >
                                   <div className="font-bold text-white">{f.count}</div>
-                                  <div className="text-[10px] text-slate-400 mt-0.5">
+                                  <div className="text-[10px] text-slate-500 mt-0.5">
                                     {f.stage}
                                   </div>
                                 </div>
@@ -156,19 +156,19 @@ export function TutorAnalyticsSection() {
                           </div>
         
                           {/* 3. Hourly Engagement Patterns */}
-                          <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                               <div>
                                 <h3 className="font-bold text-base text-white flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-cyan-400" />
+                                  <Clock className="w-4 h-4 text-blue-700" />
                                   <span>Hourly Engagement &amp; Inquiry Windows</span>
                                 </h3>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-500 mt-0.5">
                                   Peak neighborhood tuition activity &amp; proposal
                                   submission response
                                 </p>
                               </div>
-                              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50">
+                              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                                 Peak: 17:00 - 21:00
                               </span>
                             </div>
@@ -211,8 +211,8 @@ export function TutorAnalyticsSection() {
                               </ResponsiveContainer>
                             </div>
         
-                            <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-800/40 text-xs text-blue-300 flex items-center gap-2">
-                              <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                            <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700 flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-amber-700 shrink-0" />
                               <span>
                                 <strong>Pro Tip:</strong> 68% of guardians review and
                                 accept proposals between 5:00 PM and 9:00 PM. Submitting
@@ -224,27 +224,27 @@ export function TutorAnalyticsSection() {
                         </div>
         
                         {/* 4. Profile View Trends by Date (30-Day Area Chart) */}
-                        <div className="bg-[#111827] border border-blue-900/40 rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div className="bg-white border border-blue-200 rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                             <div>
                               <h3 className="font-bold text-base sm:text-lg text-white flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-blue-400" />
+                                <Activity className="w-5 h-5 text-blue-700" />
                                 <span>
                                   Profile View Trends &amp; Guardian Reach (30 Days)
                                 </span>
                               </h3>
-                              <p className="text-xs text-slate-400 mt-1">
+                              <p className="text-xs text-slate-500 mt-1">
                                 Daily student and parent impressions on your verified
                                 teacher dossier
                               </p>
                             </div>
                             <div className="flex items-center gap-3 text-xs">
-                              <span className="flex items-center gap-1.5 text-blue-400">
+                              <span className="flex items-center gap-1.5 text-blue-700">
                                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />{" "}
                                 Applications
                               </span>
-                              <span className="flex items-center gap-1.5 text-cyan-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />{" "}
+                              <span className="flex items-center gap-1.5 text-blue-700">
+                                <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />{" "}
                                 Profile Views
                               </span>
                             </div>

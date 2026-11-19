@@ -2,18 +2,16 @@ import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 
 export function useFeedPreferences(showToast: (message: string) => void) {
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    return (localStorage.getItem("porabo_theme") as "dark" | "light") || "dark";
-  });
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
-    document.documentElement.classList.remove("dark", "light");
-    document.documentElement.classList.add(theme);
-    localStorage.setItem("porabo_theme", theme);
+    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("light");
+    localStorage.setItem("porabo_theme", "light");
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((previous) => (previous === "dark" ? "light" : "dark"));
+    setTheme("light");
   };
 
   const [hiddenPostIds, setHiddenPostIds] = useState<string[]>(() => {

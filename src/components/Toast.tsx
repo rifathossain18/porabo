@@ -116,21 +116,21 @@ export const Toast: React.FC<ToastProps> = ({
       accent: 'bg-emerald-500',
       ring: 'border-emerald-500/30',
       iconBg: 'bg-emerald-500/15',
-      iconColor: 'text-emerald-400',
+      iconColor: 'text-emerald-700',
       Icon: CheckCircle2,
     },
     error: {
       accent: 'bg-rose-500',
       ring: 'border-rose-500/30',
       iconBg: 'bg-rose-500/15',
-      iconColor: 'text-rose-400',
+      iconColor: 'text-rose-700',
       Icon: AlertCircle,
     },
     info: {
       accent: 'bg-blue-500',
       ring: 'border-blue-500/30',
       iconBg: 'bg-blue-500/15',
-      iconColor: 'text-blue-400',
+      iconColor: 'text-blue-700',
       Icon: Info,
     },
   }[resolvedType];
@@ -144,7 +144,7 @@ export const Toast: React.FC<ToastProps> = ({
       aria-live="polite"
     >
       <div
-        className={`pointer-events-auto relative overflow-hidden w-full max-w-md rounded-2xl border ${palette.ring} bg-[#111827] shadow-2xl transition-all duration-300 ease-out ${
+        className={`pointer-events-auto relative overflow-hidden w-full max-w-md rounded-2xl border ${palette.ring} bg-white shadow-2xl transition-all duration-300 ease-out ${
           visible
             ? 'opacity-100 translate-y-0 scale-100'
             : 'opacity-0 -translate-y-3 scale-95'
@@ -157,14 +157,14 @@ export const Toast: React.FC<ToastProps> = ({
             <Icon className={`w-3.5 h-3.5 ${palette.iconColor}`} />
           </div>
 
-          <p className="flex-1 min-w-0 text-[13px] leading-relaxed font-medium text-slate-100">
+          <p className="flex-1 min-w-0 text-[13px] leading-relaxed font-medium text-slate-900">
             {renderedMessage}
           </p>
 
           <button
             type="button"
             onClick={handleClose}
-            className="shrink-0 -mr-1 -mt-0.5 p-1 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+            className="shrink-0 -mr-1 -mt-0.5 p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white/5 transition-colors"
             aria-label="Dismiss notification"
           >
             <X className="w-3.5 h-3.5" />

@@ -1,10 +1,36 @@
+import { lazy, Suspense } from "react";
 import { useAppContext } from "./AppContext";
-import { StudentExamRoute } from "./views/StudentExamRoute";
-import { AdminRoute } from "./views/AdminRoute";
-import { LandingGate } from "./views/LandingGate";
-import { AuthenticationGate } from "./views/AuthenticationGate";
-import { TeacherProfilePage } from "./views/TeacherProfilePage";
-import { MainDashboard } from "./views/MainDashboard";
+
+const StudentExamRoute = lazy(() =>
+  import("./views/StudentExamRoute").then((module) => ({
+    default: module.StudentExamRoute,
+  })),
+);
+const AdminRoute = lazy(() =>
+  import("./views/AdminRoute").then((module) => ({
+    default: module.AdminRoute,
+  })),
+);
+const LandingGate = lazy(() =>
+  import("./views/LandingGate").then((module) => ({
+    default: module.LandingGate,
+  })),
+);
+const AuthenticationGate = lazy(() =>
+  import("./views/AuthenticationGate").then((module) => ({
+    default: module.AuthenticationGate,
+  })),
+);
+const TeacherProfilePage = lazy(() =>
+  import("./views/TeacherProfilePage").then((module) => ({
+    default: module.TeacherProfilePage,
+  })),
+);
+const MainDashboard = lazy(() =>
+  import("./views/MainDashboard").then((module) => ({
+    default: module.MainDashboard,
+  })),
+);
 
 export function AppRoutes() {
   const {
@@ -16,12 +42,28 @@ export function AppRoutes() {
     viewingTeacherProfile,
   } = useAppContext();
 
-  if (activeExamId) return <StudentExamRoute />;
-  if (isAdminView) return <AdminRoute />;
-  if (!currentUser && !showAuthForm) return <LandingGate />;
-  if (!currentUser) return <AuthenticationGate />;
-  if (viewingTeacherProfileId && viewingTeacherProfile) {
-    return <TeacherProfilePage />;
-  }
-  return <MainDashboard />;
+  let route;
+  if (activeExamId) route = <StudentExamRoute />;
+  else if (isAdminView) route = <AdminRoute />;
+  else if (!currentUser && !showAuthForm) route = <LandingGate />;
+  else if (!currentUser) route = <AuthenticationGate />;
+  else if (viewingTeacherProfileId && viewingTeacherProfile) {
+    route = <TeacherProfilePage />;
+  } else route = <MainDashboard />;
+
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-medium text-slate-600"
+          role="status"
+          aria-live="polite"
+        >
+          Loading Porabo...
+        </div>
+      }
+    >
+      {route}
+    </Suspense>
+  );
 }

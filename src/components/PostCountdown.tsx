@@ -21,14 +21,14 @@ export const PostCountdown: React.FC<PostCountdownProps> = ({
 
   const color =
     daysLeft <= 0 || daysLeft <= 3
-      ? 'bg-rose-950 text-rose-400 border-rose-800/60'
+      ? 'bg-rose-50 text-rose-700 border-rose-200'
       : daysLeft <= 7
-      ? 'bg-amber-950 text-amber-400 border-amber-800/60'
-      : 'bg-emerald-950 text-emerald-400 border-emerald-800/60';
+      ? 'bg-amber-50 text-amber-700 border-amber-200'
+      : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
   if (daysLeft <= 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-mono bg-rose-950 text-rose-400 border-rose-800/60">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-mono bg-rose-50 text-rose-700 border-rose-200">
         <Clock className="w-3 h-3" />
         Expired
       </span>

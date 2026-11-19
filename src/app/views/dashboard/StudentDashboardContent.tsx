@@ -35,10 +35,10 @@ export function StudentDashboardContent() {
     <>
       <div className="space-y-6">
                     {/* Student Top Banner */}
-                    <div className="bg-gradient-to-r from-emerald-950 via-[#064e3b] to-emerald-900 border border-emerald-700/50 rounded-3xl p-5 sm:p-7 shadow-xl shadow-emerald-950/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="bg-gradient-to-r from-emerald-50 via-emerald-50 to-emerald-50 border border-emerald-700/50 rounded-3xl p-5 sm:p-7 shadow-xl shadow-emerald-950/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 text-xs font-mono border border-emerald-800/60">
+                          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-mono border border-emerald-200">
                             <MapPin className="w-3.5 h-3.5" />
                             <span>
                               Your Location: {currentUser.areaName || "Area"},{" "}
@@ -49,7 +49,7 @@ export function StudentDashboardContent() {
                         <h1 className="text-xl sm:text-2xl font-extrabold text-white">
                           Welcome, {currentUser.fullName.split(" ")[0]}
                         </h1>
-                        <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                        <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
                           Find a trusted teacher for your family. Post your learning
                           needs, compare verified teachers, and choose the right fit.
                         </p>
@@ -59,9 +59,9 @@ export function StudentDashboardContent() {
                         <button
                           type="button"
                           onClick={handleOpenProfileModal}
-                          className="px-4 py-3 bg-[#0B0F19] hover:bg-slate-800 text-slate-200 font-semibold rounded-2xl text-xs sm:text-sm transition-all border border-slate-700 flex items-center justify-center gap-2 shrink-0 shadow-md"
+                          className="px-4 py-3 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-2xl text-xs sm:text-sm transition-all border border-slate-300 flex items-center justify-center gap-2 shrink-0 shadow-md"
                         >
-                          <UserIcon className="w-4 h-4 text-emerald-400" />
+                          <UserIcon className="w-4 h-4 text-emerald-700" />
                           <span>My profile</span>
                         </button>
         
@@ -77,17 +77,17 @@ export function StudentDashboardContent() {
                     </div>
         
                     {/* Applicant Inbox Section */}
-                    <div className="bg-[#111827] border border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div className="bg-white border border-emerald-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-700 flex items-center justify-center">
                             <Users className="w-4 h-4" />
                           </div>
                           <div>
                             <h2 className="text-base sm:text-lg font-bold text-white">
                               Applicant Inbox
                             </h2>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-slate-500">
                               Verified teachers who applied to your tuition posts
                             </p>
                           </div>
@@ -97,10 +97,10 @@ export function StudentDashboardContent() {
                       {studentReceivedApplications.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 space-y-3">
                           <EmptyInboxIllustration className="w-36 h-36 mx-auto mb-1" />
-                          <p className="text-sm font-semibold text-slate-300">
+                          <p className="text-sm font-semibold text-slate-600">
                             No applications received yet.
                           </p>
-                          <p className="text-xs text-slate-400 max-w-md mx-auto">
+                          <p className="text-xs text-slate-500 max-w-md mx-auto">
                             Once verified neighborhood teachers apply to your tuition
                             posts, their credentials and proposals will appear here for
                             your review.
@@ -120,8 +120,8 @@ export function StudentDashboardContent() {
                                 key={app.id}
                                 className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                                   isAccepted
-                                    ? "bg-emerald-950/20 border-emerald-500/50 shadow-lg shadow-emerald-950/40"
-                                    : "bg-[#0B0F19] border-emerald-950/70 hover:border-emerald-800/50"
+                                    ? "bg-emerald-50 border-emerald-500/50 shadow-lg shadow-emerald-950/40"
+                                    : "bg-white border-emerald-200 hover:border-emerald-200"
                                 }`}
                               >
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -146,26 +146,26 @@ export function StudentDashboardContent() {
                                               handleOpenTeacherProfile(app.tutorId);
                                             }
                                           }}
-                                          className="font-bold text-sm sm:text-base text-white hover:text-emerald-400 cursor-pointer underline decoration-emerald-500/40 decoration-dotted hover:decoration-solid transition-colors inline-flex items-center gap-1"
+                                          className="font-bold text-sm sm:text-base text-white hover:text-emerald-700 cursor-pointer underline decoration-emerald-500/40 decoration-dotted hover:decoration-solid transition-colors inline-flex items-center gap-1"
                                           title="Click to view detailed qualifications, degrees, experience & ratings"
                                         >
                                           <span>{app.tutorName}</span>
-                                          <Info className="w-3.5 h-3.5 text-emerald-400" />
+                                          <Info className="w-3.5 h-3.5 text-emerald-700" />
                                         </span>
-                                        <span className="text-xs text-amber-400 flex items-center gap-0.5">
+                                        <span className="text-xs text-amber-700 flex items-center gap-0.5">
                                           <Star className="w-3 h-3 fill-amber-400" />
                                           <span>{app.tutorRating || 5.0}</span>
                                         </span>
-                                        <span className="text-xs text-slate-400">
+                                        <span className="text-xs text-slate-500">
                                           &bull; {app.tutorDistanceKm || 0.8} km away
                                         </span>
                                       </div>
-                                      <p className="text-xs text-emerald-400 mt-0.5">
+                                      <p className="text-xs text-emerald-700 mt-0.5">
                                         {app.tutorQualifications}
                                       </p>
-                                      <p className="text-xs text-slate-400 mt-0.5">
+                                      <p className="text-xs text-slate-500 mt-0.5">
                                         Applying for:{" "}
-                                        <span className="text-slate-300 font-medium">
+                                        <span className="text-slate-600 font-medium">
                                           {post?.title || "Tuition Post"}
                                         </span>
                                       </p>
@@ -178,9 +178,9 @@ export function StudentDashboardContent() {
                                       onClick={() =>
                                         handleOpenTeacherProfile(app.tutorId)
                                       }
-                                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium border border-slate-300 transition-colors flex items-center gap-1"
                                     >
-                                      <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                      <Eye className="w-3.5 h-3.5 text-emerald-700" />
                                       <span>View Full Profile</span>
                                     </button>
         
@@ -217,11 +217,11 @@ export function StudentDashboardContent() {
                                         if (myReview) {
                                           const colorMap = {
                                             PENDING:
-                                              "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                              "bg-amber-500/20 text-amber-700 border-amber-500/30",
                                             APPROVED:
-                                              "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+                                              "bg-emerald-500/20 text-emerald-700 border-emerald-500/30",
                                             REJECTED:
-                                              "bg-rose-500/20 text-rose-400 border-rose-500/30",
+                                              "bg-rose-500/20 text-rose-700 border-rose-500/30",
                                           };
                                           const labelMap = {
                                             PENDING: "Review Pending Approval",
@@ -253,7 +253,7 @@ export function StudentDashboardContent() {
                                                 setRatingTutorId(app.tutorId);
                                                 setIsRatingModalOpen(true);
                                               }}
-                                              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-semibold border border-amber-500/40 flex items-center gap-1 transition-colors"
+                                              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 text-xs font-semibold border border-amber-500/40 flex items-center gap-1 transition-colors"
                                             >
                                               <Star className="w-3.5 h-3.5 fill-amber-400" />
                                               <span>Rate Tutor</span>
@@ -262,7 +262,7 @@ export function StudentDashboardContent() {
                                         }
         
                                         return (
-                                          <span className="px-3 py-1.5 rounded-xl bg-slate-800/80 text-slate-400 text-xs font-semibold border border-slate-700 flex items-center gap-1">
+                                          <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-300 flex items-center gap-1">
                                             <Clock className="w-3.5 h-3.5" />
                                             <span>Review in {30 - daysSince}d</span>
                                           </span>
@@ -272,12 +272,12 @@ export function StudentDashboardContent() {
                                 </div>
         
                                 {/* Proposal Details */}
-                                <div className="mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
+                                <div className="mt-3 pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
                                   <div>
                                     <span className="text-slate-500">
                                       Proposed Fee:
                                     </span>{" "}
-                                    <span className="font-semibold text-emerald-400">
+                                    <span className="font-semibold text-emerald-700">
                                       ৳ {app.proposedSalary} / month
                                     </span>
                                   </div>
@@ -285,7 +285,7 @@ export function StudentDashboardContent() {
                                     <span className="text-slate-500">
                                       Available Schedule:
                                     </span>{" "}
-                                    <span className="text-slate-300">
+                                    <span className="text-slate-600">
                                       {app.availableSchedule}
                                     </span>
                                   </div>
@@ -293,14 +293,14 @@ export function StudentDashboardContent() {
         
                                 {/* Unlocked Contact Details on Acceptance */}
                                 {isAccepted && (
-                                  <div className="mt-3 p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 text-xs space-y-1.5">
-                                    <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                                      <Unlock className="w-4 h-4 text-emerald-400" />
+                                  <div className="mt-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-500/40 text-xs space-y-1.5">
+                                    <div className="font-semibold text-emerald-700 flex items-center gap-1.5">
+                                      <Unlock className="w-4 h-4 text-emerald-700" />
                                       <span>Mutual Contact Details Unlocked!</span>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-200 pt-1">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 pt-1">
                                       <div>
-                                        <span className="text-slate-400">
+                                        <span className="text-slate-500">
                                           Tutor Phone:
                                         </span>{" "}
                                         <span className="font-mono font-bold text-white">
@@ -308,10 +308,10 @@ export function StudentDashboardContent() {
                                         </span>
                                       </div>
                                       <div>
-                                        <span className="text-slate-400">
+                                        <span className="text-slate-500">
                                           Tutor WhatsApp:
                                         </span>{" "}
-                                        <span className="font-mono font-bold text-emerald-300">
+                                        <span className="font-mono font-bold text-emerald-700">
                                           {app.tutorWhatsapp || app.tutorPhone}
                                         </span>
                                       </div>
@@ -327,17 +327,17 @@ export function StudentDashboardContent() {
         
                     {/* 🆕 My Hired Tutors — Permanent Review Access (survives post deletion) */}
                     {myAcceptedApplications.length > 0 && (
-                      <div className="bg-[#111827] border border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                      <div className="bg-white border border-emerald-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-700 flex items-center justify-center">
                               <CheckCircle2 className="w-4 h-4" />
                             </div>
                             <div>
                               <h2 className="text-base sm:text-lg font-bold text-white">
                                 My Hired Tutors ({myAcceptedApplications.length})
                               </h2>
-                              <p className="text-xs text-emerald-400">
+                              <p className="text-xs text-emerald-700">
                                 ✅ Review unlocked after 30 days — never expires
                               </p>
                             </div>
@@ -364,7 +364,7 @@ export function StudentDashboardContent() {
                             return (
                               <div
                                 key={app.id}
-                                className="p-4 rounded-2xl bg-[#0B0F19] border border-emerald-500/40 space-y-3"
+                                className="p-4 rounded-2xl bg-white border border-emerald-500/40 space-y-3"
                               >
                                 <div className="flex items-start gap-3">
                                   <GenderAvatar
@@ -377,15 +377,15 @@ export function StudentDashboardContent() {
                                     <div className="font-bold text-sm text-white truncate">
                                       {app.tutorName}
                                     </div>
-                                    <div className="text-[11px] text-emerald-400 truncate">
+                                    <div className="text-[11px] text-emerald-700 truncate">
                                       {tutorUser?.institution ||
                                         app.tutorInstitution ||
                                         "—"}
                                     </div>
-                                    <div className="text-[10px] text-emerald-400 font-mono mt-0.5 truncate">
+                                    <div className="text-[10px] text-emerald-700 font-mono mt-0.5 truncate">
                                       📞 {app.tutorPhone || tutorUser?.phone}
                                     </div>
-                                    <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                    <div className="text-[10px] text-emerald-700 font-mono truncate">
                                       💬{" "}
                                       {app.tutorWhatsapp ||
                                         tutorUser?.whatsapp ||
@@ -394,15 +394,15 @@ export function StudentDashboardContent() {
                                   </div>
                                 </div>
         
-                                <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs space-y-0.5">
-                                  <div className="text-slate-400">
+                                <div className="p-2 rounded-lg bg-white border border-slate-200 text-xs space-y-0.5">
+                                  <div className="text-slate-500">
                                     <span className="font-mono text-[10px]">
                                       Matched:
                                     </span>{" "}
                                     {new Date(acceptedAtIso).toLocaleDateString()}
                                   </div>
                                   {post ? (
-                                    <div className="text-slate-300 truncate">
+                                    <div className="text-slate-600 truncate">
                                       <span className="font-mono text-[10px]">
                                         Post:
                                       </span>{" "}
@@ -413,7 +413,7 @@ export function StudentDashboardContent() {
                                       📦 Post archived (30-day auto-cleanup)
                                     </div>
                                   )}
-                                  <div className="text-emerald-400 font-mono text-[10px]">
+                                  <div className="text-emerald-700 font-mono text-[10px]">
                                     ৳ {app.proposedSalary.toLocaleString()}/mo
                                   </div>
                                 </div>
@@ -422,10 +422,10 @@ export function StudentDashboardContent() {
                                   <span
                                     className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 justify-center ${
                                       myReview.status === "APPROVED"
-                                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                        ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30"
                                         : myReview.status === "REJECTED"
-                                          ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
-                                          : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                          ? "bg-rose-500/20 text-rose-700 border-rose-500/30"
+                                          : "bg-amber-500/20 text-amber-700 border-amber-500/30"
                                     }`}
                                   >
                                     <Star className="w-3.5 h-3.5" />
@@ -445,13 +445,13 @@ export function StudentDashboardContent() {
                                       setRatingTutorId(app.tutorId);
                                       setIsRatingModalOpen(true);
                                     }}
-                                    className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-semibold border border-amber-500/40 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                                    className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 text-xs font-semibold border border-amber-500/40 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
                                   >
                                     <Star className="w-3.5 h-3.5 fill-amber-400" />
                                     <span>⭐ Rate This Tutor</span>
                                   </button>
                                 ) : (
-                                  <span className="px-3 py-2 rounded-xl bg-slate-800/80 text-slate-400 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                                  <span className="px-3 py-2 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-300 flex items-center justify-center gap-1.5">
                                     <Clock className="w-3.5 h-3.5" />
                                     <span>
                                       Review unlocks in {30 - daysSince} day
@@ -467,17 +467,17 @@ export function StudentDashboardContent() {
                     )}
         
                     {/* Student's My Posts List with Status Filter & Full Tracking */}
-                    <div className="bg-[#111827] border border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div className="bg-white border border-emerald-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2">
-                          <BookOpen className="w-5 h-5 text-emerald-400" />
+                          <BookOpen className="w-5 h-5 text-emerald-700" />
                           <h2 className="text-base sm:text-lg font-bold text-white">
                             My Tuition Posts ({studentMyPosts.length})
                           </h2>
                         </div>
         
                         {/* Status-Based Filter Chips */}
-                        <div className="flex items-center gap-1.5 p-1 bg-[#0B0F19] rounded-xl border border-emerald-950/60 overflow-x-auto scrollbar-none">
+                        <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-emerald-200 overflow-x-auto scrollbar-none">
                           {(["ALL", "OPEN", "PENDING", "MATCHED"] as const).map(
                             (status) => (
                               <button
@@ -487,7 +487,7 @@ export function StudentDashboardContent() {
                                 className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                                   studentPostStatusFilter === status
                                     ? "bg-emerald-600 text-white shadow-sm"
-                                    : "text-slate-400 hover:text-white"
+                                    : "text-slate-500 hover:text-slate-900"
                                 }`}
                               >
                                 {status === "ALL"
@@ -506,12 +506,12 @@ export function StudentDashboardContent() {
                       {filteredStudentPosts.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 space-y-2">
                           <BookOpen className="w-8 h-8 mx-auto text-slate-600" />
-                          <p className="text-sm font-semibold text-slate-300">
+                          <p className="text-sm font-semibold text-slate-600">
                             {studentMyPosts.length === 0
                               ? "You haven't posted any tuition needs yet."
                               : `No tuition posts found in "${studentPostStatusFilter}".`}
                           </p>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             Click "Post Tuition Need" above to connect with verified
                             neighborhood tutors.
                           </p>
@@ -551,7 +551,7 @@ export function StudentDashboardContent() {
                             return (
                               <div
                                 key={post.id}
-                                className="p-4 rounded-2xl bg-[#0B0F19] border border-emerald-950/70 space-y-3"
+                                className="p-4 rounded-2xl bg-white border border-emerald-200 space-y-3"
                               >
                                 {/* Header with countdown */}
                                 <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -562,21 +562,21 @@ export function StudentDashboardContent() {
                                       </span>
                                       <PostCountdown createdAt={post.createdAt} />
                                     </div>
-                                    <div className="text-xs text-emerald-400 mt-0.5">
+                                    <div className="text-xs text-emerald-700 mt-0.5">
                                       {post.subject} • {post.gradeLevel}
                                     </div>
                                   </div>
                                   <div className="shrink-0">
                                     {isPendingApproval ? (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 border border-amber-500/30 flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> Under Review
                                       </span>
                                     ) : isMatched ? (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 flex items-center gap-1">
                                         <CheckCircle className="w-3 h-3" /> Matched
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 flex items-center gap-1">
                                         <Check className="w-3 h-3" /> Live
                                       </span>
                                     )}
@@ -585,15 +585,15 @@ export function StudentDashboardContent() {
         
                                 {/* Details grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
                                     <div className="text-[9px] text-slate-500 font-mono uppercase">
                                       Budget
                                     </div>
-                                    <div className="text-[11px] font-bold text-emerald-400">
+                                    <div className="text-[11px] font-bold text-emerald-700">
                                       ৳ {post.salaryBudget.toLocaleString()}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
                                     <div className="text-[9px] text-slate-500 font-mono uppercase">
                                       Curriculum
                                     </div>
@@ -601,7 +601,7 @@ export function StudentDashboardContent() {
                                       {post.curriculum}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
                                     <div className="text-[9px] text-slate-500 font-mono uppercase">
                                       Mode
                                     </div>
@@ -615,7 +615,7 @@ export function StudentDashboardContent() {
                                             : "—"}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
                                     <div className="text-[9px] text-slate-500 font-mono uppercase">
                                       Days/Wk
                                     </div>
@@ -626,7 +626,7 @@ export function StudentDashboardContent() {
                                 </div>
         
                                 {/* Address */}
-                                <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                                <div className="p-2 rounded-lg bg-white border border-slate-200 text-xs">
                                   <div className="text-[9px] text-slate-500 font-mono uppercase">
                                     Your Address
                                   </div>
@@ -639,15 +639,15 @@ export function StudentDashboardContent() {
                                 {/* Weekly schedule */}
                                 {post.weeklySchedule &&
                                   post.weeklySchedule.length > 0 && (
-                                    <div className="p-2 rounded-lg bg-[#111827] border border-emerald-900/50">
-                                      <div className="text-[9px] text-emerald-400 font-mono uppercase mb-1">
+                                    <div className="p-2 rounded-lg bg-white border border-emerald-200">
+                                      <div className="text-[9px] text-emerald-700 font-mono uppercase mb-1">
                                         Weekly Schedule
                                       </div>
                                       <div className="flex flex-wrap gap-1.5">
                                         {post.weeklySchedule.map((slot, i) => (
                                           <span
                                             key={i}
-                                            className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60 text-[10px] font-mono"
+                                            className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono"
                                           >
                                             {dayLabels[slot.day] || slot.day}{" "}
                                             {slot.startTime}–{slot.endTime}
@@ -658,11 +658,11 @@ export function StudentDashboardContent() {
                                   )}
         
                                 {post.specialRequirements && (
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-xs">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-xs">
                                     <div className="text-[9px] text-slate-500 font-mono uppercase">
                                       Special Requirements
                                     </div>
-                                    <p className="text-slate-300 italic mt-0.5">
+                                    <p className="text-slate-600 italic mt-0.5">
                                       {post.specialRequirements}
                                     </p>
                                   </div>
@@ -670,8 +670,8 @@ export function StudentDashboardContent() {
         
                                 {/* Accepted tutor */}
                                 {acceptedApp && acceptedTutor && (
-                                  <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/50">
-                                    <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono uppercase mb-1">
+                                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-500/50">
+                                    <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-mono uppercase mb-1">
                                       <CheckCircle className="w-3.5 h-3.5" /> Accepted
                                       Tutor — Contact Unlocked
                                     </div>
@@ -686,12 +686,12 @@ export function StudentDashboardContent() {
                                         <div className="text-sm font-bold text-white truncate">
                                           {acceptedApp.tutorName}
                                         </div>
-                                        <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                        <div className="text-[10px] text-emerald-700 font-mono truncate">
                                           📞{" "}
                                           {acceptedApp.tutorPhone ||
                                             acceptedTutor.phone}
                                         </div>
-                                        <div className="text-[10px] text-emerald-300 font-mono truncate">
+                                        <div className="text-[10px] text-emerald-700 font-mono truncate">
                                           💬 WhatsApp:{" "}
                                           {acceptedApp.tutorWhatsapp ||
                                             acceptedTutor.whatsapp ||
@@ -699,7 +699,7 @@ export function StudentDashboardContent() {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="text-[10px] text-emerald-400/80 mt-1">
+                                    <div className="text-[10px] text-emerald-700 mt-1">
                                       Matched on{" "}
                                       {new Date(
                                         acceptedApp.acceptedAt || acceptedApp.createdAt,
@@ -710,10 +710,10 @@ export function StudentDashboardContent() {
         
                                 {/* Applicants list */}
                                 {postApps.length > 0 ? (
-                                  <div className="p-3 rounded-xl bg-[#111827] border border-slate-800">
+                                  <div className="p-3 rounded-xl bg-white border border-slate-200">
                                     <div className="flex items-center justify-between mb-2">
-                                      <div className="text-[10px] text-slate-400 font-mono uppercase flex items-center gap-1">
-                                        <Users className="w-3 h-3 text-emerald-400" />{" "}
+                                      <div className="text-[10px] text-slate-500 font-mono uppercase flex items-center gap-1">
+                                        <Users className="w-3 h-3 text-emerald-700" />{" "}
                                         Applicants ({postApps.length})
                                       </div>
                                       <div className="text-[9px] font-mono text-slate-500">
@@ -742,14 +742,14 @@ export function StudentDashboardContent() {
                                           );
                                           const statusColor =
                                             app.status === "ACCEPTED"
-                                              ? "bg-emerald-950 text-emerald-400 border-emerald-800/60"
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                               : app.status === "REJECTED"
-                                                ? "bg-rose-950 text-rose-400 border-rose-800/60"
-                                                : "bg-amber-950 text-amber-400 border-amber-800/60";
+                                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                : "bg-amber-50 text-amber-700 border-amber-200";
                                           return (
                                             <div
                                               key={app.id}
-                                              className="p-2 rounded-lg bg-[#0B0F19] border border-slate-800 text-[11px] flex items-start gap-2"
+                                              className="p-2 rounded-lg bg-white border border-slate-200 text-[11px] flex items-start gap-2"
                                             >
                                               <GenderAvatar
                                                 gender={appTutor?.gender || "MALE"}
@@ -770,19 +770,19 @@ export function StudentDashboardContent() {
                                                     {app.status}
                                                   </span>
                                                 </div>
-                                                <div className="text-[10px] text-slate-400 truncate">
+                                                <div className="text-[10px] text-slate-500 truncate">
                                                   {appTutor?.institution ||
                                                     app.tutorInstitution ||
                                                     "—"}{" "}
                                                   • {appTutor?.areaName || "—"}
                                                 </div>
-                                                <div className="text-[10px] text-emerald-400 font-mono">
+                                                <div className="text-[10px] text-emerald-700 font-mono">
                                                   ৳{" "}
                                                   {app.proposedSalary.toLocaleString()}
                                                   /mo
                                                 </div>
                                                 {app.message && (
-                                                  <div className="text-[10px] text-slate-400 italic mt-0.5 line-clamp-2">
+                                                  <div className="text-[10px] text-slate-500 italic mt-0.5 line-clamp-2">
                                                     "{app.message}"
                                                   </div>
                                                 )}
@@ -793,14 +793,14 @@ export function StudentDashboardContent() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="p-2 rounded-lg bg-[#111827] border border-slate-800 text-center text-[11px] text-slate-500 italic">
+                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center text-[11px] text-slate-500 italic">
                                     No applicants yet. Verified tutors will appear here
                                     once they apply.
                                   </div>
                                 )}
         
                                 {/* Footer */}
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs gap-2 flex-wrap">
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs gap-2 flex-wrap">
                                   <span className="text-slate-500">
                                     {postApps.length} applicant(s)
                                   </span>
@@ -824,9 +824,9 @@ export function StudentDashboardContent() {
                                       <button
                                         type="button"
                                         onClick={() => handleMarkTutorFound(post.id)}
-                                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors flex items-center gap-1"
+                                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-[11px] font-medium border border-slate-300 transition-colors flex items-center gap-1"
                                       >
-                                        <CheckSquare className="w-3 h-3 text-emerald-400" />
+                                        <CheckSquare className="w-3 h-3 text-emerald-700" />
                                         <span>Mark Tutor Found</span>
                                       </button>
                                     )}

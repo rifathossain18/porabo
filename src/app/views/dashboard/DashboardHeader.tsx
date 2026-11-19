@@ -1,4 +1,4 @@
-import { Phone, Search, LogOut, X, Eye, User as UserIcon, Bell, Sun, Moon, MoreVertical } from "lucide-react";
+import { Phone, Search, LogOut, X, Eye, User as UserIcon, Bell, MoreVertical } from "lucide-react";
 import { Area } from "recharts";
 import { User } from "../../../lib/types";
 import { NotificationPanel } from "../../../components/NotificationPanel";
@@ -14,8 +14,6 @@ export function DashboardHeader() {
     setIsNotificationPanelOpen,
     notifications,
     setNotifications,
-    theme,
-    toggleTheme,
     setIsMobileMenuOpen,
     userNotifications,
     unreadNotifCount,
@@ -27,7 +25,7 @@ export function DashboardHeader() {
   return (
     <>
               {/* Main Top Header */}
-              <header className="sticky top-0 z-40 border-b border-blue-950/60 bg-[#0B0F19]/90 backdrop-blur-md px-3 sm:px-6 py-2.5">
+              <header className="sticky top-0 z-40 border-b border-blue-200 bg-white backdrop-blur-md px-3 sm:px-6 py-2.5">
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
                   {/* Logo & Brand */}
                   <div className="flex items-center gap-2.5 shrink-0">
@@ -40,7 +38,7 @@ export function DashboardHeader() {
                       <span className="font-extrabold text-base sm:text-lg text-white tracking-tight">
                         Porabo
                       </span>
-                      <span className="hidden lg:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-blue-950/80 text-blue-400 border border-blue-800/50">
+                      <span className="hidden lg:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                         Neighborhood Tutor Network
                       </span>
                     </div>
@@ -50,19 +48,19 @@ export function DashboardHeader() {
                   {currentUser.role === "TUTOR" ? (
                     <div className="flex-1 max-w-md mx-2">
                       <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
                           type="text"
                           value={globalSearchQuery}
                           onChange={(e) => setGlobalSearchQuery(e.target.value)}
                           placeholder="Search by subject, title, area, or curriculum..."
-                          className="w-full bg-[#111827] border border-blue-950/80 hover:border-blue-800/60 focus:border-blue-500 rounded-full pl-9 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner"
+                          className="w-full bg-white border border-blue-200 hover:border-blue-200 focus:border-blue-500 rounded-full pl-9 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner"
                         />
                         {globalSearchQuery && (
                           <button
                             type="button"
                             onClick={() => setGlobalSearchQuery("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -82,8 +80,8 @@ export function DashboardHeader() {
                         onClick={() => setIsNotificationPanelOpen((prev) => !prev)}
                         className={`p-2 rounded-xl border transition-all relative ${
                           isNotificationPanelOpen
-                            ? "bg-blue-600/30 text-blue-400 border-blue-500/50"
-                            : "bg-[#111827] text-slate-300 hover:text-white border-blue-900/40 hover:border-blue-700/60"
+                            ? "bg-blue-600/30 text-blue-700 border-blue-500/50"
+                            : "bg-white text-slate-600 hover:text-slate-900 border-blue-200 hover:border-blue-700/60"
                         }`}
                         title="Notifications"
                         aria-label="View notifications"
@@ -129,25 +127,10 @@ export function DashboardHeader() {
                       />
                     </div>
         
-                    {/* Global CSS Theme Toggle (Sun / Moon) */}
-                    <button
-                      type="button"
-                      onClick={toggleTheme}
-                      className="p-2 rounded-xl bg-[#111827] text-slate-300 hover:text-white border border-blue-900/40 hover:border-blue-700/60 transition-all shadow-sm"
-                      title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode for better accessibility`}
-                      aria-label={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
-                    >
-                      {theme === "dark" ? (
-                        <Sun className="w-4 h-4 text-amber-400" />
-                      ) : (
-                        <Moon className="w-4 h-4 text-blue-500" />
-                      )}
-                    </button>
-        
                     {/* Strict Role Pill */}
-                    <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#111827] border border-blue-900/40 text-xs">
+                    <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white border border-blue-200 text-xs">
                       <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-slate-400">Role:</span>
+                      <span className="text-slate-500">Role:</span>
                       <span className="font-semibold text-white">
                         {currentUser.role === "STUDENT" ? "Student" : "Tutor"}
                       </span>
@@ -157,7 +140,7 @@ export function DashboardHeader() {
                     <button
                       type="button"
                       onClick={handleOpenProfileModal}
-                      className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-semibold transition-colors"
+                      className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-700 border border-blue-500/30 rounded-xl text-xs font-semibold transition-colors"
                       title="Edit Profile & Location (District, Area, Contact)"
                     >
                       <UserIcon className="w-3.5 h-3.5" />
@@ -169,10 +152,10 @@ export function DashboardHeader() {
                       <button
                         type="button"
                         onClick={() => handleOpenTeacherProfile(currentUser.id)}
-                        className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 rounded-xl text-xs font-medium transition-colors"
+                        className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-300 rounded-xl text-xs font-medium transition-colors"
                         title="View Public Teacher Dossier"
                       >
-                        <Eye className="w-3.5 h-3.5 text-blue-400" />
+                        <Eye className="w-3.5 h-3.5 text-blue-700" />
                         <span>Public Profile</span>
                       </button>
                     )}
@@ -182,10 +165,10 @@ export function DashboardHeader() {
                       href="https://wa.me/8801642695161?text=Hello%20Porabo%20Support%2C%20I%20have%20a%20feedback%20or%20complain"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden md:flex px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-400 hover:text-emerald-300 border border-emerald-600/60 text-xs font-semibold items-center gap-1.5 transition-all shadow-sm"
+                      className="hidden md:flex px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-50 text-emerald-700 hover:text-emerald-700 border border-emerald-600/60 text-xs font-semibold items-center gap-1.5 transition-all shadow-sm"
                       title="Direct WhatsApp Support: +8801642695161"
                     >
-                      <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <Phone className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span>Feedback &amp; Complaints</span>
                     </a>
         
@@ -194,9 +177,9 @@ export function DashboardHeader() {
                       type="button"
                       onClick={handleLogout}
                       title="Sign Out"
-                      className="hidden sm:flex p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs items-center gap-1.5 border border-slate-700 transition-colors"
+                      className="hidden sm:flex p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs items-center gap-1.5 border border-slate-300 transition-colors"
                     >
-                      <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                      <LogOut className="w-3.5 h-3.5 text-rose-700" />
                       <span>Sign Out</span>
                     </button>
         
@@ -204,7 +187,7 @@ export function DashboardHeader() {
                     <button
                       type="button"
                       onClick={() => setIsMobileMenuOpen(true)}
-                      className="sm:hidden p-2 rounded-xl bg-[#111827] text-slate-300 hover:text-white border border-blue-900/40 hover:border-blue-700/60 transition-colors"
+                      className="sm:hidden p-2 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-blue-200 hover:border-blue-700/60 transition-colors"
                       title="More options"
                       aria-label="More options"
                     >

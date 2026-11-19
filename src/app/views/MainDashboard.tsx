@@ -1,11 +1,25 @@
+import { lazy, Suspense } from "react";
 import { Phone, PlusCircle, Send, BookOpen, BarChart3, LayoutGrid, User as UserIcon, Radio, Bell } from "lucide-react";
 import { Toast } from "../../components/Toast";
 import { MobileMenuDrawer } from "../../components/MobileMenuDrawer";
 import { useAppContext } from "../AppContext";
 import { DashboardHeader } from "./dashboard/DashboardHeader";
-import { DashboardModals } from "./dashboard/DashboardModals";
-import { StudentDashboardContent } from "./dashboard/StudentDashboardContent";
-import { TutorDashboardContent } from "./dashboard/TutorDashboardContent";
+
+const DashboardModals = lazy(() =>
+  import("./dashboard/DashboardModals").then((module) => ({
+    default: module.DashboardModals,
+  })),
+);
+const StudentDashboardContent = lazy(() =>
+  import("./dashboard/StudentDashboardContent").then((module) => ({
+    default: module.StudentDashboardContent,
+  })),
+);
+const TutorDashboardContent = lazy(() =>
+  import("./dashboard/TutorDashboardContent").then((module) => ({
+    default: module.TutorDashboardContent,
+  })),
+);
 
 export function MainDashboard() {
   const {
@@ -125,9 +139,6 @@ export function MainDashboard() {
     bookmarkedPostIds,
     setBookmarkedPostIds,
     sendNotification,
-    theme,
-    setTheme,
-    toggleTheme,
     distanceRadiusKm,
     setDistanceRadiusKm,
     isDistanceFilterEnabled,
@@ -291,11 +302,21 @@ export function MainDashboard() {
     handleAdminDeleteUser,
   } = useAppContext();
   if (!currentUser) return null;
+  const isDashboardModalOpen = Boolean(
+    selectedPostForApply ||
+      isCreatePostOpen ||
+      isRatingModalOpen ||
+      selectedTutorForDetailModal ||
+      isResubmitModalOpen ||
+      isProfileModalOpen ||
+      qrModalData.isOpen ||
+      isQuizDashboardOpen,
+  );
 
   // VIEW: MAIN APPLICATION DASHBOARD (STUDENT / TEACHER)
     // =========================================================================
     return (
-      <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white">
         {/* Toast Notification */}
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
   
@@ -306,8 +327,6 @@ export function MainDashboard() {
           isOpen={isMobileMenuOpen}
           onClose={() => setIsMobileMenuOpen(false)}
           currentUser={currentUser}
-          theme={theme}
-          onToggleTheme={toggleTheme}
           onOpenProfileModal={handleOpenProfileModal}
           onOpenTeacherProfile={handleOpenTeacherProfile}
           onLogout={handleLogout}
@@ -318,12 +337,28 @@ export function MainDashboard() {
           {/* =================================================================== */}
           {/* STUDENT MODE VIEW: Post Tuitions, Inspect Applicants, Accept Tutor */}
           {/* =================================================================== */}
-          {currentUser.role === "STUDENT" ? <StudentDashboardContent /> : <TutorDashboardContent />}
+          <Suspense
+            fallback={
+              <div
+                className="flex min-h-32 items-center justify-center text-sm text-slate-500"
+                role="status"
+                aria-live="polite"
+              >
+                Loading dashboard...
+              </div>
+            }
+          >
+            {currentUser.role === "STUDENT" ? <StudentDashboardContent /> : <TutorDashboardContent />}
+          </Suspense>
         </div>
   
-<DashboardModals />
+        {isDashboardModalOpen && (
+          <Suspense fallback={null}>
+            <DashboardModals />
+          </Suspense>
+        )}
           {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F19]/95 backdrop-blur-xl border-t border-blue-900/50 py-2 px-3 shadow-2xl flex items-center justify-around">
+        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white backdrop-blur-xl border-t border-blue-200 py-2 px-3 shadow-2xl flex items-center justify-around">
           {currentUser.role === "TUTOR" ? (
             <>
               <button
@@ -334,8 +369,8 @@ export function MainDashboard() {
                 }}
                 className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
                   teacherViewMode === "feed"
-                    ? "text-blue-400 font-bold"
-                    : "text-slate-400 hover:text-white"
+                    ? "text-blue-700 font-bold"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -350,11 +385,11 @@ export function MainDashboard() {
                 }}
                 className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
                   teacherViewMode === "map"
-                    ? "text-cyan-400 font-bold"
-                    : "text-slate-400 hover:text-white"
+                    ? "text-blue-700 font-bold"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
-                <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+                <Radio className="w-4 h-4 text-blue-700 animate-pulse" />
                 <span className="text-[10px]">Radar</span>
               </button>
   
@@ -366,8 +401,8 @@ export function MainDashboard() {
                 }}
                 className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors relative ${
                   teacherViewMode === "my_applications"
-                    ? "text-blue-400 font-bold"
-                    : "text-slate-400 hover:text-white"
+                    ? "text-blue-700 font-bold"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <Send className="w-4 h-4" />
@@ -387,8 +422,8 @@ export function MainDashboard() {
                 }}
                 className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
                   teacherViewMode === "trends"
-                    ? "text-blue-400 font-bold"
-                    : "text-slate-400 hover:text-white"
+                    ? "text-blue-700 font-bold"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <BarChart3 className="w-4 h-4" />
@@ -398,7 +433,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => handleOpenTeacherProfile(currentUser.id)}
-                className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl text-slate-400 hover:text-blue-400 transition-colors"
+                className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl text-slate-500 hover:text-blue-700 transition-colors"
               >
                 <UserIcon className="w-4 h-4" />
                 <span className="text-[10px]">Profile</span>
@@ -409,7 +444,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="flex flex-col items-center gap-1 py-1 px-3 text-blue-400 font-bold"
+                className="flex flex-col items-center gap-1 py-1 px-3 text-blue-700 font-bold"
               >
                 <BookOpen className="w-4 h-4" />
                 <span className="text-[10px]">My Tuitions</span>
@@ -427,7 +462,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => setIsNotificationPanelOpen(true)}
-                className="flex flex-col items-center gap-1 py-1 px-3 text-slate-400 hover:text-white relative"
+                className="flex flex-col items-center gap-1 py-1 px-3 text-slate-500 hover:text-slate-900 relative"
               >
                 <Bell className="w-4 h-4" />
                 <span className="text-[10px]">Alerts</span>
@@ -446,7 +481,7 @@ export function MainDashboard() {
           href="https://wa.me/8801642695161?text=Hello%20Porabo%20Support%2C%20I%20have%20a%20feedback%20or%20complain"
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-3.5 sm:px-4 py-2.5 rounded-full shadow-2xl shadow-emerald-600/40 border border-emerald-400/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 group font-medium text-xs"
+          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white px-3.5 sm:px-4 py-2.5 rounded-full shadow-2xl shadow-emerald-600/40 border border-emerald-400/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 group font-medium text-xs"
           title="WhatsApp Support & Complain: +8801642695161"
         >
           <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0" />
@@ -458,7 +493,7 @@ export function MainDashboard() {
         </a>
   
         {/* Clean Footer (No Admin Panel link in UI - only accessible via /admin) */}
-        <footer className="border-t border-blue-950/60 bg-[#0B0F19] py-4 px-4 text-center text-xs text-slate-500 font-mono flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto w-full gap-2">
+        <footer className="border-t border-blue-200 bg-white py-4 px-4 text-center text-xs text-slate-500 font-mono flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto w-full gap-2">
           <div>
             Porabo &bull; Hyper-Local Neighborhood Tuition Marketplace &bull;
             Black &amp; Electric Blue Edition

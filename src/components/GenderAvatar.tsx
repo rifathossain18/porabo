@@ -43,7 +43,7 @@ export function GenderAvatar({
 
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-slate-400 ${sizeClasses[size]} ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-slate-500 ${sizeClasses[size]} ${className}`}
       title={name ? `${name} has not added a profile picture` : "No profile picture"}
       aria-label={name ? `${name} profile picture unavailable` : "Profile picture unavailable"}
     >

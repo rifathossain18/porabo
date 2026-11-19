@@ -23,26 +23,26 @@ export function AuthenticationGateView() {
   const isTutor = authRoleChoice === "TUTOR";
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
-      <header className="border-b border-blue-950/40 bg-[#0B0F19]/90 backdrop-blur-md px-4 py-3 sm:px-6">
+      <header className="border-b border-blue-200 bg-white backdrop-blur-md px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/assets/porabo_logo_transparent_90065b0b.svg" alt="Porabo Logo" className="w-9 h-9 object-contain shrink-0" />
             <div>
               <span className="font-extrabold text-xl text-white tracking-tight">Porabo</span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-blue-950/80 text-blue-400 border border-blue-800/50">
+              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                 Hyper-Local Tutor Network
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
-            <span className="flex items-center gap-1.5 text-blue-400">
+          <div className="flex items-center gap-3 text-xs font-mono text-slate-500">
+            <span className="flex items-center gap-1.5 text-blue-700">
               <ShieldCheck className="w-4 h-4" />
               <span className="hidden sm:inline">Verified Credentials Only</span>
             </span>
-            <button type="button" onClick={() => setShowAuthForm(false)} className="text-slate-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-800/60 transition-colors" title="Back to landing">
+            <button type="button" onClick={() => setShowAuthForm(false)} className="text-slate-500 hover:text-slate-900 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors" title="Back to landing">
               ← Back
             </button>
           </div>
@@ -50,10 +50,10 @@ export function AuthenticationGateView() {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-4">
-        <div className="w-full max-w-lg bg-[#111827] border border-blue-900/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-blue-950/40">
+        <div className="w-full max-w-lg bg-white border border-blue-200 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-blue-950/40">
           <div className="text-center mb-6">
             <img src="/assets/porabo_logo_transparent_90065b0b.svg" alt="Porabo Logo" className="w-14 h-14 mx-auto object-contain mb-2" />
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider mb-2 border ${isTutor ? "bg-blue-950/80 text-blue-300 border-blue-800/60" : "bg-emerald-950/80 text-emerald-300 border-emerald-800/60"}`}>
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider mb-2 border ${isTutor ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
               {isTutor ? (
                 <>
                   <GraduationCap className="w-3 h-3" />
@@ -75,7 +75,7 @@ export function AuthenticationGateView() {
                   ? "Create Teacher Account"
                   : "Create Guardian Account"}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1.5">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
               {isLogin
                 ? isTutor
                   ? "Sign in to your teacher account to find local tuition opportunities."
@@ -87,17 +87,17 @@ export function AuthenticationGateView() {
           </div>
 
           {authError && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs sm:text-sm flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 text-xs sm:text-sm flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-700" />
               <div className="flex-1">{authError}</div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 p-1 bg-[#0B0F19] rounded-2xl border border-blue-950/50 mb-6">
-            <button type="button" onClick={() => { setAuthViewTab("login"); setAuthError(null); }} className={`py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all ${isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "text-slate-400 hover:text-white"}`}>
+          <div className="grid grid-cols-2 p-1 bg-white rounded-2xl border border-blue-200 mb-6">
+            <button type="button" onClick={() => { setAuthViewTab("login"); setAuthError(null); }} className={`py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all ${isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "text-slate-500 hover:text-slate-900"}`}>
               Sign In
             </button>
-            <button type="button" onClick={() => { setAuthViewTab("register"); setAuthError(null); }} className={`py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all ${!isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "text-slate-400 hover:text-white"}`}>
+            <button type="button" onClick={() => { setAuthViewTab("register"); setAuthError(null); }} className={`py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all ${!isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "text-slate-500 hover:text-slate-900"}`}>
               Register
             </button>
           </div>
@@ -115,7 +115,7 @@ export function AuthenticationGateView() {
         onClose={() => setIsForgotPasswordOpen(false)}
       />
 
-      <footer className="border-t border-blue-950/40 bg-[#0B0F19] py-4 text-center text-xs text-slate-500 font-mono">
+      <footer className="border-t border-blue-200 bg-white py-4 text-center text-xs text-slate-500 font-mono">
         Porabo &copy; 2026 &bull; Hyper-Local Radius Tuition Platform &bull; All Rights Reserved
       </footer>
     </div>

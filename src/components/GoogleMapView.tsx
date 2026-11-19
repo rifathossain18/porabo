@@ -276,43 +276,43 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
   }, [posts, radiusKm, userLat, userLng, appliedPostIds]);
 
   return (
-    <div className="relative w-full h-[520px] sm:h-[620px] rounded-3xl overflow-hidden border border-blue-900/40 shadow-2xl bg-[#090E18]">
+    <div className="relative w-full h-[520px] sm:h-[620px] rounded-3xl overflow-hidden border border-blue-200 shadow-2xl bg-slate-50">
       {/* Map Element */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Loading or Error Overlay */}
       {!mapLoaded && !mapError && (
-        <div className="absolute inset-0 bg-[#090E18] flex flex-col items-center justify-center text-slate-300 gap-3 z-20">
+        <div className="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3 z-20">
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-blue-400">Loading Google Maps Interactive Feed...</p>
+          <p className="text-sm font-medium text-blue-700">Loading Google Maps Interactive Feed...</p>
         </div>
       )}
 
       {mapError && (
-        <div className="absolute inset-0 bg-[#090E18] flex flex-col items-center justify-center p-6 text-center z-20">
+        <div className="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center p-6 text-center z-20">
           <MapPin className="w-10 h-10 text-rose-500 mb-2" />
           <h3 className="text-base font-bold text-white">Map View Unavailable</h3>
-          <p className="text-xs text-slate-400 max-w-sm mt-1">{mapError}</p>
+          <p className="text-xs text-slate-500 max-w-sm mt-1">{mapError}</p>
         </div>
       )}
 
       {/* Top Floating Map Info Badge */}
-      <div className="absolute top-4 left-4 z-10 bg-[#0B0F19]/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-blue-900/60 text-xs flex items-center gap-2.5 shadow-xl">
+      <div className="absolute top-4 left-4 z-10 bg-white backdrop-blur-md px-3.5 py-2 rounded-2xl border border-blue-200 text-xs flex items-center gap-2.5 shadow-xl">
         <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></span>
         <span className="font-semibold text-white">Live Radar Map</span>
-        <span className="text-slate-400 font-mono text-[11px]">
+        <span className="text-slate-500 font-mono text-[11px]">
           ({posts.length} tuition markers within {radiusKm >= 9000 ? 'District' : `${radiusKm} km`})
         </span>
       </div>
 
       {/* Dynamic Radius Slider (1km to 5km) */}
-      <div className="absolute top-16 left-4 z-10 bg-[#0B0F19]/95 backdrop-blur-md p-3 rounded-2xl border border-blue-900/70 shadow-2xl space-y-2 w-64 max-w-[calc(100vw-3rem)]">
+      <div className="absolute top-16 left-4 z-10 bg-white backdrop-blur-md p-3 rounded-2xl border border-blue-200 shadow-2xl space-y-2 w-64 max-w-[calc(100vw-3rem)]">
         <div className="flex items-center justify-between text-xs">
           <span className="font-semibold text-white flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
             <span>Radar Range:</span>
           </span>
-          <span className="font-mono font-bold text-cyan-400 text-xs">
+          <span className="font-mono font-bold text-blue-700 text-xs">
             {radiusKm >= 9000 ? 'District' : `${radiusKm} km`}
           </span>
         </div>
@@ -326,14 +326,14 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
               step="0.5"
               value={radiusKm >= 9000 ? 5 : Math.min(Math.max(radiusKm, 1), 5)}
               onChange={(e) => onRadiusChange(Number(e.target.value))}
-              className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+              className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-100 rounded-lg"
             />
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
               <span>1 km</span>
               <span>2.5 km</span>
               <span>5 km</span>
             </div>
-            <div className="flex items-center gap-1 pt-1 border-t border-slate-800/80">
+            <div className="flex items-center gap-1 pt-1 border-t border-slate-200">
               {[1, 2, 3, 5].map((preset) => (
                 <button
                   key={preset}
@@ -342,7 +342,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
                   className={`flex-1 py-0.5 rounded-lg text-[10px] font-semibold transition-all ${
                     radiusKm === preset
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-[#111827] text-slate-400 hover:text-white border border-slate-800'
+                      : 'bg-white text-slate-500 hover:text-slate-900 border border-slate-200'
                   }`}
                 >
                   {preset}km
@@ -356,14 +356,14 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
       {/* Top Right Action Controls: Map Style Toggle & Recenter */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         {/* Satellite / Hybrid / 3D Toggle */}
-        <div className="bg-[#0B0F19]/95 backdrop-blur-md p-1 rounded-2xl border border-blue-900/60 shadow-xl flex items-center gap-1">
+        <div className="bg-white backdrop-blur-md p-1 rounded-2xl border border-blue-200 shadow-xl flex items-center gap-1">
           <button
             type="button"
             onClick={() => handleToggleMapType('roadmap')}
             className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
               mapType === 'roadmap'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400'
-                : 'text-slate-400 hover:text-white'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
             title="Standard Dark Cyber Map"
           >
@@ -375,8 +375,8 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
             onClick={() => handleToggleMapType('hybrid')}
             className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
               mapType === 'hybrid'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-emerald-600 to-green-500 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
             title="Satellite & Landmarks Hybrid 3D View"
           >
@@ -393,7 +393,7 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
             mapInstanceRef.current?.setZoom(radiusKm <= 2 ? 15 : 14);
           }}
           title="Recenter on your GPS location"
-          className="bg-[#0B0F19]/90 hover:bg-[#111827] text-blue-400 p-2.5 rounded-2xl border border-blue-900/60 shadow-xl transition-all"
+          className="bg-white hover:bg-white text-blue-700 p-2.5 rounded-2xl border border-blue-200 shadow-xl transition-all"
         >
           <Navigation className="w-4 h-4" />
         </button>
@@ -401,9 +401,9 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
 
       {/* Selected Marker Bottom Card Popup */}
       {selectedPost && (
-        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-20 bg-[#111827]/95 backdrop-blur-xl border border-blue-500/50 rounded-3xl p-5 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-20 bg-white backdrop-blur-xl border border-blue-500/50 rounded-3xl p-5 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200">
           <div className="flex items-start justify-between gap-3 mb-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-400 text-[11px] font-mono border border-blue-800/60 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-mono border border-blue-200 flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               <span>
                 {selectedPost.distanceKm !== undefined
@@ -416,14 +416,14 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
               <button
                 type="button"
                 onClick={(e) => onBookmarkToggle(selectedPost.id, e)}
-                className="p-1.5 rounded-full bg-[#0B0F19] hover:bg-slate-800 text-slate-400 hover:text-rose-400"
+                className="p-1.5 rounded-full bg-white hover:bg-slate-100 text-slate-500 hover:text-rose-700"
               >
                 <Heart className={`w-4 h-4 ${selectedPost.isBookmarked ? 'fill-rose-500 text-rose-500' : ''}`} />
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedPost(null)}
-                className="p-1.5 rounded-full bg-[#0B0F19] hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="p-1.5 rounded-full bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-900"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -431,24 +431,24 @@ export const GoogleMapView: React.FC<GoogleMapViewProps> = ({
           </div>
 
           <h4 className="font-bold text-sm text-white line-clamp-1">{selectedPost.title}</h4>
-          <p className="text-xs text-blue-400 font-medium mt-0.5">
+          <p className="text-xs text-blue-700 font-medium mt-0.5">
             {selectedPost.subject} &bull; {selectedPost.gradeLevel} ({selectedPost.curriculum})
           </p>
-          <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+          <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
             <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
             <span>{selectedPost.areaName}, {selectedPost.district}</span>
           </p>
 
-          <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
+          <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
             <div>
               <span className="text-[10px] text-slate-500 uppercase font-mono block">Budget</span>
-              <span className="text-base font-extrabold text-emerald-400">
+              <span className="text-base font-extrabold text-emerald-700">
                 ৳ {selectedPost.salaryBudget.toLocaleString()} / mo
               </span>
             </div>
 
             {appliedPostIds.includes(selectedPost.id) ? (
-              <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30">
+              <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-700 text-xs font-semibold border border-emerald-500/30">
                 Applied
               </span>
             ) : (

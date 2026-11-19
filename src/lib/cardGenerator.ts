@@ -1,918 +1,809 @@
-import QRCode from 'qrcode';
-import { TuitionPost, User } from './types';
+import QRCode from "qrcode";
+import type { TuitionPost, User } from "./types";
 
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1440;
-const PADDING = 68;
-const LOGO_SRC = '/assets/porabo_logo.webp';
+const PAGE_MARGIN = 48;
+const CONTENT_MARGIN = 92;
+const CONTENT_WIDTH = CARD_WIDTH - CONTENT_MARGIN * 2;
+const LOGO_SRC = "/assets/porabo_logo.webp";
 
-const loadImage = (src: string, crossOrigin?: boolean): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    if (crossOrigin) img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load: ${src}`));
-    img.src = src;
-  });
-};
-
-const wrapText = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-  maxLines: number
-): string[] => {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const test = current ? `${current} ${word}` : word;
-    if (ctx.measureText(test).width > maxWidth && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = test;
-    }
-  }
-  if (current) lines.push(current);
-  if (lines.length > maxLines) {
-    const trunc = lines.slice(0, maxLines);
-    let last = trunc[maxLines - 1];
-    while (ctx.measureText(`${last}...`).width > maxWidth && last.length > 0) {
-      last = last.slice(0, -1);
-    }
-    trunc[maxLines - 1] = `${last}...`;
-    return trunc;
-  }
-  return lines;
-};
-
-const roundRect = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) => {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+const COLORS = {
+  background: "#F1F5F9",
+  surface: "#FFFFFF",
+  text: "#0F172A",
+  secondary: "#475569",
+  muted: "#64748B",
+  border: "#E2E8F0",
+  blue: "#2563EB",
+  blueDark: "#1D4ED8",
+  blueLight: "#EFF6FF",
+  green: "#059669",
+  greenLight: "#ECFDF5",
+  amber: "#B45309",
+  amberLight: "#FFFBEB",
+  rose: "#BE123C",
+  roseLight: "#FFF1F2",
 };
 
 const DAY_LABELS: Record<string, string> = {
-  SAT: 'Saturday', SUN: 'Sunday', MON: 'Monday', TUE: 'Tuesday',
-  WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday',
+  SAT: "Saturday",
+  SUN: "Sunday",
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  THU: "Thursday",
+  FRI: "Friday",
 };
 
-async function drawPremiumBackground(
-  ctx: CanvasRenderingContext2D,
-  topAccentColor: string = 'rgba(56,189,248,0.9)'
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    image.src = src;
+  });
+}
+
+function roundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
 ) {
-  const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  bg.addColorStop(0, '#0A0F19');
-  bg.addColorStop(0.5, '#0B1428');
-  bg.addColorStop(1, '#070A12');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(
+    x + width,
+    y + height,
+    x + width - radius,
+    y + height,
+  );
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
 
-  const g1 = ctx.createRadialGradient(CARD_WIDTH, 0, 0, CARD_WIDTH, 0, 720);
-  g1.addColorStop(0, 'rgba(59,130,246,0.35)');
-  g1.addColorStop(1, 'rgba(59,130,246,0)');
-  ctx.fillStyle = g1;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+function wrapText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
 
-  const g2 = ctx.createRadialGradient(0, CARD_HEIGHT, 0, 0, CARD_HEIGHT, 600);
-  g2.addColorStop(0, 'rgba(6,182,212,0.22)');
-  g2.addColorStop(1, 'rgba(6,182,212,0)');
-  ctx.fillStyle = g2;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  ctx.fillStyle = 'rgba(59,130,246,0.07)';
-  for (let x = 0; x < CARD_WIDTH; x += 32) {
-    for (let y = 0; y < CARD_HEIGHT; y += 32) {
-      ctx.beginPath();
-      ctx.arc(x, y, 1, 0, Math.PI * 2);
-      ctx.fill();
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (context.measureText(next).width <= maxWidth || !line) {
+      line = next;
+    } else {
+      lines.push(line);
+      line = word;
     }
   }
+  if (line) lines.push(line);
+  if (lines.length <= maxLines) return lines;
 
-  const topLine = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
-  topLine.addColorStop(0, 'rgba(59,130,246,0)');
-  topLine.addColorStop(0.5, topAccentColor);
-  topLine.addColorStop(1, 'rgba(59,130,246,0)');
-  ctx.fillStyle = topLine;
-  ctx.fillRect(0, 0, CARD_WIDTH, 3);
+  const visible = lines.slice(0, maxLines);
+  let lastLine = visible[maxLines - 1];
+  while (
+    lastLine.length > 0 &&
+    context.measureText(`${lastLine}…`).width > maxWidth
+  ) {
+    lastLine = lastLine.slice(0, -1);
+  }
+  visible[maxLines - 1] = `${lastLine.trimEnd()}…`;
+  return visible;
 }
 
-async function drawHeader(ctx: CanvasRenderingContext2D) {
-  const logoX = PADDING + 28;
-  const logoY = 90;
-  const logoR = 26;
+function drawTextLines(
+  context: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+) {
+  lines.forEach((line, index) => {
+    context.fillText(line, x, y + index * lineHeight);
+  });
+}
 
-  const lglow = ctx.createRadialGradient(logoX, logoY, 0, logoX, logoY, 60);
-  lglow.addColorStop(0, 'rgba(56,189,248,0.6)');
-  lglow.addColorStop(1, 'rgba(56,189,248,0)');
-  ctx.fillStyle = lglow;
-  ctx.beginPath();
-  ctx.arc(logoX, logoY, 60, 0, Math.PI * 2);
-  ctx.fill();
+async function createCanvas(): Promise<{
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
+}> {
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is not available in this browser.");
+  return { canvas, context };
+}
 
-  const lbg = ctx.createLinearGradient(logoX - logoR, logoY - logoR, logoX + logoR, logoY + logoR);
-  lbg.addColorStop(0, '#1E3A8A');
-  lbg.addColorStop(1, '#0369A1');
-  ctx.fillStyle = lbg;
-  ctx.beginPath();
-  ctx.arc(logoX, logoY, logoR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#38BDF8';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+async function drawBrandHeader(
+  context: CanvasRenderingContext2D,
+  label: string,
+) {
+  context.fillStyle = COLORS.background;
+  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
+  const header = context.createLinearGradient(0, 0, CARD_WIDTH, 220);
+  header.addColorStop(0, COLORS.blueDark);
+  header.addColorStop(1, COLORS.blue);
+  context.fillStyle = header;
+  context.fillRect(0, 0, CARD_WIDTH, 230);
+
+  context.fillStyle = "rgba(255,255,255,0.08)";
+  context.beginPath();
+  context.arc(1000, 28, 180, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(820, 210, 105, 0, Math.PI * 2);
+  context.fill();
+
+  roundedRect(context, PAGE_MARGIN, 48, 78, 78, 22);
+  context.fillStyle = COLORS.surface;
+  context.fill();
   try {
-    const logoImg = await loadImage(LOGO_SRC);
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(logoX, logoY, logoR - 3, 0, Math.PI * 2);
-    ctx.clip();
-    const aspect = logoImg.width / logoImg.height;
-    const maxDim = logoR * 2 - 8;
-    let dw = maxDim;
-    let dh = maxDim / aspect;
-    if (dh > maxDim) { dh = maxDim; dw = maxDim * aspect; }
-    ctx.drawImage(logoImg, logoX - dw / 2, logoY - dh / 2, dw, dh);
-    ctx.restore();
+    const logo = await loadImage(LOGO_SRC);
+    const size = 58;
+    const scale = Math.min(size / logo.width, size / logo.height);
+    const width = logo.width * scale;
+    const height = logo.height * scale;
+    context.drawImage(
+      logo,
+      PAGE_MARGIN + (78 - width) / 2,
+      48 + (78 - height) / 2,
+      width,
+      height,
+    );
   } catch {
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('P', logoX, logoY + 2);
+    context.fillStyle = COLORS.blue;
+    context.font = "700 44px Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("P", PAGE_MARGIN + 39, 87);
   }
 
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Porabo', PADDING + 74, logoY - 2);
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.fillStyle = COLORS.surface;
+  context.font = "700 42px Arial, sans-serif";
+  context.fillText("Porabo", PAGE_MARGIN + 98, 86);
+  context.fillStyle = "#DBEAFE";
+  context.font = "600 15px Arial, sans-serif";
+  context.fillText("LOCAL LEARNING. REAL CONNECTIONS.", PAGE_MARGIN + 100, 113);
 
-  ctx.fillStyle = '#38BDF8';
-  ctx.font = '600 12px "SF Mono", Monaco, monospace';
-  ctx.fillText("BANGLADESH'S LARGEST TUITION NETWORK", PADDING + 76, logoY + 20);
+  const labelWidth = Math.max(175, context.measureText(label).width + 38);
+  roundedRect(context, CARD_WIDTH - PAGE_MARGIN - labelWidth, 67, labelWidth, 42, 21);
+  context.fillStyle = "rgba(255,255,255,0.16)";
+  context.fill();
+  context.strokeStyle = "rgba(255,255,255,0.35)";
+  context.lineWidth = 1;
+  context.stroke();
+  context.fillStyle = COLORS.surface;
+  context.font = "700 14px Arial, sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(
+    label,
+    CARD_WIDTH - PAGE_MARGIN - labelWidth / 2,
+    88,
+    labelWidth - 24,
+  );
+
+  context.save();
+  context.shadowColor = "rgba(15,23,42,0.10)";
+  context.shadowBlur = 28;
+  context.shadowOffsetY = 8;
+  roundedRect(context, PAGE_MARGIN, 184, CARD_WIDTH - PAGE_MARGIN * 2, 1160, 32);
+  context.fillStyle = COLORS.surface;
+  context.fill();
+  context.restore();
+  context.strokeStyle = COLORS.border;
+  context.lineWidth = 1;
+  roundedRect(context, PAGE_MARGIN, 184, CARD_WIDTH - PAGE_MARGIN * 2, 1160, 32);
+  context.stroke();
 }
 
-function drawBadge(
-  ctx: CanvasRenderingContext2D,
-  yPos: number,
+function drawFooter(context: CanvasRenderingContext2D) {
+  context.fillStyle = COLORS.blueDark;
+  context.fillRect(0, 1370, CARD_WIDTH, 70);
+  context.fillStyle = COLORS.surface;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = "700 21px Arial, sans-serif";
+  context.fillText("Porabo  •  Local learning, closer to home", CARD_WIDTH / 2, 1394);
+  context.fillStyle = "#DBEAFE";
+  context.font = "500 14px Arial, sans-serif";
+  context.fillText("porabo.online", CARD_WIDTH / 2, 1420);
+}
+
+function drawEyebrow(
+  context: CanvasRenderingContext2D,
   text: string,
-  colorScheme: 'cyan' | 'emerald' = 'cyan'
+  x: number,
+  y: number,
 ) {
-  ctx.font = 'bold 15px "SF Mono", Monaco, monospace';
-  const bTextW = ctx.measureText(text).width;
-  const bW = bTextW + 50;
-
-  const bGrad = ctx.createLinearGradient(PADDING, yPos, PADDING + bW, yPos);
-  if (colorScheme === 'emerald') {
-    bGrad.addColorStop(0, 'rgba(16,185,129,0.3)');
-    bGrad.addColorStop(1, 'rgba(6,182,212,0.15)');
-  } else {
-    bGrad.addColorStop(0, 'rgba(6,182,212,0.3)');
-    bGrad.addColorStop(1, 'rgba(59,130,246,0.15)');
-  }
-  ctx.fillStyle = bGrad;
-  roundRect(ctx, PADDING, yPos, bW, 42, 21);
-  ctx.fill();
-  ctx.strokeStyle = colorScheme === 'emerald' ? 'rgba(52,211,153,0.7)' : 'rgba(56,189,248,0.7)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, PADDING, yPos, bW, 42, 21);
-  ctx.stroke();
-
-  ctx.fillStyle = colorScheme === 'emerald' ? '#6EE7B7' : '#67E8F9';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  ctx.fillText(text, PADDING + 25, yPos + 22);
+  context.fillStyle = COLORS.blueLight;
+  roundedRect(context, x, y, 214, 34, 17);
+  context.fill();
+  context.fillStyle = COLORS.blueDark;
+  context.font = "700 13px Arial, sans-serif";
+  context.textAlign = "left";
+  context.textBaseline = "middle";
+  context.fillText(text, x + 16, y + 17);
 }
 
-async function drawQR(
-  ctx: CanvasRenderingContext2D,
-  qrY: number,
+function drawInfoCell(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  label: string,
+  value: string,
+  accent: string = COLORS.blue,
+) {
+  roundedRect(context, x, y, width, 98, 18);
+  context.fillStyle = "#F8FAFC";
+  context.fill();
+  context.strokeStyle = COLORS.border;
+  context.lineWidth = 1;
+  context.stroke();
+  context.fillStyle = accent;
+  roundedRect(context, x + 1, y + 18, 4, 62, 2);
+  context.fill();
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillStyle = COLORS.muted;
+  context.font = "700 12px Arial, sans-serif";
+  context.fillText(label.toUpperCase(), x + 20, y + 18);
+  context.fillStyle = COLORS.text;
+  context.font = "700 22px Arial, sans-serif";
+  const lines = wrapText(context, value || "Not specified", width - 40, 2);
+  drawTextLines(context, lines, x + 20, y + 45, 25);
+}
+
+async function drawQrPanel(
+  context: CanvasRenderingContext2D,
+  y: number,
   shareUrl: string,
-  caption: string
+  title: string,
+  caption: string,
 ) {
-  const qrSize = 200;
-  const qrX = (CARD_WIDTH - qrSize) / 2;
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.7)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 12;
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, qrX, qrY, qrSize, qrSize, 22);
-  ctx.fill();
-  ctx.restore();
-
+  const panelX = CONTENT_MARGIN;
+  const panelWidth = CONTENT_WIDTH;
+  roundedRect(context, panelX, y, panelWidth, 104, 20);
+  context.fillStyle = COLORS.blueLight;
+  context.fill();
+  const qrSize = 76;
+  const qrX = panelX + 14;
+  const qrY = y + 14;
+  roundedRect(context, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 12);
+  context.fillStyle = COLORS.surface;
+  context.fill();
   try {
-    const qrUrl = await QRCode.toDataURL(shareUrl, {
-      width: 500,
+    const qrData = await QRCode.toDataURL(shareUrl, {
+      width: 240,
       margin: 1,
-      color: { dark: '#0B0F19', light: '#FFFFFF' },
-      errorCorrectionLevel: 'M',
+      color: { dark: COLORS.text, light: COLORS.surface },
+      errorCorrectionLevel: "M",
     });
-    const qrImg = await loadImage(qrUrl, true);
-    const inner = 16;
-    ctx.drawImage(qrImg, qrX + inner, qrY + inner, qrSize - inner * 2, qrSize - inner * 2);
-  } catch (e) {
-    console.warn('QR gen failed:', e);
+    const qrImage = await loadImage(qrData);
+    context.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+  } catch (error) {
+    console.warn("Porabo card QR generation failed:", error);
+    context.fillStyle = COLORS.blueDark;
+    context.font = "700 12px Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("PORABO", qrX + qrSize / 2, qrY + qrSize / 2);
   }
 
-  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#38BDF8';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(caption, CARD_WIDTH / 2, qrY + qrSize + 28);
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillStyle = COLORS.text;
+  context.font = "700 20px Arial, sans-serif";
+  context.fillText(title, panelX + 112, y + 26);
+  context.fillStyle = COLORS.secondary;
+  context.font = "500 15px Arial, sans-serif";
+  const lines = wrapText(context, caption, panelWidth - 140, 2);
+  drawTextLines(context, lines, panelX + 112, y + 56, 20);
 }
 
-function drawFooter(ctx: CanvasRenderingContext2D) {
-  const fY = CARD_HEIGHT - 90;
-  const fGrad = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
-  fGrad.addColorStop(0, 'rgba(59,130,246,0.05)');
-  fGrad.addColorStop(0.5, 'rgba(59,130,246,0.22)');
-  fGrad.addColorStop(1, 'rgba(59,130,246,0.05)');
-  ctx.fillStyle = fGrad;
-  ctx.fillRect(0, fY, CARD_WIDTH, 90);
-
-  const fBorder = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
-  fBorder.addColorStop(0, 'rgba(56,189,248,0)');
-  fBorder.addColorStop(0.5, 'rgba(56,189,248,0.6)');
-  fBorder.addColorStop(1, 'rgba(56,189,248,0)');
-  ctx.fillStyle = fBorder;
-  ctx.fillRect(0, fY, CARD_WIDTH, 2);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('porabo.online', CARD_WIDTH / 2, fY + 34);
-
-  ctx.font = '600 13px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#38BDF8';
-  ctx.fillText('No Commission  •  No Ads Fee  •  100% Verified', CARD_WIDTH / 2, fY + 66);
+function formatBudget(amount: number): string {
+  return `৳ ${amount.toLocaleString("en-US")}`;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// TUITION CARD
-// ═══════════════════════════════════════════════════════════════════
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently posted";
+  return date.toLocaleDateString("en-BD", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function drawStatus(
+  context: CanvasRenderingContext2D,
+  status: string,
+  x: number,
+  y: number,
+) {
+  const palette =
+    status === "OPEN"
+      ? { background: COLORS.greenLight, text: COLORS.green }
+      : status === "MATCHED"
+        ? { background: COLORS.blueLight, text: COLORS.blueDark }
+        : { background: COLORS.amberLight, text: COLORS.amber };
+  const label = status.replaceAll("_", " ");
+  context.font = "700 13px Arial, sans-serif";
+  const width = Math.max(88, context.measureText(label).width + 28);
+  roundedRect(context, x, y, width, 32, 16);
+  context.fillStyle = palette.background;
+  context.fill();
+  context.fillStyle = palette.text;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(label, x + width / 2, y + 16);
+}
+
 export async function generateTuitionCard(
   post: TuitionPost,
-  shareUrl: string = 'https://porabo.online'
+  shareUrl: string = "https://porabo.online",
 ): Promise<string> {
-  const canvas = document.createElement('canvas');
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas not available');
+  const { canvas, context } = await createCanvas();
+  await drawBrandHeader(context, "TUITION OPPORTUNITY");
 
-  await drawPremiumBackground(ctx);
-  await drawHeader(ctx);
+  const left = CONTENT_MARGIN;
+  drawStatus(context, post.status, left, 240);
+  context.textAlign = "right";
+  context.textBaseline = "middle";
+  context.fillStyle = COLORS.muted;
+  context.font = "500 14px Arial, sans-serif";
+  context.fillText(formatDate(post.createdAt), CARD_WIDTH - CONTENT_MARGIN, 256);
 
-  drawBadge(ctx, 165, 'TUITION OPPORTUNITY', 'cyan');
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillStyle = COLORS.text;
+  context.font = "700 46px Arial, sans-serif";
+  const titleLines = wrapText(context, post.title, CONTENT_WIDTH, 2);
+  drawTextLines(context, titleLines, left, 296, 56);
 
-  let yPos = 240;
-  const maxW = CARD_WIDTH - PADDING * 2;
-  ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  const titleLines = wrapText(ctx, post.title, maxW, 2);
-  titleLines.forEach((line) => {
-    ctx.fillText(line, PADDING, yPos);
-    yPos += 60;
-  });
+  context.fillStyle = COLORS.secondary;
+  context.font = "600 22px Arial, sans-serif";
+  context.fillText(
+    `${post.subject || "Subject"}  •  ${post.gradeLevel || "Class not specified"}`,
+    left,
+    420,
+    CONTENT_WIDTH,
+  );
 
-  yPos += 5;
-  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#22D3EE';
-  ctx.textBaseline = 'top';
-  ctx.fillText(`${post.subject}  •  ${post.gradeLevel}`, PADDING, yPos);
-  yPos += 45;
+  const budgetY = 462;
+  const budgetGradient = context.createLinearGradient(left, budgetY, left + CONTENT_WIDTH, budgetY + 110);
+  budgetGradient.addColorStop(0, COLORS.blueDark);
+  budgetGradient.addColorStop(1, COLORS.blue);
+  roundedRect(context, left, budgetY, CONTENT_WIDTH, 112, 22);
+  context.fillStyle = budgetGradient;
+  context.fill();
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillStyle = "#DBEAFE";
+  context.font = "700 13px Arial, sans-serif";
+  context.fillText("MONTHLY BUDGET", left + 26, budgetY + 20);
+  context.fillStyle = COLORS.surface;
+  context.font = "700 43px Arial, sans-serif";
+  context.fillText(formatBudget(post.salaryBudget), left + 26, budgetY + 43);
+  context.textAlign = "right";
+  context.fillStyle = "#DBEAFE";
+  context.font = "600 15px Arial, sans-serif";
+  context.fillText("per month", left + CONTENT_WIDTH - 26, budgetY + 76);
 
-  yPos += 10;
   const gap = 14;
-  const cellW = (maxW - gap) / 2;
-  const cellH = 130;
+  const cellWidth = (CONTENT_WIDTH - gap) / 2;
+  const mode =
+    post.tuitionMode === "ONLINE"
+      ? "Online"
+      : post.tuitionMode === "OFFLINE"
+        ? "In person"
+        : post.tuitionMode === "BOTH"
+          ? "Online or in person"
+          : "Flexible";
+  const preference =
+    post.genderPreference === "MALE_ONLY"
+      ? "Male tutor preferred"
+      : post.genderPreference === "FEMALE_ONLY"
+        ? "Female tutor preferred"
+        : "Any tutor";
+  drawInfoCell(context, left, 592, cellWidth, "Curriculum", post.curriculum);
+  drawInfoCell(
+    context,
+    left + cellWidth + gap,
+    592,
+    cellWidth,
+    "Lesson mode",
+    mode,
+    COLORS.green,
+  );
+  drawInfoCell(
+    context,
+    left,
+    704,
+    cellWidth,
+    "Weekly commitment",
+    `${post.daysPerWeek} days  •  ${post.hoursPerDay} hrs/day`,
+  );
+  drawInfoCell(
+    context,
+    left + cellWidth + gap,
+    704,
+    cellWidth,
+    "Tutor preference",
+    preference,
+    COLORS.green,
+  );
 
-  const drawCell = (
-    x: number, y: number, label: string, value: string,
-    valueColor: string, borderColor: string, wrapValue = false
-  ) => {
-    ctx.fillStyle = 'rgba(17,24,39,0.9)';
-    roundRect(ctx, x, y, cellW, cellH, 20);
-    ctx.fill();
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 2;
-    roundRect(ctx, x, y, cellW, cellH, 20);
-    ctx.stroke();
-
-    ctx.font = '600 13px "SF Mono", Monaco, monospace';
-    ctx.fillStyle = '#94A3B8';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillText(label, x + 22, y + 24);
-
-    if (wrapValue) {
-      ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = valueColor;
-      const lines = wrapText(ctx, value, cellW - 44, 2);
-      lines.forEach((l, i) => ctx.fillText(l, x + 22, y + 60 + i * 26));
-    } else {
-      ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = valueColor;
-      ctx.fillText(value, x + 22, y + 58);
-    }
-  };
-
-  drawCell(PADDING, yPos, 'MONTHLY BUDGET', `৳ ${post.salaryBudget.toLocaleString()}`, '#34D399', 'rgba(16,185,129,0.4)');
-
-  const modeText =
-    post.tuitionMode === 'ONLINE' ? '🌐 Online'
-    : post.tuitionMode === 'OFFLINE' ? '🏠 Offline'
-    : post.tuitionMode === 'BOTH' ? '🔄 Both'
-    : 'Flexible';
-  const modeColor =
-    post.tuitionMode === 'ONLINE' ? '#22D3EE'
-    : post.tuitionMode === 'OFFLINE' ? '#34D399'
-    : '#A78BFA';
-  drawCell(PADDING + cellW + gap, yPos, 'TUITION MODE', modeText, modeColor, 'rgba(59,130,246,0.4)');
-
-  yPos += cellH + gap;
-
-  drawCell(PADDING, yPos, 'DAYS PER WEEK', `${post.daysPerWeek} days`, '#FFFFFF', 'rgba(59,130,246,0.4)');
-  drawCell(PADDING + cellW + gap, yPos, 'CURRICULUM', post.curriculum, '#FFFFFF', 'rgba(59,130,246,0.4)', true);
-
-  yPos += cellH + 20;
-
-  if (post.weeklySchedule && post.weeklySchedule.length > 0) {
-    const maxRows = Math.min(post.weeklySchedule.length, 4);
-    const schedH = 56 + maxRows * 36;
-    ctx.fillStyle = 'rgba(17,24,39,0.9)';
-    roundRect(ctx, PADDING, yPos, maxW, schedH, 20);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(6,182,212,0.4)';
-    ctx.lineWidth = 2;
-    roundRect(ctx, PADDING, yPos, maxW, schedH, 20);
-    ctx.stroke();
-
-    ctx.font = 'bold 14px "SF Mono", Monaco, monospace';
-    ctx.fillStyle = '#22D3EE';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillText('WEEKLY SCHEDULE', PADDING + 24, yPos + 18);
-
-    post.weeklySchedule.slice(0, maxRows).forEach((slot, i) => {
-      const rowY = yPos + 50 + i * 36;
-      ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.textAlign = 'left';
-      ctx.fillText(DAY_LABELS[slot.day] || slot.day, PADDING + 24, rowY);
-
-      ctx.font = 'bold 18px "SF Mono", Monaco, monospace';
-      ctx.fillStyle = '#22D3EE';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${slot.startTime} – ${slot.endTime}`, PADDING + maxW - 24, rowY);
+  const schedule = post.weeklySchedule || [];
+  if (schedule.length > 0) {
+    const scheduleY = 824;
+    roundedRect(context, left, scheduleY, CONTENT_WIDTH, 164, 20);
+    context.fillStyle = "#F8FAFC";
+    context.fill();
+    context.strokeStyle = COLORS.border;
+    context.lineWidth = 1;
+    context.stroke();
+    context.fillStyle = COLORS.text;
+    context.textAlign = "left";
+    context.textBaseline = "top";
+    context.font = "700 14px Arial, sans-serif";
+    context.fillText("WEEKLY SCHEDULE", left + 22, scheduleY + 18);
+    schedule.slice(0, 3).forEach((slot, index) => {
+      const rowY = scheduleY + 50 + index * 30;
+      context.font = "600 15px Arial, sans-serif";
+      context.fillStyle = COLORS.secondary;
+      context.textAlign = "left";
+      context.fillText(DAY_LABELS[slot.day] || slot.day, left + 22, rowY);
+      context.fillStyle = COLORS.blueDark;
+      context.textAlign = "right";
+      context.fillText(
+        `${slot.startTime} – ${slot.endTime}`,
+        left + CONTENT_WIDTH - 22,
+        rowY,
+      );
     });
-    ctx.textAlign = 'left';
-
-    yPos += schedH + 20;
+    if (schedule.length > 3) {
+      context.fillStyle = COLORS.muted;
+      context.font = "500 11px Arial, sans-serif";
+      context.textAlign = "left";
+      context.fillText(`+${schedule.length - 3} more days`, left + 22, scheduleY + 145);
+    }
   }
 
-  const locText = `${post.areaName}, ${post.district}`;
-  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-  const locW = ctx.measureText(locText).width + 90;
-  ctx.fillStyle = 'rgba(30,58,138,0.5)';
-  roundRect(ctx, PADDING, yPos, locW, 54, 27);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(96,165,250,0.7)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, PADDING, yPos, locW, 54, 27);
-  ctx.stroke();
+  const locationY = schedule.length > 0 ? 1004 : 846;
+  roundedRect(context, left, locationY, CONTENT_WIDTH, 72, 18);
+  context.fillStyle = COLORS.blueLight;
+  context.fill();
+  context.fillStyle = COLORS.blueDark;
+  context.font = "700 12px Arial, sans-serif";
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillText("APPROXIMATE LOCATION", left + 20, locationY + 13);
+  context.fillStyle = COLORS.text;
+  context.font = "600 19px Arial, sans-serif";
+  context.fillText(
+    `${post.areaName}, ${post.district}`,
+    left + 20,
+    locationY + 35,
+    CONTENT_WIDTH - 40,
+  );
 
-  ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#60A5FA';
-  ctx.textAlign = 'left';
-  ctx.fillText('📍', PADDING + 22, yPos + 27);
+  const noteY = locationY + 88;
+  if (post.specialRequirements?.trim()) {
+    context.fillStyle = COLORS.muted;
+    context.font = "700 12px Arial, sans-serif";
+    context.textAlign = "left";
+    context.textBaseline = "top";
+    context.fillText("STUDENT'S NOTE", left, noteY);
+    context.fillStyle = COLORS.secondary;
+    context.font = "500 15px Arial, sans-serif";
+    const noteLines = wrapText(context, post.specialRequirements, CONTENT_WIDTH, 2);
+    drawTextLines(context, noteLines, left, noteY + 22, 20);
+  }
 
-  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#E0F2FE';
-  ctx.fillText(locText, PADDING + 56, yPos + 27);
-  yPos += 72;
-
-  ctx.font = '500 13px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#64748B';
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  ctx.fillText('Exact address unlocks only after accepting a tutor', PADDING, yPos);
-
-  await drawQR(ctx, 1120, shareUrl, 'Scan to view on Porabo');
-  drawFooter(ctx);
-
-  return canvas.toDataURL('image/png');
+  // Only the approximate area is included; the student's exact address and contact stay private.
+  await drawQrPanel(
+    context,
+    1224,
+    shareUrl,
+    "Find local tuition on Porabo",
+    "Scan to explore trusted, nearby tutoring opportunities.",
+  );
+  drawFooter(context);
+  return canvas.toDataURL("image/png");
 }
 
-export async function downloadTuitionCard(post: TuitionPost): Promise<void> {
-  const dataUrl = await generateTuitionCard(post, 'https://porabo.online');
-  const slug =
-    post.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '').slice(0, 40) || 'tuition';
-  const filename = `porabo-tuition-${slug}-${Date.now()}.png`;
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// 🎨 TEACHER BIO CARD — Elegant magazine layout
-// Small circular photo (280px) with premium cinematic background
-// ═══════════════════════════════════════════════════════════════════
 export async function generateTeacherCard(
   tutor: User,
-  shareUrl: string = 'https://porabo.online'
+  shareUrl: string = "https://porabo.online",
 ): Promise<string> {
-  const canvas = document.createElement('canvas');
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas not available');
+  const { canvas, context } = await createCanvas();
+  const verified = tutor.verificationStatus === "VERIFIED";
+  await drawBrandHeader(context, "TEACHER PROFILE");
 
-  // ─── 1. Background ───
-  const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  bg.addColorStop(0, '#070A12');
-  bg.addColorStop(0.5, '#0B1428');
-  bg.addColorStop(1, '#050810');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  const g1 = ctx.createRadialGradient(CARD_WIDTH, 0, 0, CARD_WIDTH, 0, 800);
-  g1.addColorStop(0, 'rgba(6,182,212,0.28)');
-  g1.addColorStop(1, 'rgba(6,182,212,0)');
-  ctx.fillStyle = g1;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  const g2 = ctx.createRadialGradient(0, CARD_HEIGHT, 0, 0, CARD_HEIGHT, 700);
-  g2.addColorStop(0, 'rgba(16,185,129,0.22)');
-  g2.addColorStop(1, 'rgba(16,185,129,0)');
-  ctx.fillStyle = g2;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  // Dot grid
-  ctx.fillStyle = 'rgba(56,189,248,0.06)';
-  for (let x = 0; x < CARD_WIDTH; x += 40) {
-    for (let y = 0; y < CARD_HEIGHT; y += 40) {
-      ctx.beginPath();
-      ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  // Top accent line
-  const topLine = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
-  topLine.addColorStop(0, 'rgba(59,130,246,0)');
-  topLine.addColorStop(0.5, 'rgba(52,211,153,0.9)');
-  topLine.addColorStop(1, 'rgba(59,130,246,0)');
-  ctx.fillStyle = topLine;
-  ctx.fillRect(0, 0, CARD_WIDTH, 3);
-
-  // ─── 2. Premium corner accents ───
-  const cornerSize = 40;
-  const cornerPad = 24;
-  ctx.strokeStyle = 'rgba(52,211,153,0.5)';
-  ctx.lineWidth = 3;
-  // Top-left
-  ctx.beginPath();
-  ctx.moveTo(cornerPad, cornerPad + cornerSize);
-  ctx.lineTo(cornerPad, cornerPad);
-  ctx.lineTo(cornerPad + cornerSize, cornerPad);
-  ctx.stroke();
-  // Top-right
-  ctx.beginPath();
-  ctx.moveTo(CARD_WIDTH - cornerPad - cornerSize, cornerPad);
-  ctx.lineTo(CARD_WIDTH - cornerPad, cornerPad);
-  ctx.lineTo(CARD_WIDTH - cornerPad, cornerPad + cornerSize);
-  ctx.stroke();
-  // Bottom-left
-  ctx.beginPath();
-  ctx.moveTo(cornerPad, CARD_HEIGHT - cornerPad - cornerSize);
-  ctx.lineTo(cornerPad, CARD_HEIGHT - cornerPad);
-  ctx.lineTo(cornerPad + cornerSize, CARD_HEIGHT - cornerPad);
-  ctx.stroke();
-  // Bottom-right
-  ctx.beginPath();
-  ctx.moveTo(CARD_WIDTH - cornerPad - cornerSize, CARD_HEIGHT - cornerPad);
-  ctx.lineTo(CARD_WIDTH - cornerPad, CARD_HEIGHT - cornerPad);
-  ctx.lineTo(CARD_WIDTH - cornerPad, CARD_HEIGHT - cornerPad - cornerSize);
-  ctx.stroke();
-
-  // ─── 3. Header: Logo + Verified Badge ───
-  const logoX = PADDING + 24;
-  const logoY = 92;
-  const logoR = 24;
-
-  const lglow = ctx.createRadialGradient(logoX, logoY, 0, logoX, logoY, 60);
-  lglow.addColorStop(0, 'rgba(56,189,248,0.6)');
-  lglow.addColorStop(1, 'rgba(56,189,248,0)');
-  ctx.fillStyle = lglow;
-  ctx.beginPath();
-  ctx.arc(logoX, logoY, 60, 0, Math.PI * 2);
-  ctx.fill();
-
-  const lbg = ctx.createLinearGradient(logoX - logoR, logoY - logoR, logoX + logoR, logoY + logoR);
-  lbg.addColorStop(0, '#1E3A8A');
-  lbg.addColorStop(1, '#0369A1');
-  ctx.fillStyle = lbg;
-  ctx.beginPath();
-  ctx.arc(logoX, logoY, logoR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#38BDF8';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  try {
-    const logoImg = await loadImage(LOGO_SRC);
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(logoX, logoY, logoR - 3, 0, Math.PI * 2);
-    ctx.clip();
-    const aspect = logoImg.width / logoImg.height;
-    const maxDim = logoR * 2 - 8;
-    let dw = maxDim;
-    let dh = maxDim / aspect;
-    if (dh > maxDim) { dh = maxDim; dw = maxDim * aspect; }
-    ctx.drawImage(logoImg, logoX - dw / 2, logoY - dh / 2, dw, dh);
-    ctx.restore();
-  } catch {
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('P', logoX, logoY + 2);
-  }
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Porabo', PADDING + 66, logoY - 2);
-
-  ctx.fillStyle = '#38BDF8';
-  ctx.font = '600 11px "SF Mono", Monaco, monospace';
-  ctx.fillText("BANGLADESH'S LARGEST TUITION NETWORK", PADDING + 68, logoY + 18);
-
-  // Verified badge (top-right)
-  const badgeText = '✓ VERIFIED';
-  ctx.font = 'bold 14px "SF Mono", Monaco, monospace';
-  const bTextW = ctx.measureText(badgeText).width;
-  const bW = bTextW + 44;
-  const bX = CARD_WIDTH - PADDING - bW;
-
-  ctx.fillStyle = 'rgba(16,185,129,0.28)';
-  roundRect(ctx, bX, 78, bW, 42, 21);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(52,211,153,0.8)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, bX, 78, bW, 42, 21);
-  ctx.stroke();
-
-  ctx.fillStyle = '#6EE7B7';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText(badgeText, bX + bW / 2, 99);
-
-  // ─── 4. Circular Profile Photo (280px) ───
-  const photoR = 140;
-  const photoCX = CARD_WIDTH / 2;
-  const photoCY = 365;
-
-  // Outer glow
-  const photoGlow = ctx.createRadialGradient(photoCX, photoCY, 0, photoCX, photoCY, photoR + 60);
-  photoGlow.addColorStop(0, 'rgba(52,211,153,0.35)');
-  photoGlow.addColorStop(0.6, 'rgba(6,182,212,0.15)');
-  photoGlow.addColorStop(1, 'rgba(6,182,212,0)');
-  ctx.fillStyle = photoGlow;
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR + 60, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Outer orbital ring
-  ctx.strokeStyle = 'rgba(56,189,248,0.3)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR + 28, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Dashed decorative ring
-  ctx.strokeStyle = 'rgba(52,211,153,0.5)';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([8, 8]);
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR + 16, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Photo background (placeholder)
-  const pbg = ctx.createLinearGradient(
-    photoCX - photoR, photoCY - photoR,
-    photoCX + photoR, photoCY + photoR
-  );
-  pbg.addColorStop(0, '#065F46');
-  pbg.addColorStop(1, '#0E7490');
-  ctx.fillStyle = pbg;
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Photo border
-  ctx.strokeStyle = '#34D399';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Inner white ring
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(photoCX, photoCY, photoR - 8, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Draw photo or initial
+  const photoRadius = 108;
+  const photoX = CARD_WIDTH / 2;
+  const photoY = 316;
+  context.save();
+  context.shadowColor = "rgba(15,23,42,0.20)";
+  context.shadowBlur = 24;
+  context.shadowOffsetY = 8;
+  context.beginPath();
+  context.arc(photoX, photoY, photoRadius + 6, 0, Math.PI * 2);
+  context.fillStyle = COLORS.surface;
+  context.fill();
+  context.restore();
+  context.save();
+  context.beginPath();
+  context.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+  context.clip();
   let photoDrawn = false;
   if (tutor.profilePicture) {
     try {
-      const img = await loadImage(tutor.profilePicture, true);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(photoCX, photoCY, photoR - 8, 0, Math.PI * 2);
-      ctx.clip();
-      const scale = Math.max((photoR * 2) / img.width, (photoR * 2) / img.height);
-      const dw = img.width * scale;
-      const dh = img.height * scale;
-      ctx.drawImage(img, photoCX - dw / 2, photoCY - dh / 2, dw, dh);
-      ctx.restore();
+      const photo = await loadImage(tutor.profilePicture);
+      const scale = Math.max(
+        (photoRadius * 2) / photo.width,
+        (photoRadius * 2) / photo.height,
+      );
+      const width = photo.width * scale;
+      const height = photo.height * scale;
+      context.drawImage(
+        photo,
+        photoX - width / 2,
+        photoY - height / 2,
+        width,
+        height,
+      );
       photoDrawn = true;
-    } catch (err) {
-      console.warn('Photo load failed:', err);
+    } catch (error) {
+      console.warn("Porabo teacher photo failed to load:", error);
     }
   }
-
   if (!photoDrawn) {
-    const initial = tutor.fullName.trim().charAt(0).toUpperCase() || 'P';
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 110px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(initial, photoCX, photoCY + 10);
+    context.fillStyle = COLORS.blueLight;
+    context.fillRect(
+      photoX - photoRadius,
+      photoY - photoRadius,
+      photoRadius * 2,
+      photoRadius * 2,
+    );
+    context.fillStyle = COLORS.blueDark;
+    context.font = "700 88px Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(tutor.fullName.trim().charAt(0).toUpperCase() || "P", photoX, photoY);
+  }
+  context.restore();
+  context.strokeStyle = COLORS.surface;
+  context.lineWidth = 8;
+  context.beginPath();
+  context.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+  context.stroke();
+
+  context.fillStyle = COLORS.text;
+  context.font = "700 48px Arial, sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "top";
+  const nameLines = wrapText(
+    context,
+    tutor.fullName || "Porabo Teacher",
+    CONTENT_WIDTH,
+    2,
+  );
+  drawTextLines(context, nameLines, CARD_WIDTH / 2, 440, 56);
+
+  const institution = [tutor.institution, tutor.department]
+    .filter(Boolean)
+    .join("  •  ");
+  context.fillStyle = COLORS.secondary;
+  context.font = "600 19px Arial, sans-serif";
+  context.textAlign = "center";
+  const institutionLines = wrapText(
+    context,
+    institution || "Dedicated local educator",
+    CONTENT_WIDTH - 24,
+    2,
+  );
+  drawTextLines(context, institutionLines, CARD_WIDTH / 2, 562, 26);
+
+  const statusText = verified ? "VERIFIED TEACHER" : "TEACHER PROFILE";
+  context.font = "700 13px Arial, sans-serif";
+  const statusWidth = context.measureText(statusText).width + 34;
+  roundedRect(
+    context,
+    (CARD_WIDTH - statusWidth) / 2,
+    620,
+    statusWidth,
+    34,
+    17,
+  );
+  context.fillStyle = verified ? COLORS.greenLight : COLORS.blueLight;
+  context.fill();
+  context.fillStyle = verified ? COLORS.green : COLORS.blueDark;
+  context.textBaseline = "middle";
+  context.fillText(statusText, CARD_WIDTH / 2, 637);
+
+  const statsY = 684;
+  const statGap = 14;
+  const statWidth = (CONTENT_WIDTH - statGap * 2) / 3;
+  const reviews =
+    tutor.totalReviews && tutor.totalReviews > 0
+      ? `${tutor.totalReviews} review${tutor.totalReviews === 1 ? "" : "s"}`
+      : "New profile";
+  const rate =
+    tutor.hourlyOrMonthlyRate && tutor.hourlyOrMonthlyRate > 0
+      ? `${formatBudget(tutor.hourlyOrMonthlyRate)}/mo`
+      : "Discuss";
+  drawInfoCell(
+    context,
+    CONTENT_MARGIN,
+    statsY,
+    statWidth,
+    "Experience",
+    tutor.yearsOfExperience
+      ? `${tutor.yearsOfExperience} years`
+      : "Not listed",
+    COLORS.blue,
+  );
+  drawInfoCell(
+    context,
+    CONTENT_MARGIN + statWidth + statGap,
+    statsY,
+    statWidth,
+    "Expected fee",
+    rate,
+    COLORS.green,
+  );
+  drawInfoCell(
+    context,
+    CONTENT_MARGIN + (statWidth + statGap) * 2,
+    statsY,
+    statWidth,
+    "Student reviews",
+    reviews,
+    COLORS.blue,
+  );
+
+  const detailsY = 804;
+  roundedRect(context, CONTENT_MARGIN, detailsY, CONTENT_WIDTH, 176, 20);
+  context.fillStyle = "#F8FAFC";
+  context.fill();
+  context.strokeStyle = COLORS.border;
+  context.lineWidth = 1;
+  context.stroke();
+
+  const columnGap = 36;
+  const columnWidth = (CONTENT_WIDTH - 52 - columnGap) / 2;
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  context.fillStyle = COLORS.blueDark;
+  context.font = "700 12px Arial, sans-serif";
+  context.fillText("SUBJECTS", CONTENT_MARGIN + 24, detailsY + 22);
+  context.fillText(
+    "LEVELS",
+    CONTENT_MARGIN + 24 + columnWidth + columnGap,
+    detailsY + 22,
+  );
+  context.fillStyle = COLORS.text;
+  context.font = "600 17px Arial, sans-serif";
+  const subjects =
+    tutor.subjectsTaught && tutor.subjectsTaught.length > 0
+      ? tutor.subjectsTaught.slice(0, 5).join(", ")
+      : "Subjects available on request";
+  const grades =
+    tutor.gradesTaught && tutor.gradesTaught.length > 0
+      ? tutor.gradesTaught.slice(0, 5).join(", ")
+      : "Levels available on request";
+  drawTextLines(
+    context,
+    wrapText(context, subjects, columnWidth, 4),
+    CONTENT_MARGIN + 24,
+    detailsY + 52,
+    25,
+  );
+  drawTextLines(
+    context,
+    wrapText(context, grades, columnWidth, 4),
+    CONTENT_MARGIN + 24 + columnWidth + columnGap,
+    detailsY + 52,
+    25,
+  );
+
+  const bioY = 1002;
+  const bio = tutor.bio?.trim() || tutor.qualifications?.trim();
+  if (bio) {
+    roundedRect(context, CONTENT_MARGIN, bioY, CONTENT_WIDTH, 112, 20);
+    context.fillStyle = COLORS.surface;
+    context.fill();
+    context.strokeStyle = COLORS.border;
+    context.lineWidth = 1;
+    context.stroke();
+    context.fillStyle = COLORS.muted;
+    context.font = "700 12px Arial, sans-serif";
+    context.textAlign = "left";
+    context.textBaseline = "top";
+    context.fillText(tutor.bio?.trim() ? "ABOUT THE TEACHER" : "QUALIFICATIONS", CONTENT_MARGIN + 22, bioY + 18);
+    context.fillStyle = COLORS.secondary;
+    context.font = "500 16px Arial, sans-serif";
+    drawTextLines(
+      context,
+      wrapText(context, bio, CONTENT_WIDTH - 44, 3),
+      CONTENT_MARGIN + 22,
+      bioY + 42,
+      20,
+    );
   }
 
-  // Small sparkle badge (bottom-right of photo)
-  const sparkleX = photoCX + photoR * 0.72;
-  const sparkleY = photoCY + photoR * 0.72;
-  ctx.fillStyle = '#34D399';
-  ctx.beginPath();
-  ctx.arc(sparkleX, sparkleY, 22, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('✓', sparkleX, sparkleY + 2);
-
-  // ─── 5. Name ───
-  let yPos = 570;
-  const maxW = CARD_WIDTH - PADDING * 2;
-
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 20;
-
-  ctx.font = 'bold 62px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-
-  const nameLines = wrapText(ctx, tutor.fullName, maxW, 2);
-  nameLines.forEach((line) => {
-    ctx.fillText(line, CARD_WIDTH / 2, yPos);
-    yPos += 74;
-  });
-  ctx.restore();
-
-  // ─── 6. Institution • Department ───
-  yPos += 4;
-  const instDept = [tutor.institution, tutor.department].filter(Boolean).join('  •  ') || 'Verified Educator';
-  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#22D3EE';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  const instDeptLines = wrapText(ctx, instDept, maxW, 1);
-  ctx.fillText(instDeptLines[0] || instDept, CARD_WIDTH / 2, yPos);
-  yPos += 55;
-
-  // ─── 7. Divider ───
-  const divGrad = ctx.createLinearGradient(CARD_WIDTH / 2 - 100, 0, CARD_WIDTH / 2 + 100, 0);
-  divGrad.addColorStop(0, 'rgba(56,189,248,0)');
-  divGrad.addColorStop(0.5, 'rgba(56,189,248,0.5)');
-  divGrad.addColorStop(1, 'rgba(56,189,248,0)');
-  ctx.fillStyle = divGrad;
-  ctx.fillRect(CARD_WIDTH / 2 - 100, yPos, 200, 2);
-  yPos += 26;
-
-  // ─── 8. Qualifications chip ───
-  if (tutor.qualifications) {
-    const qText = tutor.qualifications;
-    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
-    const qLines = wrapText(ctx, qText, maxW - 130, 1);
-    const displayQ = qLines[0] || qText;
-    const qTextWidth = ctx.measureText(displayQ).width;
-    const qLabelW = Math.min(qTextWidth + 88, maxW);
-    const qX = (CARD_WIDTH - qLabelW) / 2;
-
-    ctx.fillStyle = 'rgba(30,58,138,0.4)';
-    roundRect(ctx, qX, yPos, qLabelW, 56, 28);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(96,165,250,0.6)';
-    ctx.lineWidth = 2;
-    roundRect(ctx, qX, yPos, qLabelW, 56, 28);
-    ctx.stroke();
-
-    ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = '#60A5FA';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🎓', qX + 22, yPos + 29);
-
-    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = '#E0F2FE';
-    ctx.fillText(displayQ, qX + 58, yPos + 29);
-    yPos += 76;
+  const area = [tutor.areaName, tutor.district].filter(Boolean).join(", ");
+  if (area) {
+    context.fillStyle = COLORS.muted;
+    context.font = "600 14px Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(`Based in ${area}`, CARD_WIDTH / 2, 1146, CONTENT_WIDTH);
   }
 
-  // ─── 9. Degrees Section ───
-  if (tutor.degrees && tutor.degrees.length > 0) {
-    // Section header
-    ctx.font = 'bold 13px "SF Mono", Monaco, monospace';
-    ctx.fillStyle = '#94A3B8';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText('ACADEMIC DEGREES', CARD_WIDTH / 2, yPos);
-    yPos += 28;
+  await drawQrPanel(
+    context,
+    1182,
+    shareUrl,
+    "Meet your next tutor on Porabo",
+    "Scan to discover trusted teachers in your neighbourhood.",
+  );
+  drawFooter(context);
+  return canvas.toDataURL("image/png");
+}
 
-    const degreesShown = tutor.degrees.slice(0, 2);
-    degreesShown.forEach((deg) => {
-      const boxH = 88;
+function saveImage(dataUrl: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
-      // Box background
-      ctx.fillStyle = 'rgba(17,24,39,0.9)';
-      roundRect(ctx, PADDING, yPos, maxW, boxH, 18);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(6,182,212,0.35)';
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, PADDING, yPos, maxW, boxH, 18);
-      ctx.stroke();
+function slugify(value: string, fallback: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || fallback
+  );
+}
 
-      // Left accent bar
-      ctx.fillStyle = '#22D3EE';
-      roundRect(ctx, PADDING, yPos + 12, 4, boxH - 24, 2);
-      ctx.fill();
-
-      // Degree name
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = '#FFFFFF';
-      const degNameLines = wrapText(ctx, deg.degreeName, maxW - 260, 1);
-      ctx.fillText(degNameLines[0] || deg.degreeName, PADDING + 26, yPos + 18);
-
-      // Institution
-      ctx.font = '600 14px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = '#94A3B8';
-      const instLines = wrapText(ctx, deg.institution, maxW - 260, 1);
-      ctx.fillText(instLines[0] || deg.institution, PADDING + 26, yPos + 50);
-
-      // Year • Result (right aligned)
-      const yearResult = [deg.passingYear, deg.result].filter(Boolean).join(' • ');
-      ctx.font = 'bold 14px "SF Mono", Monaco, monospace';
-      ctx.fillStyle = '#34D399';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(yearResult, CARD_WIDTH - PADDING - 22, yPos + boxH / 2);
-
-      yPos += boxH + 14;
-    });
-  }
-
-  // ─── 10. QR Code + Marketing (bottom) ───
-  const qrSize = 150;
-  const qrX = PADDING;
-  const qrY = CARD_HEIGHT - qrSize - 100;
-
-  // QR white card
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.shadowBlur = 24;
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, qrX, qrY, qrSize, qrSize, 16);
-  ctx.fill();
-  ctx.restore();
-
-  ctx.strokeStyle = 'rgba(56,189,248,0.5)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, qrX, qrY, qrSize, qrSize, 16);
-  ctx.stroke();
-
-  try {
-    const qrUrl = await QRCode.toDataURL(shareUrl, {
-      width: 500,
-      margin: 1,
-      color: { dark: '#0B0F19', light: '#FFFFFF' },
-      errorCorrectionLevel: 'M',
-    });
-    const qrImg = await loadImage(qrUrl, true);
-    const inner = 12;
-    ctx.drawImage(qrImg, qrX + inner, qrY + inner, qrSize - inner * 2, qrSize - inner * 2);
-  } catch (e) {
-    console.warn('QR gen failed:', e);
-  }
-
-  // QR caption
-  ctx.font = 'bold 12px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#94A3B8';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillText('Scan to connect', qrX, qrY + qrSize + 12);
-
-  // Right side: porabo.online marketing
-  const taglineX = qrX + qrSize + 28;
-  const taglineY = qrY + 14;
-
-  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillText('porabo.online', taglineX, taglineY);
-
-  ctx.font = '600 13px "SF Mono", Monaco, monospace';
-  ctx.fillStyle = '#38BDF8';
-  ctx.fillText('No Commission', taglineX, taglineY + 36);
-  ctx.fillText('No Ads Fee', taglineX, taglineY + 58);
-  ctx.fillText('100% Verified', taglineX, taglineY + 80);
-
-  // ─── 11. Footer bar ───
-  const fY = CARD_HEIGHT - 56;
-  const fGrad = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
-  fGrad.addColorStop(0, 'rgba(59,130,246,0.05)');
-  fGrad.addColorStop(0.5, 'rgba(59,130,246,0.22)');
-  fGrad.addColorStop(1, 'rgba(59,130,246,0.05)');
-  ctx.fillStyle = fGrad;
-  ctx.fillRect(0, fY, CARD_WIDTH, 56);
-
-  const fBorder = ctx.createLinearGradient(0, fY, CARD_WIDTH, fY);
-  fBorder.addColorStop(0, 'rgba(56,189,248,0)');
-  fBorder.addColorStop(0.5, 'rgba(56,189,248,0.6)');
-  fBorder.addColorStop(1, 'rgba(56,189,248,0)');
-  ctx.fillStyle = fBorder;
-  ctx.fillRect(0, fY, CARD_WIDTH, 2);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('Verified Educator Profile  •  porabo.online', CARD_WIDTH / 2, fY + 28);
-
-  return canvas.toDataURL('image/png');
+export async function downloadTuitionCard(post: TuitionPost): Promise<void> {
+  const image = await generateTuitionCard(post);
+  saveImage(
+    image,
+    `porabo-tuition-${slugify(post.title, "tuition")}-${Date.now()}.png`,
+  );
 }
 
 export async function downloadTeacherCard(tutor: User): Promise<void> {
-  const dataUrl = await generateTeacherCard(tutor, 'https://porabo.online');
-  const slug =
-    tutor.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '').slice(0, 40) || 'teacher';
-  const filename = `porabo-teacher-${slug}-${Date.now()}.png`;
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const image = await generateTeacherCard(tutor);
+  saveImage(
+    image,
+    `porabo-teacher-${slugify(tutor.fullName, "teacher")}-${Date.now()}.png`,
+  );
 }

@@ -81,7 +81,7 @@ export function StudentDashboardContent() {
                     </div>
         
                     {/* Applicant Inbox Section */}
-                    <div className="bg-white border border-emerald-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] sm:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-700 flex items-center justify-center">
@@ -505,8 +505,8 @@ export function StudentDashboardContent() {
                     <div className="bg-white border border-emerald-200 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2">
-                          <BookOpen className="w-5 h-5 text-emerald-700" />
-                          <h2 className="text-base sm:text-lg font-bold text-white">
+                          <BookOpen className="w-5 h-5 text-blue-700" />
+                          <h2 className="text-base sm:text-lg font-bold text-slate-900">
                             My Tuition Posts ({studentMyPosts.length})
                           </h2>
                         </div>
@@ -521,7 +521,7 @@ export function StudentDashboardContent() {
                                 onClick={() => setStudentPostStatusFilter(status)}
                                 className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                                   studentPostStatusFilter === status
-                                    ? "bg-emerald-600 text-white shadow-sm"
+                                    ? "bg-blue-600 text-white shadow-sm"
                                     : "text-slate-500 hover:text-slate-900"
                                 }`}
                               >
@@ -552,7 +552,7 @@ export function StudentDashboardContent() {
                           </p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                           {filteredStudentPosts.map((post) => {
                             const isMatched =
                               post.status === "MATCHED" || post.isFoundTutor;
@@ -586,86 +586,106 @@ export function StudentDashboardContent() {
                             return (
                               <div
                                 key={post.id}
-                                className="p-4 rounded-2xl bg-white border border-emerald-200 space-y-3"
+                                className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_12px_24px_-8px_rgba(15,23,42,0.12),0_4px_8px_-2px_rgba(15,23,42,0.06)] space-y-4"
                               >
                                 {/* Header with countdown */}
-                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-bold text-sm sm:text-base text-white">
+                                    <div className="flex items-start gap-2 flex-wrap">
+                                      <h3 className="font-bold text-base sm:text-lg leading-snug text-slate-900">
                                         {post.title}
-                                      </span>
+                                      </h3>
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+                                      <span className="font-medium text-blue-700">{post.subject}</span>
+                                      <span aria-hidden="true">·</span>
+                                      <span>{post.gradeLevel}</span>
+                                    </div>
+                                    <div className="mt-2">
                                       <PostCountdown createdAt={post.createdAt} />
                                     </div>
-                                    <div className="text-xs text-emerald-700 mt-0.5">
-                                      {post.subject} • {post.gradeLevel}
-                                    </div>
                                   </div>
-                                  <div className="shrink-0">
+                                  <div className="flex shrink-0 flex-col items-end gap-2">
                                     {isPendingApproval ? (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 border border-amber-500/30 flex items-center gap-1">
+                                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> Under Review
                                       </span>
                                     ) : isMatched ? (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 flex items-center gap-1">
+                                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                                         <CheckCircle className="w-3 h-3" /> Matched
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 flex items-center gap-1">
+                                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1">
                                         <Check className="w-3 h-3" /> Live
                                       </span>
                                     )}
+                                    <span className="text-xs text-slate-500">
+                                      {postApps.length} {postApps.length === 1 ? "applicant" : "applicants"}
+                                    </span>
                                   </div>
                                 </div>
         
                                 {/* Details grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
-                                    <div className="text-[9px] text-slate-500 font-mono uppercase">
-                                      Budget
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      Monthly budget
                                     </div>
-                                    <div className="text-[11px] font-bold text-emerald-700">
+                                    <div className="mt-1 text-base font-bold text-emerald-800">
                                       ৳ {post.salaryBudget.toLocaleString()}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
-                                    <div className="text-[9px] text-slate-500 font-mono uppercase">
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">
                                       Curriculum
                                     </div>
-                                    <div className="text-[11px] font-semibold text-white truncate">
+                                    <div className="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
                                       {post.curriculum}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
-                                    <div className="text-[9px] text-slate-500 font-mono uppercase">
-                                      Mode
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      Lesson mode
                                     </div>
-                                    <div className="text-[11px] font-semibold text-white">
+                                    <div className="mt-1 text-sm font-semibold text-slate-900">
                                       {post.tuitionMode === "ONLINE"
-                                        ? "🌐 Online"
+                                        ? "Online"
                                         : post.tuitionMode === "OFFLINE"
-                                          ? "🏠 Offline"
+                                          ? "In person"
                                           : post.tuitionMode === "BOTH"
-                                            ? "🔄 Both"
-                                            : "—"}
+                                            ? "Online or in person"
+                                            : "Not specified"}
                                     </div>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-center">
-                                    <div className="text-[9px] text-slate-500 font-mono uppercase">
-                                      Days/Wk
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      Weekly commitment
                                     </div>
-                                    <div className="text-[11px] font-semibold text-white">
-                                      {post.daysPerWeek}
+                                    <div className="mt-1 text-sm font-semibold text-slate-900">
+                                      {post.daysPerWeek} days · {post.hoursPerDay} hrs/session
+                                    </div>
+                                  </div>
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">
+                                      Tutor preference
+                                    </div>
+                                    <div className="mt-1 text-sm font-semibold text-slate-900">
+                                      {post.genderPreference === "MALE_ONLY"
+                                        ? "Male tutor"
+                                        : post.genderPreference === "FEMALE_ONLY"
+                                          ? "Female tutor"
+                                          : "Any tutor"}
                                     </div>
                                   </div>
                                 </div>
         
                                 {/* Address */}
-                                <div className="p-2 rounded-lg bg-white border border-slate-200 text-xs">
-                                  <div className="text-[9px] text-slate-500 font-mono uppercase">
-                                    Your Address
+                                <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-800">
+                                    <MapPin className="h-4 w-4" />
+                                    Teaching location
                                   </div>
-                                  <div className="text-white mt-0.5">
+                                  <div className="mt-1 text-sm font-medium text-slate-800">
                                     {post.exactAddress ||
                                       `${post.areaName}, ${post.district}`}
                                   </div>
@@ -674,15 +694,15 @@ export function StudentDashboardContent() {
                                 {/* Weekly schedule */}
                                 {post.weeklySchedule &&
                                   post.weeklySchedule.length > 0 && (
-                                    <div className="p-2 rounded-lg bg-white border border-emerald-200">
-                                      <div className="text-[9px] text-emerald-700 font-mono uppercase mb-1">
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <div className="text-xs font-semibold text-slate-700 mb-2">
                                         Weekly Schedule
                                       </div>
                                       <div className="flex flex-wrap gap-1.5">
                                         {post.weeklySchedule.map((slot, i) => (
                                           <span
                                             key={i}
-                                            className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono"
+                                            className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800"
                                           >
                                             {dayLabels[slot.day] || slot.day}{" "}
                                             {slot.startTime}–{slot.endTime}
@@ -693,11 +713,11 @@ export function StudentDashboardContent() {
                                   )}
         
                                 {post.specialRequirements && (
-                                  <div className="p-2 rounded-lg bg-white border border-slate-200 text-xs">
-                                    <div className="text-[9px] text-slate-500 font-mono uppercase">
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-xs font-semibold text-slate-700">
                                       Special Requirements
                                     </div>
-                                    <p className="text-slate-600 italic mt-0.5">
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">
                                       {post.specialRequirements}
                                     </p>
                                   </div>

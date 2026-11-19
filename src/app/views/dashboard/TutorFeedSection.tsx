@@ -265,7 +265,7 @@ export function TutorFeedSection() {
                             </button>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                             {filteredTutorPosts.map((post) => {
                               const alreadyApplied = tutorMyApplications.some(
                                 (a) => a.postId === post.id,
@@ -284,14 +284,14 @@ export function TutorFeedSection() {
                               return (
                                 <div
                                   key={post.id}
-                                  className="bg-white border border-blue-200 rounded-3xl p-5 shadow-xl hover:border-blue-700/60 transition-all flex flex-col justify-between space-y-4 relative group"
+                                  className="relative flex flex-col justify-between space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_12px_24px_-8px_rgba(15,23,42,0.12),0_4px_8px_-2px_rgba(15,23,42,0.06)]"
                                 >
                                   <div>
                                     {/* Card Header with countdown */}
-                                    <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-mono font-semibold border border-blue-200 flex items-center gap-1">
-                                          <MapPin className="w-3 h-3 text-blue-700" />
+                                    <div className="mb-4 flex items-start justify-between gap-3">
+                                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800">
+                                          <MapPin className="h-3.5 w-3.5" />
                                           <span>
                                             {post.distanceKm !== undefined
                                               ? formatDistanceAnnotation(
@@ -303,7 +303,7 @@ export function TutorFeedSection() {
                                         <PostCountdown createdAt={post.createdAt} />
                                       </div>
         
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex shrink-0 items-center gap-1">
                                         <button
                                           type="button"
                                           onClick={(e) => {
@@ -319,7 +319,8 @@ export function TutorFeedSection() {
                                             });
                                           }}
                                           title="Share via QR Code"
-                                          className="w-7 h-7 rounded-full bg-white hover:bg-blue-50 flex items-center justify-center border border-blue-200 text-slate-500 hover:text-blue-700 transition-colors"
+                                          aria-label="Share tuition post by QR code"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700"
                                         >
                                           <QrCode className="w-3.5 h-3.5" />
                                         </button>
@@ -327,7 +328,8 @@ export function TutorFeedSection() {
                                           type="button"
                                           onClick={(e) => handleSharePost(post, e)}
                                           title="Share"
-                                          className="w-7 h-7 rounded-full bg-white hover:bg-blue-50 flex items-center justify-center border border-blue-200 text-slate-500 hover:text-slate-900 transition-colors"
+                                          aria-label="Share tuition post"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700"
                                         >
                                           <Share2 className="w-3.5 h-3.5" />
                                         </button>
@@ -341,7 +343,8 @@ export function TutorFeedSection() {
                                           }}
                                           disabled={downloadingPostId === post.id}
                                           title="Download beautiful PNG card"
-                                          className="w-7 h-7 rounded-full bg-white hover:bg-blue-50 flex items-center justify-center border border-blue-200 text-slate-500 hover:text-blue-700 transition-colors disabled:opacity-50"
+                                          aria-label="Download tuition post card"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
                                         >
                                           <Download
                                             className={`w-3.5 h-3.5 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
@@ -352,7 +355,8 @@ export function TutorFeedSection() {
                                           type="button"
                                           onClick={(e) => handleHidePost(post.id, e)}
                                           title="Hide"
-                                          className="w-7 h-7 rounded-full bg-white hover:bg-slate-100 flex items-center justify-center border border-blue-200 text-slate-500 hover:text-rose-700 transition-colors"
+                                          aria-label="Hide tuition post"
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700"
                                         >
                                           <EyeOff className="w-3.5 h-3.5" />
                                         </button>
@@ -362,7 +366,8 @@ export function TutorFeedSection() {
                                             handleToggleBookmark(post.id, e)
                                           }
                                           title="Bookmark"
-                                          className="w-7 h-7 rounded-full bg-white hover:bg-slate-100 flex items-center justify-center border border-blue-200 transition-colors"
+                                          aria-label={post.isBookmarked ? "Remove bookmark" : "Bookmark tuition post"}
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white transition-colors hover:bg-rose-50"
                                         >
                                           <Heart
                                             className={`w-3.5 h-3.5 ${post.isBookmarked ? "text-rose-500 fill-rose-500" : "text-slate-500 hover:text-slate-900"}`}
@@ -371,57 +376,76 @@ export function TutorFeedSection() {
                                       </div>
                                     </div>
         
-                                    <h3 className="font-bold text-base text-white line-clamp-2 leading-snug">
+                                    <h3 className="text-lg font-bold leading-snug text-slate-900 line-clamp-2">
                                       {post.title}
                                     </h3>
-                                    <p className="text-xs text-blue-700 font-medium mt-1">
-                                      {post.subject} • {post.gradeLevel}
+                                    <p className="mt-1.5 text-sm leading-5 text-slate-600">
+                                      <span className="font-semibold text-blue-800">{post.subject}</span>
+                                      <span className="mx-1.5 text-slate-400" aria-hidden="true">·</span>
+                                      {post.gradeLevel}
                                     </p>
         
-                                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                                      <span className="px-2 py-0.5 rounded bg-white text-slate-600 text-[10px] border border-slate-200">
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
                                         {post.curriculum}
-                                      </span>
-                                      <span className="px-2 py-0.5 rounded bg-white text-slate-600 text-[10px] border border-slate-200">
-                                        {post.daysPerWeek} days/wk
                                       </span>
                                       {post.tuitionMode && (
                                         <span
-                                          className={`px-2 py-0.5 rounded text-[10px] font-bold border ${post.tuitionMode === "ONLINE" ? "bg-blue-50 text-blue-700 border-blue-200" : post.tuitionMode === "OFFLINE" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-50 text-blue-700 border-slate-200"}`}
+                                          className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${post.tuitionMode === "ONLINE" ? "border-blue-100 bg-blue-50 text-blue-800" : post.tuitionMode === "OFFLINE" ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}
                                         >
                                           {post.tuitionMode === "ONLINE"
-                                            ? "🌐 Online"
+                                            ? "Online"
                                             : post.tuitionMode === "OFFLINE"
-                                              ? "🏠 Offline"
-                                              : "🔄 Both"}
+                                              ? "In person"
+                                              : "Online or in person"}
                                         </span>
                                       )}
                                     </div>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <div className="text-xs font-medium text-slate-500">Schedule</div>
+                                        <div className="mt-1 text-sm font-semibold text-slate-900">
+                                          {post.daysPerWeek} days · {post.hoursPerDay} hrs/session
+                                        </div>
+                                      </div>
+                                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <div className="text-xs font-medium text-slate-500">Tutor preference</div>
+                                        <div className="mt-1 text-sm font-semibold text-slate-900">
+                                          {post.genderPreference === "MALE_ONLY"
+                                            ? "Male tutor"
+                                            : post.genderPreference === "FEMALE_ONLY"
+                                              ? "Female tutor"
+                                              : "Any tutor"}
+                                        </div>
+                                      </div>
+                                    </div>
         
                                     {/* Location (area only — exact address hidden) */}
-                                    <div className="mt-3 text-xs text-slate-500 space-y-1.5">
-                                      <div className="flex items-center gap-1 text-slate-600">
-                                        <Compass className="w-3.5 h-3.5 text-slate-500" />
-                                        <span>
+                                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                                      <Compass className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                                      <div>
+                                        <div className="text-sm font-semibold text-slate-800">
                                           {post.areaName}, {post.district}
-                                        </span>
-                                        <span className="text-[9px] text-slate-600 ml-1 italic">
-                                          (exact address unlocks after acceptance)
-                                        </span>
+                                        </div>
+                                        <p className="mt-0.5 text-xs leading-5 text-slate-600">
+                                          Approximate area only; exact address is shared after acceptance.
+                                        </p>
                                       </div>
+                                    </div>
         
                                       {/* Weekly schedule preview */}
                                       {post.weeklySchedule &&
                                         post.weeklySchedule.length > 0 && (
-                                          <div className="p-2 rounded-lg bg-white border border-slate-200">
-                                            <div className="text-[9px] text-blue-700 font-mono uppercase mb-1">
+                                          <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                                            <div className="mb-2 text-xs font-semibold text-slate-700">
                                               Schedule
                                             </div>
-                                            <div className="flex flex-wrap gap-1">
+                                            <div className="flex flex-wrap gap-1.5">
                                               {post.weeklySchedule.map((slot, i) => (
                                                 <span
                                                   key={i}
-                                                  className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-mono"
+                                                  className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800"
                                                 >
                                                   {dayLabels[slot.day] || slot.day}{" "}
                                                   {slot.startTime}–{slot.endTime}
@@ -432,26 +456,32 @@ export function TutorFeedSection() {
                                         )}
         
                                       {post.specialRequirements && (
-                                        <div className="p-2 rounded-lg bg-white border border-slate-200">
-                                          <div className="text-[9px] text-slate-500 font-mono uppercase mb-0.5">
+                                        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                          <div className="text-xs font-semibold text-slate-700">
                                             Special Requirements
                                           </div>
-                                          <p className="text-[10px] text-slate-600 italic line-clamp-2">
+                                          <p className="mt-1 text-sm leading-6 text-slate-600 line-clamp-3">
                                             {post.specialRequirements}
                                           </p>
                                         </div>
                                       )}
-                                    </div>
                                   </div>
         
-                                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                                    <div>
-                                      <span className="text-[10px] text-slate-500 uppercase font-mono block">
-                                        Monthly Budget
-                                      </span>
-                                      <span className="text-base font-extrabold text-emerald-700">
-                                        ৳ {post.salaryBudget.toLocaleString()}
-                                      </span>
+                                  <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
+                                    <div className="flex items-center justify-between gap-4 sm:block">
+                                      <div>
+                                        <span className="block text-xs font-medium text-slate-500">
+                                          Monthly budget
+                                        </span>
+                                        <span className="mt-0.5 block text-xl font-bold text-emerald-800">
+                                          ৳ {post.salaryBudget.toLocaleString()}
+                                        </span>
+                                      </div>
+                                      {post.applicationsCount !== undefined && (
+                                        <span className="text-xs text-slate-500 sm:mt-1 sm:block">
+                                          {post.applicationsCount} {post.applicationsCount === 1 ? "applicant" : "applicants"}
+                                        </span>
+                                      )}
                                     </div>
         
                                     {alreadyApplied ? (

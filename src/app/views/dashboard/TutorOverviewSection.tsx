@@ -163,26 +163,29 @@ export function TutorOverviewSection() {
                               return (
                                 <div
                                   key={app.id}
-                                  className="p-4 rounded-2xl bg-white border border-blue-200 space-y-3"
+                                  className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]"
                                 >
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                    <div>
-                                      <h3 className="font-bold text-sm sm:text-base text-white">
+                                  <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                      <h3 className="text-base font-bold text-slate-900 sm:text-lg">
                                         {post?.title || "Tuition Post"}
                                       </h3>
-                                      <p className="text-xs text-blue-700 mt-0.5">
-                                        {post?.subject} &bull; {post?.gradeLevel} &bull;{" "}
-                                        {post?.areaName}, {post?.district}
+                                      <p className="mt-1 text-sm text-slate-600">
+                                        <span className="font-semibold text-blue-800">{post?.subject || "Subject not specified"}</span>
+                                        {post?.gradeLevel && <> · {post.gradeLevel}</>}
+                                      </p>
+                                      <p className="mt-1 text-xs text-slate-500">
+                                        {post?.areaName || "Area unavailable"}, {post?.district || "District unavailable"}
                                       </p>
                                     </div>
         
                                     <span
-                                      className={`text-[11px] font-mono px-3 py-1 rounded-full self-start sm:self-center border flex items-center gap-1.5 ${
+                                      className={`inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border px-3 py-1.5 text-xs font-semibold ${
                                         isAccepted
-                                          ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30"
+                                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                           : isRejected
-                                            ? "bg-rose-500/20 text-rose-700 border-rose-500/30"
-                                            : "bg-blue-500/20 text-blue-700 border-blue-500/30"
+                                            ? "bg-rose-50 text-rose-800 border-rose-200"
+                                            : "bg-amber-50 text-amber-800 border-amber-200"
                                       }`}
                                     >
                                       {isAccepted ? (
@@ -201,36 +204,57 @@ export function TutorOverviewSection() {
                                   </div>
         
                                   {/* Dynamic Tracking Status Box */}
-                                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                                    <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px]">
+                                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                                       <Activity className="w-3.5 h-3.5 text-blue-700" />
-                                      <span>Status Tracking:</span>
+                                      <span>Application update</span>
                                     </div>
-                                    <p className="text-slate-700 font-medium">
+                                    <p className="mt-1 text-sm leading-6 text-slate-600">
                                       {app.dynamicStatusReason}
                                     </p>
                                   </div>
         
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-slate-500 pt-1">
-                                    <div>
-                                      Proposed Fee:{" "}
-                                      <span className="text-emerald-700 font-semibold">
-                                        ৳ {app.proposedSalary}/mo
+                                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
+                                      <span className="text-xs font-medium text-slate-500">Your proposed fee</span>
+                                      <span className="mt-1 block text-sm font-bold text-emerald-800">৳ {app.proposedSalary.toLocaleString()} / mo</span>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <span className="text-xs font-medium text-slate-500">Student's budget</span>
+                                      <span className="mt-1 block text-sm font-semibold text-slate-900">
+                                        {post?.salaryBudget ? `৳ ${post.salaryBudget.toLocaleString()} / mo` : "Not listed"}
                                       </span>
                                     </div>
-                                    <div>
-                                      Schedule:{" "}
-                                      <span className="text-slate-600">
-                                        {app.availableSchedule}
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <span className="text-xs font-medium text-slate-500">Class / curriculum</span>
+                                      <span className="mt-1 block text-sm font-semibold text-slate-900">
+                                        {[post?.gradeLevel, post?.curriculum].filter(Boolean).join(" · ") || "Not listed"}
                                       </span>
                                     </div>
-                                    <div>
-                                      Applied:{" "}
-                                      <span className="text-slate-600">
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <span className="text-xs font-medium text-slate-500">Weekly commitment</span>
+                                      <span className="mt-1 block text-sm font-semibold text-slate-900">
+                                        {post ? `${post.daysPerWeek} days · ${post.hoursPerDay} hrs/session` : "Not listed"}
+                                      </span>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <span className="text-xs font-medium text-slate-500">Student schedule</span>
+                                      <span className="mt-1 block text-sm font-semibold text-slate-900">{app.availableSchedule}</span>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <span className="text-xs font-medium text-slate-500">Applied</span>
+                                      <span className="mt-1 block text-sm font-semibold text-slate-900">
                                         {new Date(app.createdAt).toLocaleDateString()}
                                       </span>
                                     </div>
                                   </div>
+
+                                  {post?.specialRequirements && (
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                      <span className="text-xs font-semibold text-slate-700">Special requirements</span>
+                                      <p className="mt-1 text-sm leading-6 text-slate-600">{post.specialRequirements}</p>
+                                    </div>
+                                  )}
         
                                   {isAccepted && (
                                     <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-emerald-50 to-emerald-50 border border-emerald-500/50 text-emerald-700 space-y-3 shadow-lg">

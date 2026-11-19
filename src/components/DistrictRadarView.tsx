@@ -344,23 +344,23 @@ export const DistrictRadarView: React.FC<DistrictRadarViewProps> = ({
         <div className="lg:col-span-5 space-y-4">
           {activePost ? (
             <div className="bg-white border border-blue-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl relative space-y-4 animate-in fade-in slide-in-from-right-3 duration-200">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Radar Target Acquired</span>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-100 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Selected tuition</span>
                     </span>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      ID: {activePost.id.substring(0, 8)}
+                    <span className="text-xs text-slate-500">
+                      {activePost.gradeLevel}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
                     {activePost.title}
                   </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5 text-sm text-slate-600">
                     <MapPin className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                    <span>{activePost.areaName}, <strong className="text-white">{activePost.district}</strong></span>
+                    <span>{activePost.areaName}, <strong className="text-slate-800">{activePost.district}</strong></span>
                   </div>
                 </div>
 
@@ -379,42 +379,71 @@ export const DistrictRadarView: React.FC<DistrictRadarViewProps> = ({
               </div>
 
               {/* Salary & Details Pill Matrix */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 rounded-2xl bg-white border border-blue-200">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Monthly Budget</span>
-                  <div className="text-base font-extrabold text-emerald-700 flex items-center gap-1 mt-0.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
+                  <span className="block text-xs font-medium text-slate-500">Monthly budget</span>
+                  <div className="mt-1 flex items-center gap-1 text-lg font-bold text-emerald-800">
                     <DollarSign className="w-4 h-4" />
                     <span>৳ {activePost.salaryBudget.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-white border border-blue-200">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Grade / Class</span>
-                  <div className="text-xs font-bold text-white mt-1 truncate">
-                    {activePost.gradeLevel}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-white border border-blue-200">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Subject Focus</span>
-                  <div className="text-xs font-bold text-blue-700 mt-1 truncate">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-xs font-medium text-slate-500">Subject</span>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
                     {activePost.subject}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-white border border-blue-200">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Schedule</span>
-                  <div className="text-xs font-bold text-white mt-1 truncate">
-                    {activePost.daysPerWeek || 3} Days/Week
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-xs font-medium text-slate-500">Curriculum</span>
+                  <div className="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
+                    {activePost.curriculum}
                   </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-xs font-medium text-slate-500">Weekly schedule</span>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {activePost.daysPerWeek} days · {activePost.hoursPerDay} hrs/session
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-xs font-medium text-slate-500">Tutor preference</span>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">
+                    {activePost.genderPreference === "MALE_ONLY"
+                      ? "Male tutor"
+                      : activePost.genderPreference === "FEMALE_ONLY"
+                        ? "Female tutor"
+                        : "Any tutor"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {activePost.tuitionMode === "ONLINE"
+                      ? "Online lessons"
+                      : activePost.tuitionMode === "OFFLINE"
+                        ? "In-person lessons"
+                        : activePost.tuitionMode === "BOTH"
+                          ? "Online or in-person lessons"
+                          : "Lesson mode not specified"}
+                  </div>
+                  <p className="mt-0.5 text-xs leading-5 text-slate-600">
+                    Approximate area only; exact address is shared after acceptance.
+                  </p>
                 </div>
               </div>
 
               {/* Requirement Note */}
               {activePost.specialRequirements && (
-                <div className="p-3 rounded-2xl bg-white border border-slate-200 text-xs text-slate-600">
-                  <span className="text-[10px] font-mono text-slate-500 uppercase block mb-1">Guardian Requirement</span>
-                  <p className="line-clamp-3 text-slate-600 leading-relaxed">{activePost.specialRequirements}</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-xs font-semibold text-slate-700">Special requirements</span>
+                  <p className="mt-1 text-sm leading-6 text-slate-600 line-clamp-3">{activePost.specialRequirements}</p>
                 </div>
               )}
 
@@ -448,15 +477,15 @@ export const DistrictRadarView: React.FC<DistrictRadarViewProps> = ({
           )}
 
           {/* District Tuition Quick List */}
-          <div className="bg-white border border-blue-200 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3">
+          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] sm:p-5">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-700" />
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <Layers className="h-4 w-4 text-blue-700" />
                 <span>{district} Tuitions on Radar ({visiblePosts.length})</span>
               </span>
             </div>
 
-            <div className="space-y-2 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-900 pr-1">
+          <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {visiblePosts.length === 0 ? (
                 <div className="p-6 text-center text-slate-500 text-xs">
                   No active tuition posts currently found in your registered district ({district}). New posts will appear on the radar in real time.
@@ -467,38 +496,40 @@ export const DistrictRadarView: React.FC<DistrictRadarViewProps> = ({
                   const isApplied = appliedPostIds.includes(post.id);
 
                   return (
-                    <div
+                    <button
                       key={post.id}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => setSelectedPostId(post.id)}
-                      className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${
                         isSelected
-                          ? 'bg-blue-50 border-blue-500/60 ring-1 ring-blue-500/40'
-                          : 'bg-white border-blue-200 hover:border-blue-200'
+                          ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-100'
+                          : 'bg-white border-slate-200 hover:bg-slate-50'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white truncate">{post.title}</span>
+                          <span className="truncate text-sm font-semibold text-slate-900">{post.title}</span>
                           {isApplied && (
-                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-slate-200">
+                            <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800">
                               Applied
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
-                          <span>{post.subject}</span>
-                          <span>&bull;</span>
-                          <span className="text-blue-700">{post.areaName}</span>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+                          <span className="font-medium text-blue-800">{post.subject}</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="truncate">{post.areaName}</span>
                         </div>
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-extrabold text-emerald-700">
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-bold text-emerald-800">
                           ৳ {post.salaryBudget.toLocaleString()}
                         </div>
-                        <span className="text-[10px] text-slate-500">{post.gradeLevel}</span>
+                        <span className="text-xs text-slate-500">{post.gradeLevel}</span>
                       </div>
-                    </div>
+                    </button>
                   );
                 })
               )}

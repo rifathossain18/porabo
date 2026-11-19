@@ -10,6 +10,7 @@ const LOGO_SRC = "/assets/porabo_logo.webp";
 
 const COLORS = {
   background: "#F1F5F9",
+  warmBackground: "#F5F3EE",
   surface: "#FFFFFF",
   text: "#0F172A",
   secondary: "#475569",
@@ -24,6 +25,36 @@ const COLORS = {
   amberLight: "#FFFBEB",
   rose: "#BE123C",
   roseLight: "#FFF1F2",
+};
+
+interface CardTheme {
+  background: string;
+  surface: string;
+  border: string;
+  primary: string;
+  dark: string;
+  pale: string;
+  contrast: string;
+}
+
+const TUITION_THEME: CardTheme = {
+  background: COLORS.background,
+  surface: COLORS.surface,
+  border: COLORS.border,
+  primary: "#2563EB",
+  dark: "#172554",
+  pale: "#EFF6FF",
+  contrast: "#DBEAFE",
+};
+
+const TEACHER_THEME: CardTheme = {
+  background: COLORS.warmBackground,
+  surface: "#FFFEFA",
+  border: "#E7E5E4",
+  primary: "#047857",
+  dark: "#064E3B",
+  pale: "#ECFDF5",
+  contrast: "#D1FAE5",
 };
 
 const DAY_LABELS: Record<string, string> = {
@@ -132,13 +163,14 @@ async function createCanvas(): Promise<{
 async function drawBrandHeader(
   context: CanvasRenderingContext2D,
   label: string,
+  theme: CardTheme,
 ) {
-  context.fillStyle = COLORS.background;
+  context.fillStyle = theme.background;
   context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
   const header = context.createLinearGradient(0, 0, CARD_WIDTH, 220);
-  header.addColorStop(0, COLORS.blueDark);
-  header.addColorStop(1, COLORS.blue);
+  header.addColorStop(0, theme.dark);
+  header.addColorStop(1, theme.primary);
   context.fillStyle = header;
   context.fillRect(0, 0, CARD_WIDTH, 230);
 
@@ -150,39 +182,43 @@ async function drawBrandHeader(
   context.arc(820, 210, 105, 0, Math.PI * 2);
   context.fill();
 
-  roundedRect(context, PAGE_MARGIN, 48, 78, 78, 22);
-  context.fillStyle = COLORS.surface;
+  roundedRect(context, PAGE_MARGIN, 42, 94, 94, 27);
+  context.fillStyle = "#0F172A";
   context.fill();
+  context.strokeStyle = "rgba(255,255,255,0.9)";
+  context.lineWidth = 3;
+  context.stroke();
   try {
     const logo = await loadImage(LOGO_SRC);
-    const size = 58;
+    const size = 78;
     const scale = Math.min(size / logo.width, size / logo.height);
     const width = logo.width * scale;
     const height = logo.height * scale;
     context.drawImage(
       logo,
-      PAGE_MARGIN + (78 - width) / 2,
-      48 + (78 - height) / 2,
+      PAGE_MARGIN + (94 - width) / 2,
+      42 + (94 - height) / 2,
       width,
       height,
     );
   } catch {
-    context.fillStyle = COLORS.blue;
+    context.fillStyle = COLORS.surface;
     context.font = "700 44px Arial, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText("P", PAGE_MARGIN + 39, 87);
+    context.fillText("P", PAGE_MARGIN + 47, 89);
   }
 
   context.textAlign = "left";
   context.textBaseline = "alphabetic";
   context.fillStyle = COLORS.surface;
-  context.font = "700 42px Arial, sans-serif";
-  context.fillText("Porabo", PAGE_MARGIN + 98, 86);
-  context.fillStyle = "#DBEAFE";
+  context.font = "700 46px Arial, sans-serif";
+  context.fillText("Porabo", PAGE_MARGIN + 112, 82);
+  context.fillStyle = theme.contrast;
   context.font = "600 15px Arial, sans-serif";
-  context.fillText("LOCAL LEARNING. REAL CONNECTIONS.", PAGE_MARGIN + 100, 113);
+  context.fillText("LOCAL LEARNING. REAL CONNECTIONS.", PAGE_MARGIN + 114, 111);
 
+  context.font = "700 14px Arial, sans-serif";
   const labelWidth = Math.max(175, context.measureText(label).width + 38);
   roundedRect(context, CARD_WIDTH - PAGE_MARGIN - labelWidth, 67, labelWidth, 42, 21);
   context.fillStyle = "rgba(255,255,255,0.16)";
@@ -191,7 +227,6 @@ async function drawBrandHeader(
   context.lineWidth = 1;
   context.stroke();
   context.fillStyle = COLORS.surface;
-  context.font = "700 14px Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(
@@ -206,24 +241,24 @@ async function drawBrandHeader(
   context.shadowBlur = 28;
   context.shadowOffsetY = 8;
   roundedRect(context, PAGE_MARGIN, 184, CARD_WIDTH - PAGE_MARGIN * 2, 1160, 32);
-  context.fillStyle = COLORS.surface;
+  context.fillStyle = theme.surface;
   context.fill();
   context.restore();
-  context.strokeStyle = COLORS.border;
+  context.strokeStyle = theme.border;
   context.lineWidth = 1;
   roundedRect(context, PAGE_MARGIN, 184, CARD_WIDTH - PAGE_MARGIN * 2, 1160, 32);
   context.stroke();
 }
 
-function drawFooter(context: CanvasRenderingContext2D) {
-  context.fillStyle = COLORS.blueDark;
+function drawFooter(context: CanvasRenderingContext2D, theme: CardTheme) {
+  context.fillStyle = theme.dark;
   context.fillRect(0, 1370, CARD_WIDTH, 70);
   context.fillStyle = COLORS.surface;
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.font = "700 21px Arial, sans-serif";
   context.fillText("Porabo  •  Local learning, closer to home", CARD_WIDTH / 2, 1394);
-  context.fillStyle = "#DBEAFE";
+  context.fillStyle = theme.contrast;
   context.font = "500 14px Arial, sans-serif";
   context.fillText("porabo.online", CARD_WIDTH / 2, 1420);
 }
@@ -279,11 +314,12 @@ async function drawQrPanel(
   shareUrl: string,
   title: string,
   caption: string,
+  theme: CardTheme,
 ) {
   const panelX = CONTENT_MARGIN;
   const panelWidth = CONTENT_WIDTH;
   roundedRect(context, panelX, y, panelWidth, 104, 20);
-  context.fillStyle = COLORS.blueLight;
+  context.fillStyle = theme.pale;
   context.fill();
   const qrSize = 76;
   const qrX = panelX + 14;
@@ -302,7 +338,7 @@ async function drawQrPanel(
     context.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
   } catch (error) {
     console.warn("Porabo card QR generation failed:", error);
-    context.fillStyle = COLORS.blueDark;
+    context.fillStyle = theme.dark;
     context.font = "700 12px Arial, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -363,7 +399,7 @@ export async function generateTuitionCard(
   shareUrl: string = "https://porabo.online",
 ): Promise<string> {
   const { canvas, context } = await createCanvas();
-  await drawBrandHeader(context, "TUITION OPPORTUNITY");
+  await drawBrandHeader(context, "TUITION OPPORTUNITY", TUITION_THEME);
 
   const left = CONTENT_MARGIN;
   drawStatus(context, post.status, left, 240);
@@ -527,8 +563,9 @@ export async function generateTuitionCard(
     shareUrl,
     "Find local tuition on Porabo",
     "Scan to explore trusted, nearby tutoring opportunities.",
+    TUITION_THEME,
   );
-  drawFooter(context);
+  drawFooter(context, TUITION_THEME);
   return canvas.toDataURL("image/png");
 }
 
@@ -538,7 +575,7 @@ export async function generateTeacherCard(
 ): Promise<string> {
   const { canvas, context } = await createCanvas();
   const verified = tutor.verificationStatus === "VERIFIED";
-  await drawBrandHeader(context, "TEACHER PROFILE");
+  await drawBrandHeader(context, "TEACHER PROFILE", TEACHER_THEME);
 
   const photoRadius = 108;
   const photoX = CARD_WIDTH / 2;
@@ -549,7 +586,7 @@ export async function generateTeacherCard(
   context.shadowOffsetY = 8;
   context.beginPath();
   context.arc(photoX, photoY, photoRadius + 6, 0, Math.PI * 2);
-  context.fillStyle = COLORS.surface;
+  context.fillStyle = "#D6A74F";
   context.fill();
   context.restore();
   context.save();
@@ -579,22 +616,22 @@ export async function generateTeacherCard(
     }
   }
   if (!photoDrawn) {
-    context.fillStyle = COLORS.blueLight;
+    context.fillStyle = TEACHER_THEME.pale;
     context.fillRect(
       photoX - photoRadius,
       photoY - photoRadius,
       photoRadius * 2,
       photoRadius * 2,
     );
-    context.fillStyle = COLORS.blueDark;
+    context.fillStyle = TEACHER_THEME.primary;
     context.font = "700 88px Arial, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(tutor.fullName.trim().charAt(0).toUpperCase() || "P", photoX, photoY);
   }
   context.restore();
-  context.strokeStyle = COLORS.surface;
-  context.lineWidth = 8;
+  context.strokeStyle = "#D6A74F";
+  context.lineWidth = 5;
   context.beginPath();
   context.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
   context.stroke();
@@ -636,9 +673,9 @@ export async function generateTeacherCard(
     34,
     17,
   );
-  context.fillStyle = verified ? COLORS.greenLight : COLORS.blueLight;
+  context.fillStyle = verified ? COLORS.greenLight : TEACHER_THEME.pale;
   context.fill();
-  context.fillStyle = verified ? COLORS.green : COLORS.blueDark;
+  context.fillStyle = verified ? COLORS.green : TEACHER_THEME.primary;
   context.textBaseline = "middle";
   context.fillText(statusText, CARD_WIDTH / 2, 637);
 
@@ -662,7 +699,7 @@ export async function generateTeacherCard(
     tutor.yearsOfExperience
       ? `${tutor.yearsOfExperience} years`
       : "Not listed",
-    COLORS.blue,
+    TEACHER_THEME.primary,
   );
   drawInfoCell(
     context,
@@ -671,7 +708,7 @@ export async function generateTeacherCard(
     statWidth,
     "Expected fee",
     rate,
-    COLORS.green,
+    "#B7791F",
   );
   drawInfoCell(
     context,
@@ -680,14 +717,14 @@ export async function generateTeacherCard(
     statWidth,
     "Student reviews",
     reviews,
-    COLORS.blue,
+    TEACHER_THEME.primary,
   );
 
   const detailsY = 804;
   roundedRect(context, CONTENT_MARGIN, detailsY, CONTENT_WIDTH, 176, 20);
-  context.fillStyle = "#F8FAFC";
+  context.fillStyle = "#F8FBF7";
   context.fill();
-  context.strokeStyle = COLORS.border;
+  context.strokeStyle = TEACHER_THEME.border;
   context.lineWidth = 1;
   context.stroke();
 
@@ -695,7 +732,7 @@ export async function generateTeacherCard(
   const columnWidth = (CONTENT_WIDTH - 52 - columnGap) / 2;
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = COLORS.blueDark;
+  context.fillStyle = TEACHER_THEME.primary;
   context.font = "700 12px Arial, sans-serif";
   context.fillText("SUBJECTS", CONTENT_MARGIN + 24, detailsY + 22);
   context.fillText(
@@ -732,12 +769,12 @@ export async function generateTeacherCard(
   const bio = tutor.bio?.trim() || tutor.qualifications?.trim();
   if (bio) {
     roundedRect(context, CONTENT_MARGIN, bioY, CONTENT_WIDTH, 112, 20);
-    context.fillStyle = COLORS.surface;
+    context.fillStyle = TEACHER_THEME.surface;
     context.fill();
-    context.strokeStyle = COLORS.border;
+    context.strokeStyle = TEACHER_THEME.border;
     context.lineWidth = 1;
     context.stroke();
-    context.fillStyle = COLORS.muted;
+    context.fillStyle = TEACHER_THEME.primary;
     context.font = "700 12px Arial, sans-serif";
     context.textAlign = "left";
     context.textBaseline = "top";
@@ -755,7 +792,7 @@ export async function generateTeacherCard(
 
   const area = [tutor.areaName, tutor.district].filter(Boolean).join(", ");
   if (area) {
-    context.fillStyle = COLORS.muted;
+    context.fillStyle = TEACHER_THEME.primary;
     context.font = "600 14px Arial, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -768,8 +805,9 @@ export async function generateTeacherCard(
     shareUrl,
     "Meet your next tutor on Porabo",
     "Scan to discover trusted teachers in your neighbourhood.",
+    TEACHER_THEME,
   );
-  drawFooter(context);
+  drawFooter(context, TEACHER_THEME);
   return canvas.toDataURL("image/png");
 }
 

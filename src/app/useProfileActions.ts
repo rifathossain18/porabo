@@ -34,11 +34,6 @@ interface ProfileActionsOptions {
   setProfilePhilosophy: Dispatch<SetStateAction<string>>;
   setProfileExpectedFee: Dispatch<SetStateAction<number>>;
   setProfileSubjects: Dispatch<SetStateAction<string[]>>;
-  isResubmitModalOpen: boolean;
-  setIsResubmitModalOpen: Dispatch<SetStateAction<boolean>>;
-  resubmitNidNumber: string;
-  resubmitRoll: string;
-  resubmitReg: string;
 }
 
 export function useProfileActions({
@@ -72,10 +67,6 @@ export function useProfileActions({
   setProfilePhilosophy,
   setProfileExpectedFee,
   setProfileSubjects,
-  setIsResubmitModalOpen,
-  resubmitNidNumber,
-  resubmitRoll,
-  resubmitReg,
 }: ProfileActionsOptions) {
   const persistUser = (updatedUser: User) => {
     setCurrentUser(updatedUser);
@@ -170,42 +161,10 @@ export function useProfileActions({
     );
   };
 
-  const handleResubmitVerification = (event: FormEvent) => {
-    event.preventDefault();
-    if (!currentUser) return;
-    if (!resubmitNidNumber.trim() && !currentUser.nidNumber) {
-      showToast("Please provide your National ID or Birth Certificate number.");
-      return;
-    }
-    if (!resubmitRoll.trim() && !currentUser.studentIdCardRoll) {
-      showToast("Please provide your Student ID Roll number.");
-      return;
-    }
-
-    const updatedUser: User = {
-      ...currentUser,
-      verificationStatus: "PENDING",
-      verificationRejectionReason: undefined,
-      verificationSubmittedAt: new Date().toISOString(),
-      nidNumber: resubmitNidNumber.trim() || currentUser.nidNumber,
-      studentIdCardRoll: resubmitRoll.trim() || currentUser.studentIdCardRoll,
-      studentIdCardReg: resubmitReg.trim() || currentUser.studentIdCardReg,
-    };
-    persistUser(updatedUser);
-    setIsResubmitModalOpen(false);
-    showToast(
-      "Corrected verification dossier submitted. Your application is now in the admin review queue.",
-    );
-    cfD1.saveUser(updatedUser).catch((error) =>
-      console.warn("Cloudflare D1 saveUser error:", error),
-    );
-  };
-
   return {
     handleSaveProfile,
     handleOpenProfileModal,
     handleSaveProfileModal,
     handleUpdateUserDistrict,
-    handleResubmitVerification,
   };
 }

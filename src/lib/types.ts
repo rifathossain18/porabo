@@ -28,6 +28,17 @@ export interface RegistrationVerificationDocuments
   selfie: string;
 }
 
+export interface TeacherVerificationResubmission {
+  profilePicture: string;
+  institution: string;
+  department: string;
+  academicYear: string;
+  nidNumber: string;
+  studentIdCardRoll: string;
+  studentIdCardReg: string;
+  verificationDocuments: RegistrationVerificationDocuments;
+}
+
 export interface WeeklyScheduleSlot {
   day: WeekDay;
   startTime: string;

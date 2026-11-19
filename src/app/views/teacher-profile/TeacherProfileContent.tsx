@@ -47,9 +47,6 @@ export function TeacherProfileContent() {
     setIsEditProfileOpen,
     setIsResubmitModalOpen,
     setQrModalData,
-    setResubmitNidNumber,
-    setResubmitReg,
-    setResubmitRoll,
     setTeacherViewMode,
     setToastMessage,
     setTutorToAccept,
@@ -219,9 +216,6 @@ export function TeacherProfileContent() {
               <button
                 type="button"
                 onClick={() => {
-                  setResubmitNidNumber(tutor.nidNumber || "");
-                  setResubmitRoll(tutor.studentIdCardRoll || "");
-                  setResubmitReg(tutor.studentIdCardReg || "");
                   setIsResubmitModalOpen(true);
                 }}
                 className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-700"

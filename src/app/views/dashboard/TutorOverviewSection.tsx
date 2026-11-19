@@ -1,4 +1,4 @@
-import { AlertTriangle, MapPin, CheckCircle2, Unlock, Phone, MessageSquare, Send, BookOpen, Clock, TrendingUp, Eye, Activity, LayoutGrid, Radio } from "lucide-react";
+import { AlertTriangle, MapPin, CheckCircle2, Unlock, Phone, MessageSquare, Send, BookOpen, Clock, TrendingUp, Eye, Activity, LayoutGrid, Radio, RefreshCw } from "lucide-react";
 import { DistrictRadarView } from "../../../components/DistrictRadarView";
 import { EmptyApplicationsIllustration } from "../../../components/EmptyStateIllustrations";
 import { useAppContext } from "../../AppContext";
@@ -10,6 +10,7 @@ export function TutorOverviewSection() {
     teacherViewMode,
     setTeacherViewMode,
     currentUser,
+    setIsResubmitModalOpen,
     tuitionPosts,
     setSelectedPostForApply,
     setApplyProposedSalary,
@@ -25,7 +26,7 @@ export function TutorOverviewSection() {
       {currentUser.verificationStatus === "REJECTED" ? (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 shadow-sm sm:text-sm"
+          className="flex flex-col gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 shadow-sm sm:flex-row sm:items-start sm:text-sm"
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
@@ -35,6 +36,14 @@ export function TutorOverviewSection() {
             {currentUser.verificationRejectionReason ||
               "Please review your submitted documents and send them again for verification."}
           </div>
+          <button
+            type="button"
+            onClick={() => setIsResubmitModalOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-rose-700 sm:ml-auto"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Resubmit
+          </button>
         </div>
       ) : currentUser.verificationStatus !== "VERIFIED" ? (
         <div className="flex items-start gap-3 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-700 shadow-sm sm:text-sm">

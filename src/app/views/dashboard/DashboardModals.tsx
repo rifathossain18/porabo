@@ -7,6 +7,7 @@ import { DistrictSelect } from "../../../components/DistrictSelect";
 import { QRCodeModal } from "../../../components/QRCodeModal";
 import { ActivityLog } from "../../../components/ActivityLog";
 import { TuitionPostForm } from "../../../components/TuitionPostForm";
+import { TeacherVerificationResubmissionModal } from "../../../components/TeacherVerificationResubmissionModal";
 import { useAppContext } from "../../AppContext";
 
 export function DashboardModals() {
@@ -22,13 +23,10 @@ export function DashboardModals() {
     setSelectedApplicationForModal,
     isResubmitModalOpen,
     setIsResubmitModalOpen,
-    resubmitNidNumber,
-    setResubmitNidNumber,
-    resubmitRoll,
-    setResubmitRoll,
-    resubmitReg,
-    setResubmitReg,
     allUsers,
+    setAllUsers,
+    setCurrentUser,
+    showToast,
     tuitionPosts,
     applications,
     qrModalData,
@@ -92,7 +90,6 @@ export function DashboardModals() {
     handleCreatePostSubmit,
     handleOpenTeacherProfile,
     handleSaveProfileModal,
-    handleResubmitVerification,
   } = useAppContext();
   if (!currentUser) return null;
   return (
@@ -515,120 +512,25 @@ export function DashboardModals() {
         
               {/* MODAL: RE-SUBMIT VERIFICATION DOCUMENTS (FOR REJECTED TUTORS) */}
               {isResubmitModalOpen && currentUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
-                  <div className="w-full max-w-xl bg-white border border-rose-500/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => setIsResubmitModalOpen(false)}
-                      className="absolute right-5 top-5 text-slate-500 hover:text-slate-900"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-        
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-700 flex items-center justify-center">
-                        <RefreshCw className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-lg text-white">
-                          Re-submit Verification Documents
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Correct your documentation dossier for administrative re-audit
-                        </p>
-                      </div>
-                    </div>
-        
-                    {/* Rejection Note */}
-                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-500/40 text-rose-700 text-xs mb-4">
-                      <span className="font-bold text-white block mb-0.5">
-                        Previous Rejection Note from Admin:
-                      </span>
-                      {currentUser.verificationRejectionReason ||
-                        "Submitted selfie was not clear or ID documents did not meet legibility requirements."}
-                    </div>
-        
-                    <form onSubmit={handleResubmitVerification} className="space-y-4">
-                      {/* 1. National ID Number */}
-                      <div className="p-3.5 bg-white rounded-2xl border border-emerald-200 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            1. National ID / Birth Certificate Number
-                          </span>
-                          <span className="text-[10px] text-emerald-700 font-mono">
-                            Official Gov Record
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={resubmitNidNumber}
-                          onChange={(e) => setResubmitNidNumber(e.target.value)}
-                          placeholder={currentUser.nidNumber || "e.g. 19984729104829"}
-                          className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-                        />
-                      </div>
-        
-                      {/* 2. Institution Roll & Reg Numbers */}
-                      <div className="p-3.5 bg-white rounded-2xl border border-emerald-200 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            2. Institution Student ID Credentials
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
-                            Academic Verification
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                              Student ID Roll No.
-                            </label>
-                            <input
-                              type="text"
-                              value={resubmitRoll}
-                              onChange={(e) => setResubmitRoll(e.target.value)}
-                              placeholder={
-                                currentUser.studentIdCardRoll || "e.g. 2021-MAT-042"
-                              }
-                              className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                              Student ID Reg No.
-                            </label>
-                            <input
-                              type="text"
-                              value={resubmitReg}
-                              onChange={(e) => setResubmitReg(e.target.value)}
-                              placeholder={
-                                currentUser.studentIdCardReg || "e.g. DU-849201"
-                              }
-                              className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-                            />
-                          </div>
-                        </div>
-                      </div>
-        
-                      <div className="flex gap-2 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsResubmitModalOpen(false)}
-                          className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl text-xs sm:text-sm"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5"
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Submit Corrected Dossier</span>
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
+                <TeacherVerificationResubmissionModal
+                  user={currentUser}
+                  onClose={() => setIsResubmitModalOpen(false)}
+                  onSubmitted={(updatedUser) => {
+                    setCurrentUser(updatedUser);
+                    setAllUsers((users) =>
+                      users.map((user) =>
+                        user.id === updatedUser.id ? updatedUser : user,
+                      ),
+                    );
+                    localStorage.setItem(
+                      "porabo_active_session",
+                      JSON.stringify(updatedUser),
+                    );
+                    showToast(
+                      "All verification details were submitted. Your account is back in the review queue.",
+                    );
+                  }}
+                />
               )}
         
               {/* MODAL: UNIFIED PROFILE & LOCATION MODAL (STUDENT & TUTOR) WITH ACTIVITY LOG */}

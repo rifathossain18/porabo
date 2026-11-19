@@ -13,7 +13,7 @@ import { compressImage } from "../../../lib/imageUtils";
 import { useAppContext } from "../../AppContext";
 import type { IdentityDocumentType } from "../../../lib/types";
 
-interface ImageUploadFieldProps {
+export interface ImageUploadFieldProps {
   id: string;
   label: string;
   value: string | null;
@@ -24,7 +24,7 @@ interface ImageUploadFieldProps {
   quality?: number;
 }
 
-function ImageUploadField({
+export function ImageUploadField({
   id,
   label,
   value,
@@ -164,7 +164,7 @@ function cropSelfie(video: HTMLVideoElement, face?: FaceBounds): string | null {
   return canvas.toDataURL("image/jpeg", 0.68);
 }
 
-function SelfieCapture({
+export function SelfieCapture({
   value,
   onChange,
   setError,

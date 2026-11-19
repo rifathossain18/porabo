@@ -2,7 +2,7 @@
  * Cloudflare D1 API Client
  */
 
-import { User, TuitionPost, TuitionApplication, VerificationDocumentSet } from './types';
+import { User, TuitionPost, TuitionApplication, VerificationDocumentSet, TeacherVerificationResubmission } from './types';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || '';
 const IS_API_ENABLED = Boolean(API_BASE);
@@ -214,6 +214,25 @@ class CloudflareD1Service {
       }
       throw error;
     }
+  }
+
+  async getOwnVerificationDocuments(
+    userId: string,
+  ): Promise<VerificationDocumentSet | null> {
+    return this.apiFetch<VerificationDocumentSet | null>(
+      `/api/users/${encodeURIComponent(userId)}/verification-resubmission`,
+    );
+  }
+
+  async resubmitTutorVerification(
+    userId: string,
+    submission: TeacherVerificationResubmission,
+  ): Promise<User> {
+    const result = await this.apiFetch<{ success: boolean; user: User }>(
+      `/api/users/${encodeURIComponent(userId)}/verification-resubmission`,
+      { method: 'POST', body: JSON.stringify(submission) },
+    );
+    return result.user;
   }
 
   async saveUser(user: User): Promise<void> {

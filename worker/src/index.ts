@@ -587,6 +587,142 @@ export default {
       }
 
       // ========== USERS ==========
+      const verificationResubmissionMatch = path.match(
+        /^\/api\/users\/([^/]+)\/verification-resubmission$/,
+      );
+      if (verificationResubmissionMatch) {
+        if (method !== 'GET' && method !== 'POST') {
+          return errorResponse('Method not allowed', 405);
+        }
+        const ctx = await getAuth(request, env);
+        const userId = decodeURIComponent(verificationResubmissionMatch[1]);
+        if (!ctx.user || ctx.user.userId !== userId) {
+          return errorResponse('Only the account owner can access verification resubmission', 403);
+        }
+
+        const userRow: any = await env.DB.prepare(
+          'SELECT data, role FROM users WHERE id = ?'
+        ).bind(userId).first();
+        if (!userRow) return errorResponse('User not found', 404);
+        const currentUser = JSON.parse(userRow.data);
+        if (userRow.role !== 'TUTOR' || currentUser.role !== 'TUTOR') {
+          return errorResponse('Teacher account required', 403);
+        }
+
+        if (method === 'GET') {
+          const documents = await env.DB.prepare(
+            `SELECT identityDocumentType, identityFront, identityBack,
+                    studentIdFront, studentIdBack, selfie
+             FROM verification_documents WHERE userId = ?`
+          ).bind(userId).first();
+          return jsonResponse(
+            documents || getLegacyVerificationDocuments(currentUser),
+          );
+        }
+
+        if (method === 'POST') {
+          if (currentUser.verificationStatus !== 'REJECTED') {
+            return errorResponse('Only rejected teacher accounts can resubmit verification', 409);
+          }
+          const body = await parseBody(request);
+          const requiredText = (value: unknown, maxLength: number) =>
+            typeof value === 'string' &&
+            value.trim().length > 0 &&
+            value.trim().length <= maxLength
+              ? value.trim()
+              : null;
+          const institution = requiredText(body.institution, 200);
+          const department = requiredText(body.department, 120);
+          const academicYear = requiredText(body.academicYear, 100);
+          const nidNumber = requiredText(body.nidNumber, 40);
+          const studentIdCardRoll = requiredText(body.studentIdCardRoll, 60);
+          const studentIdCardReg = requiredText(body.studentIdCardReg, 60);
+          const { profilePicture, verificationDocuments } = body;
+
+          if (
+            !institution ||
+            !department ||
+            !academicYear ||
+            !nidNumber ||
+            !studentIdCardRoll ||
+            !studentIdCardReg
+          ) {
+            return errorResponse('Complete all teacher verification details before resubmitting');
+          }
+          if (
+            !isImageDataUrl(profilePicture) ||
+            !verificationDocuments ||
+            !['NID', 'BIRTH_CERTIFICATE'].includes(
+              verificationDocuments.identityDocumentType,
+            ) ||
+            !isImageDataUrl(verificationDocuments.identityFront) ||
+            !isImageDataUrl(verificationDocuments.studentIdFront) ||
+            !isImageDataUrl(verificationDocuments.selfie) ||
+            (verificationDocuments.identityBack != null &&
+              !isImageDataUrl(verificationDocuments.identityBack)) ||
+            (verificationDocuments.studentIdBack != null &&
+              !isImageDataUrl(verificationDocuments.studentIdBack))
+          ) {
+            return errorResponse('A profile photo, identity document, institution ID, and selfie are required');
+          }
+          const uploadedImageSize =
+            profilePicture.length +
+            verificationDocuments.identityFront.length +
+            (verificationDocuments.identityBack?.length || 0) +
+            verificationDocuments.studentIdFront.length +
+            (verificationDocuments.studentIdBack?.length || 0) +
+            verificationDocuments.selfie.length;
+          if (uploadedImageSize > 1_500_000) {
+            return errorResponse('Verification images exceed the allowed upload size');
+          }
+
+          const now = new Date().toISOString();
+          const updatedUser = {
+            ...currentUser,
+            profilePicture,
+            institution,
+            department,
+            academicYear,
+            qualifications: `${institution} - ${department}`,
+            nidNumber,
+            studentIdCardRoll,
+            studentIdCardReg,
+            verificationStatus: 'PENDING',
+            verificationRejectionReason: undefined,
+            verificationSubmittedAt: now,
+          };
+          await env.DB.batch([
+            env.DB.prepare(
+              'UPDATE users SET data = ?, updatedAt = ? WHERE id = ?',
+            ).bind(JSON.stringify(updatedUser), now, userId),
+            env.DB.prepare(
+              `INSERT INTO verification_documents
+                (userId, identityDocumentType, identityFront, identityBack,
+                 studentIdFront, studentIdBack, selfie, createdAt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(userId) DO UPDATE SET
+                 identityDocumentType = excluded.identityDocumentType,
+                 identityFront = excluded.identityFront,
+                 identityBack = excluded.identityBack,
+                 studentIdFront = excluded.studentIdFront,
+                 studentIdBack = excluded.studentIdBack,
+                 selfie = excluded.selfie,
+                 createdAt = excluded.createdAt`,
+            ).bind(
+              userId,
+              verificationDocuments.identityDocumentType,
+              verificationDocuments.identityFront,
+              verificationDocuments.identityBack || null,
+              verificationDocuments.studentIdFront,
+              verificationDocuments.studentIdBack || null,
+              verificationDocuments.selfie,
+              now,
+            ),
+          ]);
+          return jsonResponse({ success: true, user: updatedUser });
+        }
+      }
+
       if (path === '/api/users' && method === 'GET') {
         const ctx = await getAuth(request, env);
         const result = await env.DB.prepare('SELECT data FROM users ORDER BY createdAt DESC').all();

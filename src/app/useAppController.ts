@@ -147,10 +147,6 @@ export function useAppController() {
   // Re-submission Modal State for Rejected Teachers (Text Credentials only)
   const [isResubmitModalOpen, setIsResubmitModalOpen] =
     useState<boolean>(false);
-  const [resubmitNidNumber, setResubmitNidNumber] = useState<string>("");
-  const [resubmitRoll, setResubmitRoll] = useState<string>("");
-  const [resubmitReg, setResubmitReg] = useState<string>("");
-
   // Tooltip state for Teacher Profile Page ratings
   const [profileActiveTooltip, setProfileActiveTooltip] = useState<
     string | null
@@ -460,7 +456,6 @@ export function useAppController() {
     handleOpenProfileModal,
     handleSaveProfileModal,
     handleUpdateUserDistrict,
-    handleResubmitVerification,
   } = useProfileActions({
     currentUser,
     setCurrentUser,
@@ -493,11 +488,6 @@ export function useAppController() {
     setProfilePhilosophy,
     setProfileExpectedFee,
     setProfileSubjects,
-    isResubmitModalOpen,
-    setIsResubmitModalOpen,
-    resubmitNidNumber,
-    resubmitRoll,
-    resubmitReg,
   });
 
   const {
@@ -711,12 +701,6 @@ export function useAppController() {
     setSelectedApplicationForModal,
     isResubmitModalOpen,
     setIsResubmitModalOpen,
-    resubmitNidNumber,
-    setResubmitNidNumber,
-    resubmitRoll,
-    setResubmitRoll,
-    resubmitReg,
-    setResubmitReg,
     profileActiveTooltip,
     setProfileActiveTooltip,
     isForgotPasswordOpen,
@@ -912,7 +896,6 @@ export function useAppController() {
     handleOpenProfileModal,
     handleSaveProfileModal,
     handleUpdateUserDistrict,
-    handleResubmitVerification,
     handleAdminApproveTutor,
     handleAdminRejectTutor,
     handleAdminApprovePost,

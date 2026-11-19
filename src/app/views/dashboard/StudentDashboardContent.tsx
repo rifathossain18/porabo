@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { MapPin, CheckCircle2, Unlock, Phone, Download, Users, PlusCircle, Check, BookOpen, Star, Clock, Filter, CheckCircle, GraduationCap, Info, Eye, User as UserIcon, CheckSquare, Sun } from "lucide-react";
 import { Area } from "recharts";
 import { GenderAvatar } from "../../../components/GenderAvatar";
@@ -34,6 +35,42 @@ export function StudentDashboardContent() {
     handleOpenTeacherProfile,
     handleOpenProfileModal,
   } = useAppContext();
+
+  const usersById = useMemo(
+    () => new Map(allUsers.map((user) => [user.id, user] as const)),
+    [allUsers],
+  );
+  const postsById = useMemo(
+    () => new Map(tuitionPosts.map((post) => [post.id, post] as const)),
+    [tuitionPosts],
+  );
+  const applicantRatingsByTutorId = useMemo(() => {
+    const ratings = new Map<
+      string,
+      ReturnType<typeof getTutorRatingSummary>
+    >();
+    studentReceivedApplications.forEach((application) => {
+      if (!ratings.has(application.tutorId)) {
+        ratings.set(
+          application.tutorId,
+          getTutorRatingSummary(usersById.get(application.tutorId)),
+        );
+      }
+    });
+    return ratings;
+  }, [studentReceivedApplications, usersById]);
+  const inboxSummary = useMemo(
+    () => ({
+      total: studentReceivedApplications.length,
+      pending: studentReceivedApplications.filter(
+        (application) => application.status === "PENDING",
+      ).length,
+      posts: new Set(
+        studentReceivedApplications.map((application) => application.postId),
+      ).size,
+    }),
+    [studentReceivedApplications],
+  );
   if (!currentUser || currentUser.role !== "STUDENT") return null;
   return (
     <>
@@ -81,143 +118,196 @@ export function StudentDashboardContent() {
                     </div>
         
                     {/* Applicant Inbox Section */}
-                    <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] sm:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                    <div className="overflow-hidden rounded-[28px] border border-blue-100 bg-white shadow-[0_12px_36px_-20px_rgba(15,23,42,0.28)]">
+                      <div className="flex flex-col gap-4 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-600/20 text-emerald-700 flex items-center justify-center">
-                            <Users className="w-4 h-4" />
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-blue-100 shadow-inner">
+                            <Users className="h-5 w-5" />
                           </div>
                           <div>
-                            <h2 className="text-base sm:text-lg font-bold text-white">
-                              Applicant Inbox
+                            <h2 className="text-base font-bold tracking-tight text-white sm:text-lg">
+                              Applicant inbox
                             </h2>
-                            <p className="text-xs text-slate-500">
-                              Verified teachers who applied to your tuition posts
+                            <p className="mt-0.5 text-xs text-blue-100/75">
+                              {inboxSummary.posts} posts with applications to review
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <div className="rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2 text-center">
+                            <p className="text-lg font-bold leading-5 text-white">
+                              {inboxSummary.total}
+                            </p>
+                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                              Applications
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-white/10 bg-white/10 px-3.5 py-2 text-center">
+                            <p className="text-lg font-bold leading-5 text-white">
+                              {inboxSummary.pending}
+                            </p>
+                            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                              Pending
                             </p>
                           </div>
                         </div>
                       </div>
         
                       {studentReceivedApplications.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500 space-y-3">
+                        <div className="space-y-3 p-8 text-center text-slate-500">
                           <EmptyInboxIllustration className="w-36 h-36 mx-auto mb-1" />
                           <p className="text-sm font-semibold text-slate-600">
                             No applications received yet.
                           </p>
-                          <p className="text-xs text-slate-500 max-w-md mx-auto">
-                            Once verified neighborhood teachers apply to your tuition
-                            posts, their credentials and proposals will appear here for
-                            your review.
+                          <p className="mx-auto max-w-md text-xs leading-5 text-slate-500">
+                            When tutors apply to your tuition posts, their credentials
+                            and proposals will appear here for your review.
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4 p-4 sm:p-5">
                           {studentReceivedApplications.map((app) => {
-                            const post = tuitionPosts.find((p) => p.id === app.postId);
+                            const post = postsById.get(app.postId);
                             const isAccepted = app.status === "ACCEPTED";
-                            const tutorUser = allUsers.find(
-                              (u) => u.id === app.tutorId,
-                            );
-                            const tutorRating = getTutorRatingSummary(tutorUser);
+                            const isRejected = app.status === "REJECTED";
+                            const isWithdrawn = app.status === "WITHDRAWN";
+                            const tutorUser = usersById.get(app.tutorId);
+                            const tutorRating =
+                              applicantRatingsByTutorId.get(app.tutorId) ??
+                              getTutorRatingSummary(tutorUser);
+                            const statusStyle = isAccepted
+                              ? {
+                                  bar: "bg-emerald-500",
+                                  badge:
+                                    "border-emerald-200 bg-emerald-50 text-emerald-700",
+                                  label: "Accepted",
+                                }
+                              : isRejected
+                                ? {
+                                    bar: "bg-rose-400",
+                                    badge:
+                                      "border-rose-200 bg-rose-50 text-rose-700",
+                                    label: "Rejected",
+                                  }
+                                : isWithdrawn
+                                  ? {
+                                    bar: "bg-slate-300",
+                                    badge:
+                                      "border-slate-200 bg-slate-100 text-slate-600",
+                                    label: "Withdrawn",
+                                  }
+                                  : {
+                                    bar: "bg-amber-400",
+                                    badge:
+                                      "border-amber-200 bg-amber-50 text-amber-800",
+                                    label: "Awaiting review",
+                                  };
         
                             return (
                               <div
                                 key={app.id}
-                                className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                                className={`overflow-hidden rounded-3xl border shadow-sm transition-colors ${
                                   isAccepted
-                                    ? "bg-emerald-50 border-emerald-500/50 shadow-lg shadow-emerald-950/40"
-                                    : "bg-white border-emerald-200 hover:border-emerald-200"
+                                    ? "border-emerald-200 bg-emerald-50/50"
+                                    : isRejected
+                                      ? "border-slate-200 bg-slate-50/80"
+                                      : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-md"
                                 }`}
                               >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                  <div className="flex items-start gap-3">
-                                    <GenderAvatar
-                                      gender={tutorUser?.gender || "MALE"}
-                                      role="TUTOR"
-                                      size="md"
-                                      profilePicture={tutorUser?.profilePicture}
-                                    />
-                                    <div>
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span
-                                          onClick={() => {
-                                            const tutorObj = allUsers.find(
-                                              (u) => u.id === app.tutorId,
-                                            );
-                                            if (tutorObj) {
-                                              setSelectedTutorForDetailModal(tutorObj);
-                                              setSelectedApplicationForModal(app);
-                                            } else {
-                                              handleOpenTeacherProfile(app.tutorId);
-                                            }
-                                          }}
-                                          className="font-bold text-sm sm:text-base text-white hover:text-emerald-700 cursor-pointer underline decoration-emerald-500/40 decoration-dotted hover:decoration-solid transition-colors inline-flex items-center gap-1"
-                                          title="Click to view detailed qualifications, degrees, experience & ratings"
-                                        >
-                                          <span>{app.tutorName}</span>
-                                          <Info className="w-3.5 h-3.5 text-emerald-700" />
-                                        </span>
-                                        <span
-                                          className={`flex items-center gap-0.5 text-xs ${
-                                            tutorRating.average > 0
-                                              ? "text-amber-700"
-                                              : "text-slate-500"
-                                          }`}
-                                          title={`${tutorRating.reviewCount} approved reviews`}
-                                        >
-                                          <Star
-                                            className={`h-3 w-3 ${
-                                              tutorRating.average > 0
-                                                ? "fill-amber-400"
-                                                : ""
-                                            }`}
-                                          />
-                                          <span>
-                                            {tutorRating.average.toFixed(1)} (
-                                            {tutorRating.reviewCount})
-                                          </span>
-                                        </span>
-                                        <span className="text-xs text-slate-500">
-                                          &bull; {app.tutorDistanceKm || 0.8} km away
-                                        </span>
+                                <div className={`h-1 w-full ${statusStyle.bar}`} />
+                                <div className="p-4 sm:p-5">
+                                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="flex min-w-0 items-start gap-3">
+                                      <div className="shrink-0 rounded-2xl bg-white p-0.5 shadow-sm ring-1 ring-slate-200">
+                                        <GenderAvatar
+                                          gender={tutorUser?.gender || "MALE"}
+                                          role="TUTOR"
+                                          size="md"
+                                          profilePicture={tutorUser?.profilePicture}
+                                        />
                                       </div>
-                                      <p className="text-xs text-emerald-700 mt-0.5">
-                                        {app.tutorQualifications}
-                                      </p>
-                                      {tutorUser?.institution?.trim() && (
-                                        <span className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-                                          <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                                          <span className="truncate">
-                                            {tutorUser.institution}
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (tutorUser) {
+                                                setSelectedTutorForDetailModal(tutorUser);
+                                                setSelectedApplicationForModal(app);
+                                              } else {
+                                                handleOpenTeacherProfile(app.tutorId);
+                                              }
+                                            }}
+                                            className="inline-flex items-center gap-1 text-left text-sm font-bold text-slate-900 underline decoration-blue-300 decoration-dotted underline-offset-4 transition-colors hover:text-blue-700 hover:decoration-solid sm:text-base"
+                                            title="View tutor qualifications, experience and ratings"
+                                          >
+                                            <span>{app.tutorName}</span>
+                                            <Info className="h-3.5 w-3.5 text-blue-600" />
+                                          </button>
+                                          <span
+                                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold ${statusStyle.badge}`}
+                                          >
+                                            {statusStyle.label}
                                           </span>
-                                        </span>
-                                      )}
-                                      <p className="text-xs text-slate-500 mt-0.5">
-                                        Applying for:{" "}
-                                        <span className="text-slate-600 font-medium">
-                                          {post?.title || "Tuition Post"}
-                                        </span>
-                                      </p>
+                                        </div>
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                          {tutorRating.reviewCount > 0 ? (
+                                            <span
+                                              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"
+                                              title={`${tutorRating.reviewCount} approved reviews`}
+                                            >
+                                              <Star className="h-3.5 w-3.5 fill-amber-400" />
+                                              {tutorRating.average.toFixed(1)}
+                                              <span className="font-normal text-slate-500">
+                                                ({tutorRating.reviewCount} reviews)
+                                              </span>
+                                            </span>
+                                          ) : (
+                                            <span className="text-xs font-medium text-slate-500">
+                                              New tutor
+                                            </span>
+                                          )}
+                                          {typeof app.tutorDistanceKm === "number" &&
+                                            Number.isFinite(app.tutorDistanceKm) && (
+                                              <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                                                <MapPin className="h-3 w-3" />
+                                                {app.tutorDistanceKm.toFixed(1)} km away
+                                              </span>
+                                            )}
+                                        </div>
+                                        {tutorUser?.institution?.trim() && (
+                                          <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-800">
+                                            <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="truncate">
+                                              {tutorUser.institution}
+                                            </span>
+                                          </span>
+                                        )}
+                                        {app.tutorQualifications?.trim() && (
+                                          <p className="mt-2 text-xs leading-5 text-slate-600">
+                                            {app.tutorQualifications}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
         
-                                  <div className="flex items-center gap-2 self-start sm:self-center">
+                                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
                                     <button
                                       type="button"
                                       onClick={() =>
                                         handleOpenTeacherProfile(app.tutorId)
                                       }
-                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium border border-slate-300 transition-colors flex items-center gap-1"
+                                      className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                                     >
-                                      <Eye className="w-3.5 h-3.5 text-emerald-700" />
+                                      <Eye className="w-3.5 h-3.5 text-blue-600" />
                                       <span>View Full Profile</span>
                                     </button>
         
-                                    {!isAccepted && app.status !== "REJECTED" && (
+                                    {app.status === "PENDING" && (
                                       <button
                                         type="button"
                                         onClick={() => acceptTutorDirectly(app)}
-                                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1"
+                                        className="flex items-center gap-1 rounded-xl bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-900/20 transition-colors hover:bg-blue-800"
                                       >
                                         <Check className="w-3.5 h-3.5" />
                                         <span>Accept Tutor</span>
@@ -234,9 +324,6 @@ export function StudentDashboardContent() {
                                           (Date.now() -
                                             new Date(acceptedAtIso).getTime()) /
                                             (1000 * 60 * 60 * 24),
-                                        );
-                                        const tutorUser = allUsers.find(
-                                          (u) => u.id === app.tutorId,
                                         );
                                         const myReview = (
                                           tutorUser?.reviews || []
@@ -259,7 +346,7 @@ export function StudentDashboardContent() {
                                           };
                                           return (
                                             <span
-                                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1 ${colorMap[myReview.status || "APPROVED"]}`}
+                                              className={`flex items-center gap-1 rounded-xl border px-3 py-2 text-xs font-semibold ${colorMap[myReview.status || "APPROVED"]}`}
                                             >
                                               <Star className="w-3.5 h-3.5" />
                                               <span>
@@ -285,7 +372,7 @@ export function StudentDashboardContent() {
                                                 setRatingTeachingStyle(0);
                                                 setIsRatingModalOpen(true);
                                               }}
-                                              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 text-xs font-semibold border border-amber-500/40 flex items-center gap-1 transition-colors"
+                                              className="flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100"
                                             >
                                               <Star className="w-3.5 h-3.5 fill-amber-400" />
                                               <span>Rate Tutor</span>
@@ -294,62 +381,91 @@ export function StudentDashboardContent() {
                                         }
         
                                         return (
-                                          <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-300 flex items-center gap-1">
+                                          <span className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
                                             <Clock className="w-3.5 h-3.5" />
                                             <span>Review in {30 - daysSince}d</span>
                                           </span>
                                         );
                                       })()}
                                   </div>
-                                </div>
+                                  </div>
         
                                 {/* Proposal Details */}
-                                <div className="mt-3 pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
-                                  <div>
-                                    <span className="text-slate-500">
-                                      Proposed Fee:
-                                    </span>{" "}
-                                    <span className="font-semibold text-emerald-700">
-                                      ৳ {app.proposedSalary} / month
-                                    </span>
+                                <div className="mt-4 grid grid-cols-1 gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2">
+                                  <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-3.5 py-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700/70">
+                                      Proposed monthly fee
+                                    </p>
+                                    <p className="mt-1 text-sm font-bold text-slate-900">
+                                      ৳ {app.proposedSalary.toLocaleString()}
+                                    </p>
                                   </div>
-                                  <div>
-                                    <span className="text-slate-500">
-                                      Available Schedule:
-                                    </span>{" "}
-                                    <span className="text-slate-600">
+                                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                                      Available schedule
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold text-slate-800">
                                       {app.availableSchedule}
-                                    </span>
+                                    </p>
+                                  </div>
+                                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 sm:col-span-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                                      Applying for
+                                    </p>
+                                    <p className="mt-1 truncate text-sm font-semibold text-slate-800">
+                                      {post?.title || "Tuition Post"}
+                                    </p>
                                   </div>
                                 </div>
+                                {app.message.trim() && (
+                                  <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                                      Tutor's note
+                                    </p>
+                                    <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-700">
+                                      {app.message}
+                                    </p>
+                                  </div>
+                                )}
         
                                 {/* Unlocked Contact Details on Acceptance */}
                                 {isAccepted && (
-                                  <div className="mt-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-500/40 text-xs space-y-1.5">
-                                    <div className="font-semibold text-emerald-700 flex items-center gap-1.5">
-                                      <Unlock className="w-4 h-4 text-emerald-700" />
+                                  <div className="mt-4 space-y-1.5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs">
+                                    <div className="flex items-center gap-1.5 font-semibold text-emerald-800">
+                                      <Unlock className="h-4 w-4 text-emerald-700" />
                                       <span>Mutual Contact Details Unlocked!</span>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 pt-1">
-                                      <div>
-                                        <span className="text-slate-500">
-                                          Tutor Phone:
-                                        </span>{" "}
-                                        <span className="font-mono font-bold text-white">
-                                          {app.tutorPhone || "+880 1712-345678"}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className="text-slate-500">
-                                          Tutor WhatsApp:
-                                        </span>{" "}
-                                        <span className="font-mono font-bold text-emerald-700">
-                                          {app.tutorWhatsapp || app.tutorPhone}
-                                        </span>
-                                      </div>
+                                    <div className="grid grid-cols-1 gap-2 pt-1 text-slate-700 sm:grid-cols-2">
+                                      {(app.tutorPhone || tutorUser?.phone) && (
+                                        <div>
+                                          <span className="text-slate-500">
+                                            Tutor Phone:
+                                          </span>{" "}
+                                          <span className="font-mono font-bold text-slate-900">
+                                            {app.tutorPhone || tutorUser?.phone}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {(app.tutorWhatsapp ||
+                                        tutorUser?.whatsapp ||
+                                        app.tutorPhone ||
+                                        tutorUser?.phone) && (
+                                        <div>
+                                          <span className="text-slate-500">
+                                            Tutor WhatsApp:
+                                          </span>{" "}
+                                          <span className="font-mono font-bold text-emerald-800">
+                                            {app.tutorWhatsapp ||
+                                              tutorUser?.whatsapp ||
+                                              app.tutorPhone ||
+                                              tutorUser?.phone}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 )}
+                              </div>
                               </div>
                             );
                           })}

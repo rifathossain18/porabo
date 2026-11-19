@@ -331,18 +331,23 @@ export function useAppViewData({
 
   const studentReceivedApplications = useMemo(() => {
     if (!currentUser || currentUser.role !== "STUDENT") return [];
-    const myPostIds = studentMyPosts.map((p) => p.id);
-    const rawApps = applications.filter((a) => myPostIds.includes(a.postId));
-
-    return rawApps.sort((a, b) => {
-      const pointsA = allQuizzes.filter(
-        (q) => q.teacherId === a.tutorId,
-      ).length;
-      const pointsB = allQuizzes.filter(
-        (q) => q.teacherId === b.tutorId,
-      ).length;
-      return pointsB - pointsA;
+    const myPostIds = new Set(studentMyPosts.map((post) => post.id));
+    const rawApps = applications.filter((application) =>
+      myPostIds.has(application.postId),
+    );
+    const quizCountByTeacher = new Map<string, number>();
+    allQuizzes.forEach((quiz) => {
+      quizCountByTeacher.set(
+        quiz.teacherId,
+        (quizCountByTeacher.get(quiz.teacherId) || 0) + 1,
+      );
     });
+
+    return rawApps.sort(
+      (a, b) =>
+        (quizCountByTeacher.get(b.tutorId) || 0) -
+        (quizCountByTeacher.get(a.tutorId) || 0),
+    );
   }, [applications, studentMyPosts, allQuizzes, currentUser]);
 
   const myAcceptedApplications = useMemo(() => {

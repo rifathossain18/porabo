@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AlertTriangle, MapPin, CheckCircle2, Unlock, Phone, MessageSquare, Send, BookOpen, Clock, TrendingUp, Eye, Activity, LayoutGrid, Radio, RefreshCw } from "lucide-react";
 import { DistrictRadarView } from "../../../components/DistrictRadarView";
 import { EmptyApplicationsIllustration } from "../../../components/EmptyStateIllustrations";
@@ -18,8 +19,11 @@ export function TutorOverviewSection() {
     filteredTutorPosts,
     tutorMyApplications,
     handleOpenTeacherProfile,
-    handleUpdateUserDistrict,
   } = useAppContext();
+  const appliedPostIds = useMemo(
+    () => new Set(tutorMyApplications.map((application) => application.postId)),
+    [tutorMyApplications],
+  );
   if (!currentUser || currentUser.role !== "TUTOR") return null;
   return (
     <>
@@ -81,12 +85,12 @@ export function TutorOverviewSection() {
                           onClick={() => setTeacherViewMode("map")}
                           className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
                             teacherViewMode === "map"
-                              ? "bg-gradient-to-r from-blue-600 to-blue-600 text-white shadow-md shadow-blue-600/30"
+                              ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20"
                               : "text-slate-500 hover:text-slate-900"
                           }`}
                         >
-                          <Radio className="w-3.5 h-3.5 text-blue-700 animate-pulse" />
-                          <span>District Radar ({filteredTutorPosts.length})</span>
+                          <Radio className="w-3.5 h-3.5" />
+                          <span>Tuition Radar ({filteredTutorPosts.length})</span>
                         </button>
         
                         <button
@@ -196,7 +200,9 @@ export function TutorOverviewSection() {
                                         {post?.gradeLevel && <> · {post.gradeLevel}</>}
                                       </p>
                                       <p className="mt-1 text-xs text-slate-500">
-                                        {post?.areaName || "Area unavailable"}, {post?.district || "District unavailable"}
+                                        {post?.tuitionMode === "ONLINE"
+                                          ? "Online · Nationwide"
+                                          : `${post?.areaName || "Area unavailable"}, ${post?.district || "District unavailable"}`}
                                       </p>
                                     </div>
         
@@ -320,7 +326,9 @@ export function TutorOverviewSection() {
                                           <span className="text-slate-900 font-medium">
                                             {app.studentExactAddress ||
                                               post?.exactAddress ||
-                                              `${post?.areaName || "Local"}, ${post?.district || "Dhaka"}`}
+                                              post?.tuitionMode === "ONLINE"
+                                                ? "Online tuition — no home address"
+                                                : `${post?.areaName || "Local"}, ${post?.district || "Dhaka"}`}
                                           </span>
                                         </div>
                                       </div>
@@ -353,11 +361,11 @@ export function TutorOverviewSection() {
                       </div>
                     )}
         
-                    {/* VIEW MODE: DISTRICT RADAR (IMAGINARY BLIPS FOR DISTRICT TUITIONS) */}
+                    {/* VIEW MODE: LOCAL AND NATIONWIDE TUITION RADAR */}
                     {teacherViewMode === "map" && (
                       <DistrictRadarView
                         posts={filteredTutorPosts}
-                        appliedPostIds={tutorMyApplications.map((a) => a.postId)}
+                        appliedPostIds={appliedPostIds}
                         district={currentUser.district || "Dhaka"}
                         areaName={currentUser.areaName || ""}
                         onApply={(post) => {
@@ -365,7 +373,6 @@ export function TutorOverviewSection() {
                           setApplyProposedSalary(post.salaryBudget);
                         }}
                         onBookmarkToggle={(postId) => handleToggleBookmark(postId)}
-                        onDistrictChange={handleUpdateUserDistrict}
                       />
                     )}
     </>

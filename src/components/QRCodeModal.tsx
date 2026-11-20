@@ -306,7 +306,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     // ----- 10. Location pill -----
     if (areaName || district) {
       currentY += 10;
-      const locationText = areaName ? `${areaName}, ${district}` : district || '';
+      const locationText = [areaName, district].filter(Boolean).join(", ");
       ctx.font = '600 15px "SF Mono", "Monaco", "Courier New", monospace';
       const locText = `${locationText}`;
       const locWidth = ctx.measureText(locText).width + 55;
@@ -510,7 +510,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           {(areaName || district) && (
             <div className="inline-flex items-center gap-1 text-[11px] font-mono text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
               <MapPin className="w-3 h-3" />
-              <span>{areaName ? `${areaName}, ${district}` : district}</span>
+              <span>{[areaName, district].filter(Boolean).join(", ")}</span>
             </div>
           )}
         </div>

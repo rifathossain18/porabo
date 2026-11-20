@@ -57,12 +57,15 @@ export function usePostApplicationActions({
       return;
     }
 
-    const distance = calculateDistanceKm(
-      baseLat,
-      baseLng,
-      selectedPostForApply.latitude,
-      selectedPostForApply.longitude,
-    );
+    const distance =
+      selectedPostForApply.tuitionMode === "ONLINE"
+        ? undefined
+        : calculateDistanceKm(
+            baseLat,
+            baseLng,
+            selectedPostForApply.latitude,
+            selectedPostForApply.longitude,
+          );
     const application: TuitionApplication = {
       id: `app_${Date.now()}`,
       postId: selectedPostForApply.id,
@@ -111,12 +114,15 @@ export function usePostApplicationActions({
     }
 
     const proposedSalary = post.salaryBudget;
-    const distance = calculateDistanceKm(
-      baseLat,
-      baseLng,
-      post.latitude,
-      post.longitude,
-    );
+    const distance =
+      post.tuitionMode === "ONLINE"
+        ? undefined
+        : calculateDistanceKm(
+            baseLat,
+            baseLng,
+            post.latitude,
+            post.longitude,
+          );
     const application: TuitionApplication = {
       id: `app_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       postId: post.id,
@@ -132,7 +138,10 @@ export function usePostApplicationActions({
       tutorDistanceKm: distance,
       proposedSalary,
       availableSchedule: "Mon, Wed, Fri (4:30 PM - 6:00 PM)",
-      message: `I am a verified tutor in ${currentUser.district} (${currentUser.areaName || ""}) with proven academic credentials. Ready to begin coaching for ${post.subject}.`,
+      message:
+        post.tuitionMode === "ONLINE"
+          ? `I am a verified tutor ready to teach remotely and support this student in ${post.subject}.`
+          : `I am a verified tutor in ${currentUser.district} (${currentUser.areaName || ""}) with proven academic credentials. Ready to begin coaching for ${post.subject}.`,
       status: "PENDING",
       statusReason: "Application Under Review by Guardian (Initial Screening)",
       createdAt: new Date().toISOString(),
@@ -192,10 +201,14 @@ export function usePostApplicationActions({
         studentWhatsapp:
           currentUser.whatsapp || currentUser.phone || "+880 1712-345678",
         studentExactAddress:
-          targetPost.exactAddress ||
-          `${targetPost.areaName}, ${targetPost.district}`,
-        studentAreaName: targetPost.areaName,
-        studentDistrict: targetPost.district,
+          targetPost.tuitionMode === "ONLINE"
+            ? ""
+            : targetPost.exactAddress ||
+              `${targetPost.areaName}, ${targetPost.district}`,
+        studentAreaName:
+          targetPost.tuitionMode === "ONLINE" ? "" : targetPost.areaName,
+        studentDistrict:
+          targetPost.tuitionMode === "ONLINE" ? "" : targetPost.district,
       };
       await cfD1.saveApplication(acceptedApplication);
 

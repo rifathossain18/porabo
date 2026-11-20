@@ -537,7 +537,9 @@ export async function generateTuitionCard(
   context.fillStyle = COLORS.text;
   context.font = "600 19px Arial, sans-serif";
   context.fillText(
-    `${post.areaName}, ${post.district}`,
+    post.tuitionMode === "ONLINE"
+      ? "Online · Nationwide"
+      : [post.areaName, post.district].filter(Boolean).join(", "),
     left + 20,
     locationY + 35,
     CONTENT_WIDTH - 40,

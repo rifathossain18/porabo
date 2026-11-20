@@ -126,7 +126,7 @@ export const TuitionPostForm: React.FC<TuitionPostFormProps> = ({
       setFormError("Enter a monthly budget greater than ৳0.");
       return;
     }
-    if (!area.trim()) {
+    if (tuitionMode !== "ONLINE" && !area.trim()) {
       setFormError("Add your neighborhood so nearby tutors can find this post.");
       return;
     }
@@ -141,12 +141,14 @@ export const TuitionPostForm: React.FC<TuitionPostFormProps> = ({
       setFormError("Choose at least one day for in-person tuition.");
       return;
     }
-    for (const slot of schedule) {
-      if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
-        const dayLabel =
-          WEEK_DAYS.find((day) => day.key === slot.day)?.label || slot.day;
-        setFormError(`Set a valid start and end time for ${dayLabel}.`);
-        return;
+    if (tuitionMode !== "ONLINE") {
+      for (const slot of schedule) {
+        if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
+          const dayLabel =
+            WEEK_DAYS.find((day) => day.key === slot.day)?.label || slot.day;
+          setFormError(`Set a valid start and end time for ${dayLabel}.`);
+          return;
+        }
       }
     }
 
@@ -155,18 +157,18 @@ export const TuitionPostForm: React.FC<TuitionPostFormProps> = ({
       subject,
       gradeLevel,
       curriculum,
-      daysPerWeek: schedule.length || 3,
-      hoursPerDay: computeHoursPerDay(),
+      daysPerWeek: tuitionMode === "ONLINE" ? 3 : schedule.length || 3,
+      hoursPerDay: tuitionMode === "ONLINE" ? 1.5 : computeHoursPerDay(),
       salaryBudget: budget,
       genderPreference: "ANY",
       tuitionMode,
-      weeklySchedule: [...schedule].sort(
+      weeklySchedule: (tuitionMode === "ONLINE" ? [] : [...schedule]).sort(
         (a, b) =>
           WEEK_DAYS.findIndex((day) => day.key === a.day) -
           WEEK_DAYS.findIndex((day) => day.key === b.day)
       ),
-      district,
-      areaName: area.trim(),
+      district: tuitionMode === "ONLINE" ? "" : district,
+      areaName: tuitionMode === "ONLINE" ? "" : area.trim(),
       exactAddress: tuitionMode === "ONLINE" ? "" : address.trim(),
       specialRequirements: "",
     });
@@ -484,14 +486,22 @@ export const TuitionPostForm: React.FC<TuitionPostFormProps> = ({
             <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <div className="mb-4 flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <MapPin className="h-4 w-4" />
+                  {tuitionMode === "ONLINE" ? (
+                    <Video className="h-4 w-4" />
+                  ) : (
+                    <MapPin className="h-4 w-4" />
+                  )}
                 </span>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Where lessons happen
+                    {tuitionMode === "ONLINE"
+                      ? "Nationwide online tuition"
+                      : "Where lessons happen"}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Your neighborhood is public; your exact address stays private.
+                    {tuitionMode === "ONLINE"
+                      ? "No district or home address is needed for online lessons."
+                      : "Your neighborhood is public; your exact address stays private."}
                   </p>
                 </div>
                 <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -499,54 +509,70 @@ export const TuitionPostForm: React.FC<TuitionPostFormProps> = ({
                 </span>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <DistrictSelect
-                  value={district}
-                  onChange={setDistrict}
-                  label="District"
-                  placeholder="Choose a district"
-                />
-                <div>
-                  <label htmlFor="tuition-area" className={labelClassName}>
-                    Neighborhood / area
-                  </label>
-                  <input
-                    id="tuition-area"
-                    type="text"
-                    value={area}
-                    onChange={(event) => setArea(event.target.value)}
-                    placeholder="e.g. Dhanmondi 27"
-                    maxLength={150}
-                    required
-                    className={inputClassName}
-                  />
-                </div>
-              </div>
-
-              {tuitionMode !== "ONLINE" && (
-                <div className="mt-3">
-                  <label htmlFor="tuition-address" className={labelClassName}>
-                    Exact address
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="tuition-address"
-                      type="text"
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                      placeholder="House, road, building (not shown publicly)"
-                      maxLength={300}
-                      required
-                      className={`${inputClassName} pr-11`}
-                    />
-                    <LockKeyhole className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-600" />
+              {tuitionMode === "ONLINE" ? (
+                <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+                    <Video className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      Open to verified tutors across Bangladesh
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">
+                      This online request will not include a district, neighborhood, or home address.
+                    </p>
                   </div>
-                  <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-4 text-slate-500">
-                    <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                    Only shared with the tutor you accept. Tutors see your area,
-                    never your full address, before then.
-                  </p>
                 </div>
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DistrictSelect
+                      value={district}
+                      onChange={setDistrict}
+                      label="District"
+                      placeholder="Choose a district"
+                    />
+                    <div>
+                      <label htmlFor="tuition-area" className={labelClassName}>
+                        Neighborhood / area
+                      </label>
+                      <input
+                        id="tuition-area"
+                        type="text"
+                        value={area}
+                        onChange={(event) => setArea(event.target.value)}
+                        placeholder="e.g. Dhanmondi 27"
+                        maxLength={150}
+                        required
+                        className={inputClassName}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    <label htmlFor="tuition-address" className={labelClassName}>
+                      Exact address
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="tuition-address"
+                        type="text"
+                        value={address}
+                        onChange={(event) => setAddress(event.target.value)}
+                        placeholder="House, road, building (not shown publicly)"
+                        maxLength={300}
+                        required
+                        className={`${inputClassName} pr-11`}
+                      />
+                      <LockKeyhole className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-600" />
+                    </div>
+                    <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-4 text-slate-500">
+                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      Only shared with the tutor you accept. Tutors see your area,
+                      never your full address, before then.
+                    </p>
+                  </div>
+                </>
               )}
             </section>
           </div>

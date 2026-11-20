@@ -802,8 +802,10 @@ export function StudentDashboardContent() {
                                     Teaching location
                                   </div>
                                   <div className="mt-1 text-sm font-medium text-slate-800">
-                                    {post.exactAddress ||
-                                      `${post.areaName}, ${post.district}`}
+                                    {post.tuitionMode === "ONLINE"
+                                      ? "Online · Nationwide (no home address)"
+                                      : post.exactAddress ||
+                                        `${post.areaName}, ${post.district}`}
                                   </div>
                                 </div>
         

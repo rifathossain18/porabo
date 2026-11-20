@@ -159,10 +159,12 @@ export function AdminPostsSection({
                   </div>
                   <div className="col-span-2 sm:col-span-3">
                     <div className="text-[9px] text-slate-500 font-mono uppercase">
-                      Exact Address
+                      {post.tuitionMode === "ONLINE" ? "Teaching mode" : "Exact Address"}
                     </div>
                     <div className="text-xs text-white">
-                      {post.exactAddress || `${post.areaName}, ${post.district}`}
+                      {post.tuitionMode === "ONLINE"
+                        ? "Online · Nationwide"
+                        : post.exactAddress || `${post.areaName}, ${post.district}`}
                     </div>
                   </div>
                 </div>

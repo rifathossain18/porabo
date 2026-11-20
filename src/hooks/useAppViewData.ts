@@ -191,47 +191,76 @@ export function useAppViewData({
   }, [applications, currentUser]);
 
   const postsWithDistance = useMemo(() => {
+    const applicationCountByPost = new Map<string, number>();
+    const acceptedPostIds = new Set<string>();
+    for (const application of applications) {
+      applicationCountByPost.set(
+        application.postId,
+        (applicationCountByPost.get(application.postId) || 0) + 1,
+      );
+      if (application.status === "ACCEPTED") {
+        acceptedPostIds.add(application.postId);
+      }
+    }
+    const bookmarkedIds = new Set(bookmarkedPostIds);
+
     const openApprovedList = tuitionPosts.filter((p) => {
       const isApproved = p.approvalStatus === "APPROVED" || !p.approvalStatus;
       const isMatched =
         p.status === "MATCHED" ||
         p.isFoundTutor ||
-        applications.some((a) => a.postId === p.id && a.status === "ACCEPTED");
+        acceptedPostIds.has(p.id);
       return isApproved && !isMatched;
     });
 
     return openApprovedList
       .map((post) => {
-        const dist = calculateDistanceKm(
-          baseLat,
-          baseLng,
-          post.latitude,
-          post.longitude,
-        );
-        const postApps = applications.filter((a) => a.postId === post.id);
+        const dist =
+          post.tuitionMode === "ONLINE"
+            ? undefined
+            : calculateDistanceKm(
+                baseLat,
+                baseLng,
+                post.latitude,
+                post.longitude,
+              );
         return {
           ...post,
           distanceKm: dist,
-          applicationsCount: postApps.length,
-          isBookmarked: bookmarkedPostIds.includes(post.id),
+          applicationsCount: applicationCountByPost.get(post.id) || 0,
+          isBookmarked: bookmarkedIds.has(post.id),
         };
       })
-      .sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
+      .sort((a, b) => {
+        if (a.distanceKm === undefined && b.distanceKm !== undefined) return 1;
+        if (a.distanceKm !== undefined && b.distanceKm === undefined) return -1;
+        if (a.distanceKm === undefined && b.distanceKm === undefined) {
+          return b.createdAt.localeCompare(a.createdAt);
+        }
+        return (a.distanceKm || 0) - (b.distanceKm || 0);
+      });
   }, [tuitionPosts, applications, baseLat, baseLng, bookmarkedPostIds]);
 
   const filteredTutorPosts = useMemo(() => {
-    const myAppliedIds =
+    const myAppliedIds = new Set(
       currentUser?.role === "TUTOR"
         ? applications
             .filter((a) => a.tutorId === currentUser.id)
             .map((a) => a.postId)
-        : [];
+        : [],
+    );
+    const hiddenIds = new Set(hiddenPostIds);
 
     return postsWithDistance.filter((post) => {
-      if (myAppliedIds.includes(post.id)) return false;
-      if (hiddenPostIds.includes(post.id)) return false;
+      if (myAppliedIds.has(post.id)) return false;
+      if (hiddenIds.has(post.id)) return false;
+      const isNationwideOnline = post.tuitionMode === "ONLINE";
 
-      if (isDistanceFilterEnabled && post.distanceKm !== undefined) {
+      if (
+        !isNationwideOnline &&
+        isDistanceFilterEnabled &&
+        post.distanceKm !== undefined
+      ) {
         if (post.distanceKm > distanceRadiusKm) return false;
       }
 
@@ -260,8 +289,9 @@ export function useAppViewData({
           .trim()
           .toLowerCase();
         const postDistrict = (post.district || "").trim().toLowerCase();
-        if (teacherDistrict !== postDistrict) return false;
+        if (!isNationwideOnline && teacherDistrict !== postDistrict) return false;
       } else if (
+        !isNationwideOnline &&
         filterDistrict !== "All Districts" &&
         post.district !== filterDistrict
       ) {

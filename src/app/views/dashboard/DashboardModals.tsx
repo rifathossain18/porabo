@@ -235,10 +235,14 @@ export function DashboardModals() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-semibold text-slate-800">
-                              Approximate area only
+                              {selectedPostForApply.tuitionMode === "ONLINE"
+                                ? "Nationwide online tuition"
+                                : "Approximate area only"}
                             </p>
                             <p className="mt-0.5 text-xs leading-5 text-slate-600">
-                              {selectedPostForApply.areaName}, {selectedPostForApply.district}. Exact address is shared only after acceptance.
+                              {selectedPostForApply.tuitionMode === "ONLINE"
+                                ? "Open to verified tutors across Bangladesh. No district or home address is attached."
+                                : `${selectedPostForApply.areaName}, ${selectedPostForApply.district}. Exact address is shared only after acceptance.`}
                             </p>
                           </div>
                         </div>

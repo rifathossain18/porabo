@@ -42,7 +42,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({
         id: `event_post_${p.id}`,
         type: 'POST_CREATED',
         title: `Tuition Requirement Posted: "${p.title}"`,
-        description: `${p.subject} • ${p.gradeLevel} • ৳ ${p.salaryBudget.toLocaleString()}/mo • ${p.areaName}, ${p.district}`,
+        description: `${p.subject} • ${p.gradeLevel} • ৳ ${p.salaryBudget.toLocaleString()}/mo • ${p.tuitionMode === "ONLINE" ? "Online · Nationwide" : [p.areaName, p.district].filter(Boolean).join(", ")}`,
         timestamp: p.createdAt || new Date().toISOString(),
         statusBadge: p.approvalStatus === 'PENDING' ? 'Under Review' : p.status === 'MATCHED' ? 'Matched' : 'Active Open'
       });

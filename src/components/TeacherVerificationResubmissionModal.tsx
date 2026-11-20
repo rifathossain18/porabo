@@ -155,7 +155,7 @@ export function TeacherVerificationResubmissionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-5">
-      <div className="relative max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-rose-200 bg-white p-5 shadow-2xl sm:p-7">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-rose-200 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-7">
         <button
           type="button"
           onClick={onClose}

@@ -480,13 +480,13 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   // Portal prevents parent's backdrop-filter/transform from breaking fixed positioning
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="w-full max-w-sm bg-white border border-blue-200 rounded-3xl p-6 shadow-2xl relative space-y-4"
+        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-sm space-y-4 overflow-y-auto rounded-2xl border border-blue-200 bg-white p-4 shadow-2xl sm:rounded-3xl sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -516,9 +516,9 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         </div>
 
         {/* QR Preview (instant on cache, loading first time) */}
-        <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-inner border-4 border-slate-200 min-h-[240px]">
+        <div className="flex min-h-[208px] flex-col items-center justify-center rounded-2xl border-4 border-slate-200 bg-white p-3 shadow-inner sm:min-h-[240px] sm:p-4">
           {generating ? (
-            <div className="w-56 h-56 flex flex-col items-center justify-center text-slate-500 gap-2">
+            <div className="flex h-48 w-48 flex-col items-center justify-center gap-2 text-slate-500 sm:h-56 sm:w-56">
               <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
               <span className="text-xs font-mono">Generating QR...</span>
             </div>
@@ -527,14 +527,14 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <img
                 src={qrDataUrl}
                 alt="Porabo QR Code"
-                className="w-56 h-56 object-contain mx-auto rounded-lg"
+                className="mx-auto h-48 w-48 rounded-lg object-contain sm:h-56 sm:w-56"
               />
               <p className="text-[10px] text-slate-600 font-mono">
                 Scan with any mobile camera
               </p>
             </div>
           ) : (
-            <div className="w-56 h-56 flex items-center justify-center text-rose-500 text-xs">
+            <div className="flex h-48 w-48 items-center justify-center text-xs text-rose-500 sm:h-56 sm:w-56">
               Unable to generate QR code.
             </div>
           )}

@@ -144,9 +144,9 @@ export function TutorFeedSection() {
         
                         {/* Filter Controls Bar with Distance Range Slider (1km to 5km) */}
                         <div className="bg-white border border-blue-200 rounded-2xl p-3 sm:p-4 shadow-lg flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                          <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5">
                             {/* Distance Range Slider (1km to 5km) */}
-                            <div className="flex items-center gap-2.5 bg-white border border-blue-200 rounded-xl px-3 py-1.5 text-xs">
+                            <div className="flex max-w-full flex-wrap items-center gap-2.5 rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs">
                               <Sliders className="w-3.5 h-3.5 text-blue-700 shrink-0" />
                               <div className="flex items-center gap-1.5">
                                 <span className="text-slate-500 font-medium">
@@ -166,7 +166,7 @@ export function TutorFeedSection() {
                                   setDistanceRadiusKm(Number(e.target.value));
                                   setIsDistanceFilterEnabled(true);
                                 }}
-                                className="w-20 sm:w-28 accent-cyan-400 cursor-pointer"
+                                className="w-16 cursor-pointer accent-cyan-400 sm:w-28"
                                 title={`Filter tuition posts within ${distanceRadiusKm} km of your location`}
                               />
                               <button
@@ -181,16 +181,28 @@ export function TutorFeedSection() {
                                 }`}
                                 title="Toggle distance filtering on or off"
                               >
-                                {isDistanceFilterEnabled
-                                  ? "1-5km Active"
-                                  : "District All"}
+                                {isDistanceFilterEnabled ? (
+                                  <>
+                                    <span className="sm:hidden">Active</span>
+                                    <span className="hidden sm:inline">
+                                      1-5km Active
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="sm:hidden">All</span>
+                                    <span className="hidden sm:inline">
+                                      District All
+                                    </span>
+                                  </>
+                                )}
                               </button>
                             </div>
         
                             <select
                               value={filterSubject}
                               onChange={(e) => setFilterSubject(e.target.value)}
-                              className="bg-white border border-blue-200 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                              className="min-w-0 w-full max-w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none sm:w-auto"
                             >
                               {SUBJECT_OPTIONS.map((s) => (
                                 <option key={s} value={s}>
@@ -202,7 +214,7 @@ export function TutorFeedSection() {
                             <select
                               value={filterGrade}
                               onChange={(e) => setFilterGrade(e.target.value)}
-                              className="bg-white border border-blue-200 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                              className="min-w-0 w-full max-w-full rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none sm:w-auto"
                             >
                               {GRADE_OPTIONS.map((g) => (
                                 <option key={g} value={g}>

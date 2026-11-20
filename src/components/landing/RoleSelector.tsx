@@ -62,9 +62,9 @@ export const RoleSelector: React.FC<{ onSelect: (role: UserRole) => void }> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-white relative overflow-hidden" style={{ fontFamily: FONT_STACK }}>
+    <div className="min-h-dvh bg-slate-50 text-white relative overflow-hidden" style={{ fontFamily: FONT_STACK }}>
       <PremiumBackground variant="mixed" />
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col min-h-screen">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col min-h-dvh">
         <header className="flex items-center justify-between mb-10 sm:mb-14 pb-rise">
           <Logo sub="Tuition Network" subClass="text-blue-700" />
           <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-slate-500 bg-white px-3 py-1.5 rounded-full border border-blue-200">

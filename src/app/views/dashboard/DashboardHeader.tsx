@@ -26,7 +26,7 @@ export function DashboardHeader() {
     <>
               {/* Main Top Header */}
               <header className="sticky top-0 z-40 border-b border-blue-200 bg-white backdrop-blur-md px-3 sm:px-6 py-2.5">
-                <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
                   {/* Logo & Brand */}
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-700 bg-blue-600 p-1 sm:h-11 sm:w-11">
@@ -51,7 +51,7 @@ export function DashboardHeader() {
         
                   {/* REAL-TIME GLOBAL SEARCH BAR IN HEADER (ONLY FOR TUTOR ROLE) */}
                   {currentUser.role === "TUTOR" ? (
-                    <div className="flex-1 max-w-md mx-2">
+                    <div className="order-3 w-full max-w-none sm:order-none sm:mx-2 sm:max-w-md sm:flex-1">
                       <div className="relative">
                         <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
@@ -73,7 +73,7 @@ export function DashboardHeader() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1" />
+                    <div className="hidden flex-1 sm:block" />
                   )}
         
                   {/* User Status, Notifications, Role Badge & Actions */}

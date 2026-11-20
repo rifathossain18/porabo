@@ -96,8 +96,8 @@ export function DashboardModals() {
     <>
               {/* MODAL: APPLY TO TUITION POST */}
               {selectedPostForApply && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                  <div className="w-full max-w-lg bg-white border border-emerald-200 rounded-3xl p-6 shadow-2xl relative">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4">
+                  <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-emerald-200 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-6">
                     <button
                       type="button"
                       onClick={() => setSelectedPostForApply(null)}
@@ -295,7 +295,7 @@ export function DashboardModals() {
               {/* MODAL: 1-MONTH RATING MODAL */}
               {isRatingModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-                  <div className="w-full max-w-lg bg-white border border-emerald-200 rounded-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+                  <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-emerald-200 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-6">
                     <button
                       type="button"
                       onClick={() => {
@@ -536,7 +536,7 @@ export function DashboardModals() {
               {/* MODAL: UNIFIED PROFILE & LOCATION MODAL (STUDENT & TUTOR) WITH ACTIVITY LOG */}
               {isProfileModalOpen && currentUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
-                  <div className="w-full max-w-2xl bg-white border border-emerald-200 rounded-3xl p-5 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+                  <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-emerald-200 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-7">
                     {/* Close Button */}
                     <button
                       type="button"

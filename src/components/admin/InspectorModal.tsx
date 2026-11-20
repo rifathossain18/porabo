@@ -14,7 +14,7 @@ export const InfoField: React.FC<{
   danger?: boolean;
 }> = ({ label, value, span, mono, danger }) => (
   <div
-    className={`bg-white p-2.5 rounded-xl border border-slate-200 ${span === 2 ? "col-span-2" : ""}`}
+    className={`bg-white p-2.5 rounded-xl border border-slate-200 ${span === 2 ? "sm:col-span-2" : ""}`}
   >
     <span className="text-[10px] text-slate-500 font-mono uppercase block mb-0.5">
       {label}
@@ -116,7 +116,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="w-full max-w-3xl bg-white border border-blue-200 rounded-3xl p-5 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto relative">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl space-y-5 overflow-y-auto rounded-2xl border border-blue-200 bg-white p-4 sm:max-h-[92vh] sm:rounded-3xl sm:p-7">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900"
@@ -166,7 +166,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
               Basic Information
             </h3>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <InfoField label="Email" value={user.email} span={2} mono />
             <InfoField label="Phone" value={user.phone} mono />
             <InfoField
@@ -210,7 +210,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
             <MapPin className="w-4 h-4 text-blue-700" />
             <h3 className="text-xs font-bold text-white uppercase">Location</h3>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <InfoField label="District" value={user.district} />
             <InfoField label="Area" value={user.areaName} />
             <InfoField
@@ -291,7 +291,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                   Verification Dossier
                 </h3>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <InfoField
                   label="NID / Birth Cert No."
                   value={user.nidNumber}
@@ -345,7 +345,7 @@ export const InspectorModal: React.FC<InspectorModalProps> = ({
                   Professional
                 </h3>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <InfoField
                   label="Qualifications"
                   value={user.qualifications}

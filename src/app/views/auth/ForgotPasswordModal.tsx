@@ -20,8 +20,8 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-white border border-blue-200 rounded-3xl p-6 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm sm:p-4">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-blue-200 bg-white p-4 shadow-2xl sm:rounded-3xl sm:p-6">
         <button
           type="button"
           onClick={() => {

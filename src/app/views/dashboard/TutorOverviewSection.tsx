@@ -61,8 +61,8 @@ export function TutorOverviewSection() {
       ) : null}
         
                     {/* Teacher Dashboard View Switcher */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-blue-200 rounded-2xl p-2.5">
-                      <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-blue-200 w-full sm:w-auto overflow-x-auto scrollbar-none">
+                    <div className="flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-blue-200 bg-white p-2.5 sm:flex-row sm:items-center">
+                      <div className="flex min-w-0 max-w-full items-center gap-1.5 overflow-x-auto rounded-xl border border-blue-200 bg-white p-1 scrollbar-none sm:w-auto">
                         <button
                           type="button"
                           onClick={() => setTeacherViewMode("feed")}

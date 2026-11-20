@@ -71,7 +71,7 @@ export function AdminAuthGate({
 }: AdminAuthGateProps) {
   if (hasPassword === null) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500">
+      <div className="min-h-dvh bg-slate-50 flex flex-col items-center justify-center text-slate-500">
         <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mb-4" />
         <p className="font-mono text-sm">
           Connecting to secure admin gateway...
@@ -81,7 +81,7 @@ export function AdminAuthGate({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-slate-50 text-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white border border-blue-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-3">
           <div className="w-16 h-16 rounded-3xl bg-blue-600/20 border border-blue-500/40 text-blue-700 mx-auto flex items-center justify-center">
@@ -271,8 +271,8 @@ export function AdminAuthGate({
       </div>
 
       {recoveryCodeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white border border-emerald-500/50 rounded-3xl p-6 text-center space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-sm sm:p-4">
+          <div className="w-full max-w-md space-y-4 rounded-2xl border border-emerald-500/50 bg-white p-4 text-center sm:rounded-3xl sm:p-6">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-700 mx-auto flex items-center justify-center border border-emerald-500/30">
               <KeyRound className="w-8 h-8" />
             </div>
@@ -284,7 +284,7 @@ export function AdminAuthGate({
                 This is the ONLY way to reset your password if forgotten.
               </p>
             </div>
-            <div className="text-3xl font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 py-4 rounded-xl tracking-widest select-all">
+            <div className="break-all rounded-xl border border-emerald-200 bg-emerald-50 py-4 font-mono text-xl font-bold tracking-normal text-emerald-700 select-all sm:text-3xl sm:tracking-widest">
               {recoveryCodeModal}
             </div>
             <button

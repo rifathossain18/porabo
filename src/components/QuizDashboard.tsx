@@ -104,17 +104,17 @@ export const QuizDashboard: React.FC<QuizDashboardProps> = ({ isOpen, onClose, c
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
-      <div className="w-full max-w-4xl bg-white border border-blue-600/40 rounded-3xl p-5 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+      <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col rounded-2xl border border-blue-600/40 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-7">
         <button onClick={onClose} className="absolute right-4 top-4 p-1.5 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900">
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-5 border-b border-blue-200 pb-4">
+        <div className="mb-5 flex min-w-0 items-center gap-3 border-b border-blue-200 pb-4 pr-8">
           <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-700 flex items-center justify-center">
             <BookOpen className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Teacher Quiz & Exam Center</h2>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-white sm:text-xl">Teacher Quiz & Exam Center</h2>
             <p className="text-xs text-slate-500">Add quizzes to earn points and rank higher in applicant lists.</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export const QuizDashboard: React.FC<QuizDashboardProps> = ({ isOpen, onClose, c
         <div className="flex-1 overflow-y-auto pr-1">
           {activeTab === 'create' ? (
             <form onSubmit={handleCreateQuiz} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <label className="text-xs text-slate-600 mb-1 block">Subject</label>
                   <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm text-white" required />
@@ -153,7 +153,7 @@ export const QuizDashboard: React.FC<QuizDashboardProps> = ({ isOpen, onClose, c
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {options.map((opt, idx) => (
                   <div key={idx} className={`p-3 rounded-xl border ${correctIndex === idx ? 'border-emerald-500 bg-emerald-50' : 'border-blue-200 bg-white'}`}>
                     <label className="flex items-center gap-2 text-xs text-slate-600 mb-1">

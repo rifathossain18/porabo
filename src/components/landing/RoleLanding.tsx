@@ -32,7 +32,7 @@ export const RoleLanding: React.FC<{
 
   return (
     <div
-      className="min-h-screen bg-slate-50 text-white relative overflow-hidden"
+      className="min-h-dvh bg-slate-50 text-white relative overflow-hidden"
       style={{ fontFamily: FONT_STACK }}
     >
       <PremiumBackground variant={config.variant} />
@@ -212,7 +212,7 @@ export const RoleLanding: React.FC<{
         </footer>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden border-t border-slate-200 bg-slate-50 p-3">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-slate-50 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:hidden">
         <button
           type="button"
           onClick={onRegister}

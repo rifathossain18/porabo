@@ -23,7 +23,7 @@ export function AuthenticationGateView() {
   const isTutor = authRoleChoice === "TUTOR";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div className="flex min-h-dvh flex-col justify-between bg-slate-50 text-slate-900 selection:bg-blue-600 selection:text-white">
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       <header className="border-b border-blue-200 bg-white backdrop-blur-md px-4 py-3 sm:px-6">

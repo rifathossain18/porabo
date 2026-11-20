@@ -309,7 +309,7 @@ export function MainDashboard() {
   // VIEW: MAIN APPLICATION DASHBOARD (STUDENT / TEACHER)
     // =========================================================================
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white">
+      <div className="flex min-h-dvh flex-col bg-slate-50 text-slate-900 selection:bg-blue-600 selection:text-white">
         {/* Toast Notification */}
         <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
   
@@ -326,7 +326,7 @@ export function MainDashboard() {
         />
   
         {/* Main Container */}
-        <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 pb-24 sm:pb-8 space-y-5">
+        <div className="mx-auto w-full max-w-7xl flex-1 space-y-5 px-3 py-4 pb-28 sm:px-6 sm:py-6 sm:pb-8">
           {/* =================================================================== */}
           {/* STUDENT MODE VIEW: Post Tuitions, Inspect Applicants, Accept Tutor */}
           {/* =================================================================== */}
@@ -351,7 +351,7 @@ export function MainDashboard() {
           </Suspense>
         )}
           {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white backdrop-blur-xl border-t border-blue-200 py-2 px-3 shadow-2xl flex items-center justify-around">
+        <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-blue-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-xl sm:hidden">
           {currentUser.role === "TUTOR" ? (
             <>
               <button
@@ -360,14 +360,14 @@ export function MainDashboard() {
                   setTeacherViewMode("feed");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
+                className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 transition-colors ${
                   teacherViewMode === "feed"
                     ? "text-blue-700 font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
-                <span className="text-[10px]">Feed</span>
+                <span className="text-[9px]">Feed</span>
               </button>
   
               <button
@@ -376,14 +376,14 @@ export function MainDashboard() {
                   setTeacherViewMode("map");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
+                className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 transition-colors ${
                   teacherViewMode === "map"
                     ? "text-blue-700 font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <Radio className="w-4 h-4 text-blue-700 animate-pulse" />
-                <span className="text-[10px]">Radar</span>
+                <span className="text-[9px]">Radar</span>
               </button>
   
               <button
@@ -392,14 +392,14 @@ export function MainDashboard() {
                   setTeacherViewMode("my_applications");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors relative ${
+                className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 transition-colors ${
                   teacherViewMode === "my_applications"
                     ? "text-blue-700 font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <Send className="w-4 h-4" />
-                <span className="text-[10px]">Applications</span>
+                <span className="text-[9px]">Applications</span>
                 {tutorMyApplications.length > 0 && (
                   <span className="absolute -top-0.5 right-1 w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center shadow">
                     {tutorMyApplications.length}
@@ -413,23 +413,23 @@ export function MainDashboard() {
                   setTeacherViewMode("trends");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
+                className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 transition-colors ${
                   teacherViewMode === "trends"
                     ? "text-blue-700 font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <BarChart3 className="w-4 h-4" />
-                <span className="text-[10px]">Analytics</span>
+                <span className="text-[9px]">Analytics</span>
               </button>
   
               <button
                 type="button"
                 onClick={() => handleOpenTeacherProfile(currentUser.id)}
-                className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl text-slate-500 hover:text-blue-700 transition-colors"
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1 text-slate-500 transition-colors hover:text-blue-700"
               >
                 <UserIcon className="w-4 h-4" />
-                <span className="text-[10px]">Profile</span>
+                <span className="text-[9px]">Profile</span>
               </button>
             </>
           ) : (
@@ -437,7 +437,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="flex flex-col items-center gap-1 py-1 px-3 text-blue-700 font-bold"
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 px-1 py-1 font-bold text-blue-700"
               >
                 <BookOpen className="w-4 h-4" />
                 <span className="text-[10px]">My Tuitions</span>
@@ -446,7 +446,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => setIsCreatePostOpen(true)}
-                className="flex flex-col items-center gap-1 py-1 px-3 text-white bg-blue-600 rounded-xl font-bold shadow-lg shadow-blue-600/40"
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-blue-600 px-1 py-1 font-bold text-white shadow-lg shadow-blue-600/40"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span className="text-[10px]">Post Tuition</span>
@@ -455,7 +455,7 @@ export function MainDashboard() {
               <button
                 type="button"
                 onClick={() => setIsNotificationPanelOpen(true)}
-                className="flex flex-col items-center gap-1 py-1 px-3 text-slate-500 hover:text-slate-900 relative"
+                className="relative flex min-w-0 flex-1 flex-col items-center gap-1 px-1 py-1 text-slate-500 hover:text-slate-900"
               >
                 <Bell className="w-4 h-4" />
                 <span className="text-[10px]">Alerts</span>
@@ -474,7 +474,7 @@ export function MainDashboard() {
           href="https://wa.me/8801642695161?text=Hello%20Porabo%20Support%2C%20I%20have%20a%20feedback%20or%20complain"
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white px-3.5 sm:px-4 py-2.5 rounded-full shadow-2xl shadow-emerald-600/40 border border-emerald-400/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 group font-medium text-xs"
+          className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-full border border-emerald-400/50 bg-gradient-to-r from-emerald-600 to-green-500 px-4 py-2.5 text-xs font-medium text-white shadow-2xl shadow-emerald-600/40 transition-all hover:scale-105 hover:from-emerald-500 hover:to-green-400 active:scale-95 group sm:flex"
           title="WhatsApp Support & Complain: +8801642695161"
         >
           <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0" />

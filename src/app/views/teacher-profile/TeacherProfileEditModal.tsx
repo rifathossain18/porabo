@@ -22,7 +22,7 @@ export function TeacherProfileEditModal() {
     <>
       {isEditProfileOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
-              <div className="relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.25)]">
+              <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_25px_50px_-12px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-3xl sm:p-6">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}

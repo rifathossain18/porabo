@@ -70,7 +70,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
   };
 
   return (
-    <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 bg-white backdrop-blur-xl border border-blue-200 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+    <div className="fixed inset-x-3 top-28 z-50 flex max-h-[calc(100dvh-5rem)] w-auto max-w-sm flex-col overflow-hidden rounded-3xl border border-blue-200 bg-white shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96">
       {/* Panel Header */}
       <div className="p-4 border-b border-blue-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
       </div>
 
       {/* Notification List */}
-      <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
+      <div className="min-h-0 max-h-80 flex-1 overflow-y-auto divide-y divide-slate-200">
         {filtered.length === 0 ? (
           <div className="p-8 text-center text-slate-500 space-y-1">
             <Bell className="w-8 h-8 mx-auto text-slate-700" />

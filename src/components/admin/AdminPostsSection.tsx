@@ -49,14 +49,14 @@ export function AdminPostsSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-blue-700" /> Tuition Posts — Full
           Details ({posts.length})
         </h2>
         <button
           onClick={onExport}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="flex items-center gap-1.5 self-start rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Download className="w-3.5 h-3.5" /> Export
         </button>

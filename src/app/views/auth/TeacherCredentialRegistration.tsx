@@ -54,13 +54,13 @@ export function TeacherCredentialRegistration({
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-1 p-1 bg-white rounded-xl border border-blue-200">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-blue-200 bg-white p-1 sm:grid-cols-4">
         {steps.map((step) => (
           <button
             key={step.step}
             type="button"
             onClick={() => onNextStep(step.step)}
-            className={`py-1.5 rounded-lg text-[10px] font-mono transition-all text-center flex items-center justify-center gap-1 ${
+            className={`min-h-9 rounded-lg px-1 py-1.5 text-[10px] font-mono transition-all text-center flex items-center justify-center gap-1 ${
               regTeacherDocStep === step.step
                 ? "bg-blue-600 text-white font-bold shadow"
                 : step.complete
@@ -79,7 +79,7 @@ export function TeacherCredentialRegistration({
           <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[11px] text-blue-700">
             Step 1: Enter your current university/college and enrolled department.
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[11px] font-medium text-slate-600 mb-1">Institution Name</label>
               <input
@@ -144,7 +144,7 @@ export function TeacherCredentialRegistration({
           <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[11px] text-blue-700">
             Step 3: Enter your current institution student roll number and registration number.
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[11px] font-medium text-slate-600 mb-1">Student ID Roll Number</label>
               <input type="text" value={regTeacherStudentIdRoll} onChange={(event) => setRegTeacherStudentIdRoll(event.target.value)} placeholder="e.g. 2021-MAT-042" required className="w-full bg-white border border-blue-200 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono" />

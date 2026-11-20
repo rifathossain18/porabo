@@ -378,7 +378,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // ============ MAIN CONSOLE ============
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-16">
+    <div className="flex min-h-dvh flex-col bg-slate-50 pb-16 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-blue-200 bg-white backdrop-blur-md px-3 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -390,7 +390,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <span className="font-extrabold text-base text-white">
                   Porabo <span className="text-blue-700">Admin</span>
                 </span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <span className="hidden items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-[10px] uppercase text-emerald-700 sm:flex">
                   <CheckCircle className="w-2.5 h-2.5" /> Authenticated
                 </span>
               </div>
@@ -874,7 +874,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* MODALS */}
       {rejectingTutorId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white border border-rose-500/40 rounded-3xl p-6 space-y-4">
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-rose-500/40 bg-white p-4 sm:rounded-3xl sm:p-6">
             <h3 className="font-bold text-lg text-white">Reject Teacher</h3>
             <textarea
               rows={3}
@@ -902,7 +902,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {rejectingReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white border border-rose-500/40 rounded-3xl p-6 space-y-4">
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-rose-500/40 bg-white p-4 sm:rounded-3xl sm:p-6">
             <h3 className="font-bold text-lg text-white">Reject Review</h3>
             <textarea
               rows={3}
@@ -945,7 +945,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {itemToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white border border-rose-500/50 rounded-3xl p-6 space-y-4 text-center">
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-sm space-y-4 overflow-y-auto rounded-2xl border border-rose-500/50 bg-white p-4 text-center sm:rounded-3xl sm:p-6">
             <Trash2 className="w-12 h-12 text-rose-700 mx-auto" />
             <h3 className="font-bold text-lg text-white">
               Permanently Delete?

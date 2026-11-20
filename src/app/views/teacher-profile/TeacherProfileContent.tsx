@@ -106,7 +106,7 @@ export function TeacherProfileContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-dvh bg-slate-50 text-slate-900">
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-sm sm:px-6">

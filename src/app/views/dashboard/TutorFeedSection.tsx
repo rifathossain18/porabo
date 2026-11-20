@@ -1,10 +1,21 @@
-import { MapPin, Compass, Download, Check, Send, Filter, Heart, Bookmark, Zap, EyeOff, Share2, Radio, Sun, QrCode, Sliders, History } from "lucide-react";
+import { MapPin, Compass, Download, Check, Send, Filter, Heart, Bookmark, Zap, EyeOff, Share2, Radio, Sun, QrCode, Sliders, History, ShieldCheck, Wallet } from "lucide-react";
+import { useMemo } from "react";
 import { Bar } from "recharts";
 import { SUBJECT_OPTIONS, GRADE_OPTIONS } from "../../../lib/mockData";
 import { formatDistanceAnnotation } from "../../../lib/geo";
 import { EmptyFeedIllustration } from "../../../components/EmptyStateIllustrations";
 import { PostCountdown } from "../../../components/PostCountdown";
 import { useAppContext } from "../../AppContext";
+
+const WEEKDAY_LABELS: Record<string, string> = {
+  SAT: "Sat",
+  SUN: "Sun",
+  MON: "Mon",
+  TUE: "Tue",
+  WED: "Wed",
+  THU: "Thu",
+  FRI: "Fri",
+};
 
 export function TutorFeedSection() {
   const {
@@ -41,6 +52,10 @@ export function TutorFeedSection() {
     handleSharePost,
     handleDownloadCard,
   } = useAppContext();
+  const appliedPostIds = useMemo(
+    () => new Set(tutorMyApplications.map((application) => application.postId)),
+    [tutorMyApplications],
+  );
   if (!currentUser || currentUser.role !== "TUTOR") return null;
   return (
     <>
@@ -277,32 +292,24 @@ export function TutorFeedSection() {
                             </button>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
                             {filteredTutorPosts.map((post) => {
-                              const alreadyApplied = tutorMyApplications.some(
-                                (a) => a.postId === post.id,
-                              );
-        
-                              const dayLabels: Record<string, string> = {
-                                SAT: "Sat",
-                                SUN: "Sun",
-                                MON: "Mon",
-                                TUE: "Tue",
-                                WED: "Wed",
-                                THU: "Thu",
-                                FRI: "Fri",
-                              };
+                              const alreadyApplied = appliedPostIds.has(post.id);
         
                               return (
                                 <div
                                   key={post.id}
-                                  className="relative flex flex-col justify-between space-y-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_12px_24px_-8px_rgba(15,23,42,0.12),0_4px_8px_-2px_rgba(15,23,42,0.06)]"
+                                  className="group relative flex h-full flex-col justify-between gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-blue-50/40 p-4 pt-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_12px_24px_-8px_rgba(15,23,42,0.12),0_4px_8px_-2px_rgba(15,23,42,0.06)] sm:p-5 sm:pt-6"
                                 >
+                                  <div
+                                    aria-hidden="true"
+                                    className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400"
+                                  />
                                   <div>
                                     {/* Card Header with countdown */}
                                     <div className="mb-4 flex items-start justify-between gap-3">
                                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 text-xs font-semibold text-blue-800 shadow-sm">
                                           <MapPin className="h-3.5 w-3.5" />
                                           <span>
                                             {post.distanceKm !== undefined
@@ -315,7 +322,7 @@ export function TutorFeedSection() {
                                         <PostCountdown createdAt={post.createdAt} />
                                       </div>
         
-                                      <div className="flex shrink-0 items-center gap-1">
+                                      <div className="flex shrink-0 items-center gap-0.5 rounded-2xl border border-slate-100 bg-white/90 p-1 shadow-sm sm:gap-1">
                                         <button
                                           type="button"
                                           onClick={(e) => {
@@ -332,7 +339,7 @@ export function TutorFeedSection() {
                                           }}
                                           title="Share via QR Code"
                                           aria-label="Share tuition post by QR code"
-                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700 sm:h-8 sm:w-8"
                                         >
                                           <QrCode className="w-3.5 h-3.5" />
                                         </button>
@@ -341,7 +348,7 @@ export function TutorFeedSection() {
                                           onClick={(e) => handleSharePost(post, e)}
                                           title="Share"
                                           aria-label="Share tuition post"
-                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700 sm:h-8 sm:w-8"
                                         >
                                           <Share2 className="w-3.5 h-3.5" />
                                         </button>
@@ -356,7 +363,7 @@ export function TutorFeedSection() {
                                           disabled={downloadingPostId === post.id}
                                           title="Download beautiful PNG card"
                                           aria-label="Download tuition post card"
-                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
+                                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 sm:h-8 sm:w-8"
                                         >
                                           <Download
                                             className={`w-3.5 h-3.5 ${downloadingPostId === post.id ? "animate-pulse" : ""}`}
@@ -368,7 +375,7 @@ export function TutorFeedSection() {
                                           onClick={(e) => handleHidePost(post.id, e)}
                                           title="Hide"
                                           aria-label="Hide tuition post"
-                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700"
+                                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-700 sm:h-8 sm:w-8"
                                         >
                                           <EyeOff className="w-3.5 h-3.5" />
                                         </button>
@@ -379,7 +386,7 @@ export function TutorFeedSection() {
                                           }
                                           title="Bookmark"
                                           aria-label={post.isBookmarked ? "Remove bookmark" : "Bookmark tuition post"}
-                                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white transition-colors hover:bg-rose-50"
+                                          className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:bg-rose-50 sm:h-8 sm:w-8"
                                         >
                                           <Heart
                                             className={`w-3.5 h-3.5 ${post.isBookmarked ? "text-rose-500 fill-rose-500" : "text-slate-500 hover:text-slate-900"}`}
@@ -388,7 +395,7 @@ export function TutorFeedSection() {
                                       </div>
                                     </div>
         
-                                    <h3 className="text-lg font-bold leading-snug text-slate-900 line-clamp-2">
+                                    <h3 className="text-lg font-bold leading-snug tracking-tight text-slate-900 line-clamp-2 sm:text-xl">
                                       {post.title}
                                     </h3>
                                     <p className="mt-1.5 text-sm leading-5 text-slate-600">
@@ -414,7 +421,7 @@ export function TutorFeedSection() {
                                       )}
                                     </div>
 
-                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                    <div className="mt-4 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 sm:gap-3">
                                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                                         <div className="text-xs font-medium text-slate-500">Schedule</div>
                                         <div className="mt-1 text-sm font-semibold text-slate-900">
@@ -434,13 +441,16 @@ export function TutorFeedSection() {
                                     </div>
         
                                     {/* Location (area only — exact address hidden) */}
-                                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
-                                      <Compass className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                                    <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50/80 to-white p-3.5">
+                                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm ring-1 ring-blue-100">
+                                        <Compass className="h-4 w-4" />
+                                      </div>
                                       <div>
                                         <div className="text-sm font-semibold text-slate-800">
                                           {post.areaName}, {post.district}
                                         </div>
-                                        <p className="mt-0.5 text-xs leading-5 text-slate-600">
+                                        <p className="mt-1 flex items-center gap-1 text-xs leading-5 text-slate-600">
+                                          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                                           Approximate area only; exact address is shared after acceptance.
                                         </p>
                                       </div>
@@ -449,17 +459,18 @@ export function TutorFeedSection() {
                                       {/* Weekly schedule preview */}
                                       {post.weeklySchedule &&
                                         post.weeklySchedule.length > 0 && (
-                                          <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                                            <div className="mb-2 text-xs font-semibold text-slate-700">
-                                              Schedule
+                                          <div className="mt-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3.5">
+                                            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+                                              <Sun className="h-3.5 w-3.5 text-amber-500" />
+                                              Weekly availability
                                             </div>
                                             <div className="flex flex-wrap gap-1.5">
                                               {post.weeklySchedule.map((slot, i) => (
                                                 <span
                                                   key={i}
-                                                  className="rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800"
+                                                  className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-800"
                                                 >
-                                                  {dayLabels[slot.day] || slot.day}{" "}
+                                                  {WEEKDAY_LABELS[slot.day] || slot.day}{" "}
                                                   {slot.startTime}–{slot.endTime}
                                                 </span>
                                               ))}
@@ -480,17 +491,18 @@ export function TutorFeedSection() {
                                   </div>
         
                                   <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
-                                    <div className="flex items-center justify-between gap-4 sm:block">
+                                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-3.5 py-2.5 sm:min-w-0 sm:flex-1 sm:justify-start sm:gap-5">
                                       <div>
-                                        <span className="block text-xs font-medium text-slate-500">
+                                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800/80">
+                                          <Wallet className="h-3.5 w-3.5" />
                                           Monthly budget
                                         </span>
-                                        <span className="mt-0.5 block text-xl font-bold text-emerald-800">
+                                        <span className="mt-0.5 block text-xl font-extrabold tracking-tight text-emerald-800">
                                           ৳ {post.salaryBudget.toLocaleString()}
                                         </span>
                                       </div>
                                       {post.applicationsCount !== undefined && (
-                                        <span className="text-xs text-slate-500 sm:mt-1 sm:block">
+                                        <span className="rounded-full border border-white bg-white/90 px-2.5 py-1 text-xs font-medium text-slate-600 shadow-sm sm:mt-1 sm:block">
                                           {post.applicationsCount} {post.applicationsCount === 1 ? "applicant" : "applicants"}
                                         </span>
                                       )}
@@ -506,13 +518,13 @@ export function TutorFeedSection() {
                                         Pending Verification
                                       </span>
                                     ) : (
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex w-full items-center gap-2 sm:w-auto">
                                         <button
                                           type="button"
                                           onClick={(e) =>
                                             handleQuickApplyToPost(post, e)
                                           }
-                                          className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition-all flex items-center gap-1"
+                                          className="flex min-h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/30 transition-all hover:from-emerald-500 hover:to-green-400 sm:flex-none"
                                           title="Quick Apply"
                                         >
                                           <Zap className="w-3.5 h-3.5" />
@@ -524,7 +536,7 @@ export function TutorFeedSection() {
                                             setSelectedPostForApply(post);
                                             setApplyProposedSalary(post.salaryBudget);
                                           }}
-                                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/30 transition-all flex items-center gap-1"
+                                          className="flex min-h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-600/30 transition-all hover:bg-blue-500 sm:flex-none"
                                         >
                                           <Send className="w-3.5 h-3.5" />
                                           <span>Apply</span>

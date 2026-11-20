@@ -1,5 +1,5 @@
 import { QuizDashboard } from "../../../components/QuizDashboard";
-import { MapPin, Phone, Navigation, GraduationCap, Search, Check, Send, Star, X, Info, Activity, RefreshCw, User as UserIcon, History } from "lucide-react";
+import { MapPin, Phone, Navigation, GraduationCap, Search, Check, Send, Star, X, Info, Activity, RefreshCw, User as UserIcon, History, CalendarDays, Clock3, ShieldCheck, Wallet } from "lucide-react";
 import { Area } from "recharts";
 import { cfD1 } from "../../../lib/cloudflareD1";
 import { TutorDetailModal } from "../../../components/TutorDetailModal";
@@ -96,190 +96,273 @@ export function DashboardModals() {
     <>
               {/* MODAL: APPLY TO TUITION POST */}
               {selectedPostForApply && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4">
-                  <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-emerald-200 bg-white p-4 shadow-2xl sm:max-h-[92vh] sm:rounded-3xl sm:p-6">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPostForApply(null)}
-                      className="absolute right-5 top-5 text-slate-500 hover:text-slate-900"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-        
-                    <h3 className="font-bold text-lg text-white mb-1">
-                      Apply to Tuition Post
-                    </h3>
-                    <p className="text-xs text-emerald-700 mb-4">
-                      {selectedPostForApply.title} &bull;{" "}
-                      {selectedPostForApply.areaName}
-                    </p>
-        
-                    {/* 🆕 Full Post Details for Tutor */}
-                    <div className="mb-4 p-3 rounded-xl bg-white border border-emerald-200 space-y-2 max-h-48 overflow-y-auto">
-                      <div className="text-[10px] text-emerald-700 font-mono uppercase mb-1 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Post Details (Before You Apply)
-                      </div>
-        
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 sm:p-5">
+                  <section
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="apply-modal-title"
+                    className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white shadow-[0_25px_50px_-12px_rgba(15,23,42,0.35)] sm:max-h-[92vh]"
+                  >
+                    <header className="relative shrink-0 overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-600 px-5 py-5 text-white sm:px-7 sm:py-6">
+                      <div
+                        aria-hidden="true"
+                        className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-white/10"
+                      />
+                      <div className="relative flex items-start justify-between gap-4">
                         <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Subject
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-50">
+                            <Send className="h-3.5 w-3.5" />
+                            Tuition application
                           </span>
-                          <span className="text-white font-semibold">
-                            {selectedPostForApply.subject}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Grade
-                          </span>
-                          <span className="text-white font-semibold">
-                            {selectedPostForApply.gradeLevel}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Curriculum
-                          </span>
-                          <span className="text-white">
-                            {selectedPostForApply.curriculum}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Budget
-                          </span>
-                          <span className="text-emerald-700 font-bold">
-                            ৳ {selectedPostForApply.salaryBudget.toLocaleString()}/mo
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Mode
-                          </span>
-                          <span className="text-white">
-                            {selectedPostForApply.tuitionMode || "Not specified"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                            Days/Week
-                          </span>
-                          <span className="text-white">
-                            {selectedPostForApply.daysPerWeek}
-                          </span>
-                        </div>
-                      </div>
-        
-                      {selectedPostForApply.weeklySchedule &&
-                        selectedPostForApply.weeklySchedule.length > 0 && (
-                          <div>
-                            <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
-                              Weekly Schedule
-                            </span>
-                            <div className="space-y-0.5">
-                              {selectedPostForApply.weeklySchedule.map((slot, i) => (
-                                <div
-                                  key={i}
-                                  className="flex items-center justify-between text-[11px]"
-                                >
-                                  <span className="text-slate-600">{slot.day}</span>
-                                  <span className="text-emerald-700 font-mono">
-                                    {slot.startTime} – {slot.endTime}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-        
-                      {selectedPostForApply.specialRequirements && (
-                        <div>
-                          <span className="text-slate-500 block text-[9px] uppercase font-mono mb-1">
-                            Special Requirements
-                          </span>
-                          <p className="text-slate-600 italic text-[11px]">
-                            {selectedPostForApply.specialRequirements}
+                          <h2
+                            id="apply-modal-title"
+                            className="mt-3 text-xl font-bold tracking-tight sm:text-2xl"
+                          >
+                            Apply for this tuition
+                          </h2>
+                          <p className="mt-1 max-w-lg text-sm leading-5 text-blue-100">
+                            Review the request and share a clear proposal with the student.
                           </p>
                         </div>
-                      )}
-        
-                      <div className="pt-2 border-t border-slate-200">
-                        <span className="text-slate-500 block text-[9px] uppercase font-mono">
-                          Location
-                        </span>
-                        <span className="text-white">
-                          {selectedPostForApply.areaName},{" "}
-                          {selectedPostForApply.district}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block mt-0.5 italic">
-                          Exact address unlocks after acceptance
-                        </span>
-                      </div>
-                    </div>
-        
-                    <form onSubmit={handleApplyToPost} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Proposed Monthly Salary (৳)
-                        </label>
-                        <input
-                          type="number"
-                          value={applyProposedSalary}
-                          onChange={(e) =>
-                            setApplyProposedSalary(Number(e.target.value))
-                          }
-                          required
-                          className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
-        
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Available Schedule
-                        </label>
-                        <input
-                          type="text"
-                          value={applySchedule}
-                          onChange={(e) => setApplySchedule(e.target.value)}
-                          placeholder="e.g. Mon, Wed, Fri (4:30 PM - 6:00 PM)"
-                          required
-                          className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
-        
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                          Cover Message
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={applyMessage}
-                          onChange={(e) => setApplyMessage(e.target.value)}
-                          required
-                          className="w-full bg-white border border-emerald-200 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
-        
-                      <div className="flex gap-2 pt-2">
                         <button
                           type="button"
                           onClick={() => setSelectedPostForApply(null)}
-                          className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl text-sm"
+                          aria-label="Close application form"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5"
-                        >
-                          <Send className="w-4 h-4" />
-                          <span>Send Application</span>
+                          <X className="h-5 w-5" />
                         </button>
                       </div>
-                    </form>
-                  </div>
+
+                      <div className="relative mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/10 p-3.5 sm:p-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words text-sm font-bold leading-5 sm:text-base">
+                            {selectedPostForApply.title}
+                          </p>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-blue-100">
+                            <GraduationCap className="h-3.5 w-3.5" />
+                            <span>{selectedPostForApply.subject}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{selectedPostForApply.gradeLevel}</span>
+                          </p>
+                        </div>
+                        <div className="min-w-32 rounded-xl bg-white px-3 py-2 text-right text-blue-900 shadow-sm">
+                          <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Student budget
+                          </span>
+                          <span className="mt-0.5 block text-base font-extrabold tracking-tight">
+                            ৳ {selectedPostForApply.salaryBudget.toLocaleString()}
+                            <span className="ml-1 text-xs font-semibold text-slate-500">/mo</span>
+                          </span>
+                        </div>
+                      </div>
+                    </header>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-6">
+                      <section
+                        aria-label="Tuition request details"
+                        className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm ring-1 ring-slate-200">
+                            <Info className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-900">
+                              Request overview
+                            </h3>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                              Make sure the schedule and requirements work for you.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {[
+                            ["Curriculum", selectedPostForApply.curriculum],
+                            ["Lesson mode", selectedPostForApply.tuitionMode || "Not specified"],
+                            ["Days per week", `${selectedPostForApply.daysPerWeek} days`],
+                          ].map(([label, value]) => (
+                            <div
+                              key={label}
+                              className="min-w-0 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5"
+                            >
+                              <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                {label}
+                              </span>
+                              <span className="mt-1 block break-words text-xs font-semibold leading-4 text-slate-800">
+                                {value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {selectedPostForApply.weeklySchedule &&
+                          selectedPostForApply.weeklySchedule.length > 0 && (
+                            <div className="mt-4">
+                              <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+                                <Clock3 className="h-4 w-4 text-blue-600" />
+                                Preferred weekly schedule
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedPostForApply.weeklySchedule.map((slot, index) => (
+                                  <span
+                                    key={`${slot.day}-${slot.startTime}-${index}`}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-800"
+                                  >
+                                    <CalendarDays className="h-3.5 w-3.5" />
+                                    {slot.day}, {slot.startTime}–{slot.endTime}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {selectedPostForApply.specialRequirements && (
+                          <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50/80 p-3">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                              Special requirements
+                            </span>
+                            <p className="mt-1 text-sm leading-5 text-slate-700">
+                              {selectedPostForApply.specialRequirements}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-blue-100 bg-blue-50/80 p-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm">
+                            <ShieldCheck className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-800">
+                              Approximate area only
+                            </p>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-600">
+                              {selectedPostForApply.areaName}, {selectedPostForApply.district}. Exact address is shared only after acceptance.
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      <form
+                        id="tuition-application-form"
+                        onSubmit={handleApplyToPost}
+                        className="mt-6"
+                      >
+                        <div className="mb-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                            Your application
+                          </p>
+                          <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                            Share your proposal
+                          </h3>
+                          <p className="mt-1 text-sm leading-5 text-slate-500">
+                            Explain your fee, availability, and why you are a good fit.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label
+                              htmlFor="apply-proposed-salary"
+                              className="mb-1.5 block text-sm font-semibold text-slate-700"
+                            >
+                              Proposed monthly fee
+                            </label>
+                            <div className="flex min-h-12 items-center rounded-xl border border-slate-300 bg-white transition-colors focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
+                              <span className="pl-3.5 text-sm font-semibold text-slate-500">৳</span>
+                              <input
+                                id="apply-proposed-salary"
+                                type="number"
+                                min="1"
+                                step="1"
+                                inputMode="numeric"
+                                value={applyProposedSalary}
+                                onChange={(event) =>
+                                  setApplyProposedSalary(Number(event.target.value))
+                                }
+                                required
+                                aria-describedby="apply-fee-hint"
+                                className="min-w-0 flex-1 rounded-xl bg-transparent px-2.5 py-3 text-base font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                              />
+                              <span className="pr-3.5 text-xs font-medium text-slate-500">/month</span>
+                            </div>
+                            <p id="apply-fee-hint" className="mt-1.5 text-xs leading-5 text-slate-500">
+                              Student budget: ৳ {selectedPostForApply.salaryBudget.toLocaleString()} per month.
+                            </p>
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor="apply-available-schedule"
+                              className="mb-1.5 block text-sm font-semibold text-slate-700"
+                            >
+                              Your available schedule
+                            </label>
+                            <input
+                              id="apply-available-schedule"
+                              type="text"
+                              value={applySchedule}
+                              onChange={(event) => setApplySchedule(event.target.value)}
+                              placeholder="e.g. Sun, Tue, Thu after 5 PM"
+                              required
+                              className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            />
+                            <p className="mt-1.5 text-xs leading-5 text-slate-500">
+                              Mention your preferred days and time.
+                            </p>
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label
+                              htmlFor="apply-cover-message"
+                              className="mb-1.5 block text-sm font-semibold text-slate-700"
+                            >
+                              A short introduction
+                            </label>
+                            <textarea
+                              id="apply-cover-message"
+                              rows={4}
+                              value={applyMessage}
+                              onChange={(event) => setApplyMessage(event.target.value)}
+                              placeholder="Share relevant experience, your teaching approach, and how you can help this student."
+                              required
+                              className="w-full resize-y rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm leading-6 text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                            />
+                            <p className="mt-1.5 text-xs leading-5 text-slate-500">
+                              Your verified profile and proposal will be shared with the student.
+                            </p>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+
+                    <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-3.5 sm:px-7 sm:py-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs leading-5 text-slate-500">
+                          <span className="font-semibold text-slate-700">Your privacy matters.</span>{" "}
+                          Student contact details stay hidden unless your application is accepted.
+                        </p>
+                        <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPostForApply(null)}
+                            className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 sm:flex-none"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            form="tuition-application-form"
+                            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:min-w-44 sm:flex-none"
+                          >
+                            <Send className="h-4 w-4" />
+                            Send application
+                          </button>
+                        </div>
+                      </div>
+                    </footer>
+                  </section>
                 </div>
               )}
         
